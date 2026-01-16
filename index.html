@@ -7,13 +7,12 @@
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
-    <link rel="manifest" href="manifest.json">
+    <!-- PWA(매니페스트/서비스워커) 비활성화: 캐시 문제 방지 -->
+    <!-- <link rel="manifest" href="manifest.json"> -->
     <meta name="theme-color" content="#3B82F6">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
 /* =========================================================
@@ -30,11 +29,6 @@
 
   --brand-yellow:#FACC15;
   --brand-yellow-soft:#FEF9C3;
-  --primary: var(--brand-blue);
-  --secondary: var(--brand-yellow);
-  --text-main: var(--ink);
-  --text-sub: var(--ink-sub);
-
 
   --ink:#0F172A;
   --ink-sub:#475569;
@@ -1479,14 +1473,14 @@ body.kiosk-mode .kiosk-exit-btn {
                     <span class="contact-label">학생</span>
                     <a id="linkCallStu" class="contact-btn btn-call"><i class="fas fa-phone"></i></a>
                     <a id="linkSmsStu" class="contact-btn btn-sms"><i class="fas fa-comment-dots"></i></a>
-                    <a id="linkKakaoStu" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('student')"><i class="fas fa-comment"></i></a>
+                    <a id="linkKakaoStu" class="contact-btn btn-kakao" onclick="shareToTarget('student')"><i class="fas fa-comment"></i></a>
                 </div>
                 <div style="width:1px; height:20px; background:#ddd;"></div>
                 <div class="contact-group">
                     <span class="contact-label">부모</span>
                     <a id="linkCallPar" class="contact-btn btn-call"><i class="fas fa-phone"></i></a>
                     <a id="linkSmsPar" class="contact-btn btn-sms"><i class="fas fa-comment-dots"></i></a>
-                    <a id="linkKakaoPar" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('parent')"><i class="fas fa-comment"></i></a>
+                    <a id="linkKakaoPar" class="contact-btn btn-kakao" onclick="shareToTarget('parent')"><i class="fas fa-comment"></i></a>
                 </div>
             </div>
             <input type="file" id="editPhotoInput" accept="image/*" style="display:none;" onchange="previewEditPhoto()">
@@ -1514,7 +1508,7 @@ body.kiosk-mode .kiosk-exit-btn {
             <button class="action-btn" onclick="generateNotice()" style="background:#fbc02d; margin:0; font-size:13px; padding:10px 0;">📝 양식</button>
             <button class="action-btn" onclick="copyNotice()" style="background:#ffa000; margin:0; font-size:13px; padding:10px 0;">📋 복사</button>
             <button class="action-btn" onclick="sendNoticeSms()" style="background:#4caf50; margin:0; font-size:13px; padding:10px 0;">📩 문자</button>
-            <button class="action-btn" onclick="sendNoticeKakao()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:10px 0;">🟡 카톡</button>
+            <button class="action-btn" onclick="sendNoticeShare()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:10px 0;">📣 공유</button>
         </div>
     </div>
 </div>
@@ -1528,7 +1522,7 @@ body.kiosk-mode .kiosk-exit-btn {
             
             <div class="admin-only" style="display:flex; gap:5px; margin-bottom:20px;">
                 <input type="text" id="newCounsel" placeholder="상담 내용 기록" style="flex:1;">
-                <button onclick="addCounselLog()" style="background:var(--primary); color:white; border:none; padding:0 20px; border-radius:8px; font-weight:bold;">등록</button>
+                <button class="action-btn" onclick="addCounselLog()" style="margin:0; padding:10px 16px; border-radius:10px; font-size:14px; background:#3B82F6; color:#fff;">등록</button>
             </div>
 
             <details style="background:white; border:1px solid #e0e0e0; border-radius:10px; padding:10px;">
@@ -2604,107 +2598,87 @@ const SMS_API_URL = "/api/send-sms";
         const msg = window.generateNotice();
         location.href = `sms:${(s.phone||'').replace(/[^0-9]/g,'')}?body=${encodeURIComponent(msg)}`;
     };
-
-   
   // =========================================================
-  // [추가] 카카오 공유용 토큰 & URL 생성 (token -> Firestore 매핑)
   // =========================================================
-  window.__NOTICE_PAGE_NAME__ = 'notice.html';
+  
+    // ============================================================
+    // [공유] 카톡 전용 SDK 제거 (Web Share / 복사로 대체)
+    // - 휴대폰에서는 '공유'를 누르면 카카오톡을 선택해서 보낼 수 있습니다.
+    // - PC/공유 불가 환경에서는 링크+문구를 자동으로 복사합니다.
+    // ============================================================
+window.sendNoticeShare = async () => {
+        const s = allStudents.find(st => st.id === currentStudentId);
+        if(!s) return alert('학생 정보 없음');
 
-  // ✅ async로 바꿔야 await 사용 가능
-  window.createNoticeToken = async function(studentId, target){
-    const token =
-      Date.now().toString(36) + '-' +
-      Math.random().toString(36).slice(2, 10);
+        const text = document.getElementById('dailyProgress').value;
+        if(!text) return alert('내용을 입력해주세요.');
 
-    // 같은 기기에서 file://로 테스트할 때도 notice.html이 token을 찾을 수 있도록 저장
-    try {
-      localStorage.setItem('noticeToken:' + token, JSON.stringify({
-        studentId: studentId,
-        target: target,
-        createdAt: new Date().toISOString()
-      }));
-    } catch(e) {}
+        // 1. 현재 주소 가져오기
+        const base = (location.origin || '').replace(/\/$/, '');
+        
+        // ★ 핵심: 뒤에 시간을 붙여서(?v=...) 매번 새로운 링크로 인식시킴
+        const parentUrl = base + '/parent.html?v=' + Date.now();
 
-    // ✅ 실제 공유(다른 폰/기기)에서도 열리게 Firestore에 저장
-    try {
-      await setDoc(doc(db, "noticeTokens", token), {
-        studentId: studentId,
-        target: target,
-        createdAt: serverTimestamp()
-      });
-    } catch(e) {
-      console.warn("noticeTokens 저장 실패(권한/규칙 확인):", e);
+        // DB 저장
+        try {
+            await updateDoc(doc(db, 'students', currentStudentId), {
+                lastNotice: text,
+                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
+            });
+        } catch(e) { console.log('저장 오류:', e); }
+
+        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모님 확인하기\n${parentUrl}`;
+
+        // Web Share (모바일)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `[미래엔수학] ${s.name} 학생 알림장`,
+                    text: msg,
+                    url: parentUrl
+                });
+                return;
+            } catch(e) {}
+        }
+
+        // 복사 (오류 수정됨: 엔터 제거하고 \n 사용)
+        try {
+            await navigator.clipboard.writeText(msg);
+            alert('공유용 문구/링크를 복사했습니다.\n카톡 대화창에 붙여넣어 보내세요!');
+        } catch(e) {
+            prompt('아래 내용을 복사해서 카톡으로 보내세요.', msg);
+        }
+    };
+  
+  // ============================================================
+window.shareToTarget = async function(target){
+    const s = allStudents.find(st => st.id === currentStudentId);
+    if(!s) return alert('학생 정보 없음');
+
+    const base = (location.origin || '').replace(/\/$/, '');
+    
+    // ★ 핵심: 여기도 시간을 붙여서 캐시 방지
+    const parentUrl = base + '/parent.html?v=' + Date.now();
+    
+    const who = target === 'parent' ? '학부모님' : '학생';
+
+    const msg = `[미래엔수학]\n${who}께 안내드립니다.\n\n${s.name} 학생 출결/학습 안내 화면 링크입니다.\n${parentUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: '미래엔수학 안내', text: msg, url: parentUrl });
+        return;
+      } catch(e) {}
     }
 
-    return token;
+    // 복사 (오류 수정됨)
+    try {
+      await navigator.clipboard.writeText(msg);
+      alert('공유용 문구/링크를 복사했습니다.\n카톡에 붙여넣어 보내세요!');
+    } catch(e) {
+      prompt('아래 내용을 복사해서 카톡으로 보내세요.', msg);
+    }
   };
-
-  // ✅ 이것도 async여야 token 생성 await 가능
-  window.buildNoticeUrl = async function(studentId, target){
-    const token = await window.createNoticeToken(studentId, target);
-
-    // GitHub Pages처럼 /shee0777/ 하위 경로면 pathname이 필요할 수 있음
-    const base = (location.origin && location.origin !== 'null') ? location.origin : '';
-    const dir  = location.pathname.replace(/\/[^\/]*$/, '/'); // 현재 폴더 경로
-    const page = window.__NOTICE_PAGE_NAME__ || 'notice.html';
-
-    const url = (base ? (base + dir + page) : (dir + page)) + '?token=' + encodeURIComponent(token);
-    return { url, token };
-  };
-
-  // =========================================================
-  // [수정] 카카오톡 공유 링크를 notice.html?token=... 으로 보내기
-  // =========================================================
-  window.sendNoticeKakao = async () => {
-    if (window.Kakao && !Kakao.isInitialized()) Kakao.init('dcefb7d07deb53cbd714d68b71392292');
-
-    const msg = window.generateNotice();
-    if(!msg) return;
-
-    const share = await window.buildNoticeUrl(currentStudentId, 'parent');
-
-    // ✅ 디버그 로그는 여기!
-    console.log('카카오 공유 URL:', share.url);
-
-    Kakao.Share.sendDefault({
-      objectType: 'text',
-      text: msg,
-      link: { mobileWebUrl: share.url, webUrl: share.url },
-      buttonTitle: '출결/학습 안내 보기'
-    });
-  };
-
-  window.sendKakaoToTarget = async function (target) {
-    if (!window.Kakao) return alert("카카오 SDK 로드 실패");
-
-    if (!Kakao.isInitialized()) Kakao.init('dcefb7d07deb53cbd714d68b71392292');
-
-    const s = allStudents.find(st => st.id === currentStudentId);
-    if (!s) return alert("학생 정보 없음");
-
-    const share = await window.buildNoticeUrl(currentStudentId, target);
-
-    // ✅ 디버그 로그는 여기!
-    console.log('카카오 공유 URL:', share.url);
-
-    const who = target === 'parent' ? '학부모님' : '학생';
-    const msg =
-      `[미래엔수학]\n` +
-      `${who}께 안내드립니다.\n\n` +
-      `${s.name} 학생 출결/학습 안내 링크입니다.\n` +
-      `궁금하신 점은 언제든지 문의 주세요 😊`;
-
-    Kakao.Share.sendDefault({
-      objectType: 'text',
-      text: msg,
-      link: { mobileWebUrl: share.url, webUrl: share.url },
-      buttonTitle: '출결/학습 안내 보기'
-    });
-  };
-
-
-
 
 // [수정됨] 월말 정산/교육비 안내 양식 (자동 계산 + 계좌 양식 포함)
     window.generateSettlement = () => {
@@ -2974,87 +2948,5 @@ const SMS_API_URL = "/api/send-sms";
         <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
     </div>
 </div>
-
-
-<!-- =========================================================
-     Kakao 공유(토큰 없이) : 카톡 메시지 + '상담/의견 입력' 폼 버튼
-     ✅ 사용법: 아래 REPLY_FORM_URL에 구글폼(또는 원하는 페이지) 주소만 붙여넣으세요.
-     ========================================================= -->
-<script>
-  // ✅ 여기만 본인 주소로 바꿔주세요 (구글폼/상담페이지 URL)
-  window.REPLY_FORM_URL = window.REPLY_FORM_URL || "https://forms.gle/여기에_구글폼_주소_붙여넣기";
-
-  // ✅ 카톡 버튼(🟡 카톡)을 누르면 이 함수가 실행됩니다.
-  //    기존 '토큰 notice.html' 방식은 포기하고, 메시지 + 폼 버튼으로 전환합니다.
-  window.sendNoticeKakao = async function () {
-    try {
-      // 1) 메시지 만들기 (기존 generateNotice() 결과를 재사용)
-      if (typeof window.generateNotice === 'function') {
-        window.generateNotice();
-      }
-
-      const msgEl = document.getElementById('noticeText');
-      let message = (msgEl && msgEl.value) ? msgEl.value.trim() : "";
-      if (!message) {
-        return alert('먼저 알림 내용을 생성해 주세요. (📝 양식 버튼)');
-      }
-
-      // 2) 폼 URL 검사
-      const formUrl = (window.REPLY_FORM_URL || "").trim();
-      if (!formUrl || formUrl.includes('여기에_구글폼_주소')) {
-        return alert('REPLY_FORM_URL(구글폼 주소)이 비어있습니다.\n\nindex.html에서\nwindow.REPLY_FORM_URL = "..."\n부분에 본인 폼 주소를 붙여넣어 주세요.');
-      }
-
-      // 3) 카카오 SDK 준비
-      if (!window.Kakao) {
-        return alert('카카오 SDK 로드 실패입니다. (kakao.min.js)');
-      }
-
-      // 이미 init 돼있으면 재호출해도 문제 없도록 try/catch
-      if (!window.Kakao.isInitialized()) {
-        // ⚠️ 기존에 쓰던 자바스크립트 키가 이미 index.html 어딘가에 있을 가능성이 큽니다.
-        //    아래는 "기존 코드에서 쓰던 키"를 찾아서 대체할 수 있게 변수로 받습니다.
-        const key = window.KAKAO_JS_KEY || window.__KAKAO_JS_KEY__ || window.KAKAO_APP_KEY;
-        if (key) {
-          window.Kakao.init(key);
-        } else {
-          // 키를 못 찾으면 기존 코드에 있는 Kakao.init('...')가 이미 실행됐을 확률이 높습니다.
-          // 그래도 혹시 몰라 사용자에게 안내.
-          console.warn('Kakao.init 키를 찾지 못했지만, 이미 초기화되어 있을 수 있습니다.');
-        }
-      }
-
-      // 4) 메시지 길이 정리 (카톡 텍스트 길이 제한 대비)
-      const footer = "\n\n[상담/의견 입력하기]";
-      const maxLen = 900; // 안전하게
-      if (message.length > maxLen) message = message.slice(0, maxLen) + "…";
-      const finalText = message + footer;
-
-      // 5) 카톡 공유 (메시지 + 버튼)
-      window.Kakao.Share.sendDefault({
-        objectType: 'text',
-        text: finalText,
-        link: {
-          mobileWebUrl: formUrl,
-          webUrl: formUrl
-        },
-        buttons: [
-          {
-            title: '상담/의견 입력',
-            link: {
-              mobileWebUrl: formUrl,
-              webUrl: formUrl
-            }
-          }
-        ]
-      });
-
-    } catch (e) {
-      console.error(e);
-      alert('카톡 공유 실패: ' + (e && e.message ? e.message : e));
-    }
-  };
-</script>
-
 </body>
 </html>
