@@ -1,37 +1,23 @@
-// [수정] 버전 확 올림 (v2026) -> 브라우저 캐시 강제 초기화
-const CACHE_NAME = 'namyang-pwa-v2026';
-
-const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './nam-192.png',
-  './nam-512.png'
-];
+// [강제 초기화 버전] 모든 캐시를 삭제하고 매번 네트워크에서 새로 받아옵니다.
+const CACHE_NAME = 'namyang-reset-v9999';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting(); // 대기 없이 즉시 설치
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
-  );
 });
 
 self.addEventListener('activate', (event) => {
+  // 기존에 저장된 모든 캐시(v1, v2, v3...)를 싹 다 지워버립니다.
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve()))
+        keys.map((key) => caches.delete(key))
       )
     )
   );
-  self.clients.claim(); // 즉시 제어권 가져옴
+  self.clients.claim();
 });
 
+// 파일 요청이 오면 저장된 거 안 쓰고 무조건 인터넷에서 새로 가져옵니다.
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+  event.respondWith(fetch(event.request)); 
 });
