@@ -1,4 +1,4 @@
-const CACHE_NAME = 'namyang-pwa-v2';
+const CACHE_NAME = 'namyang-pwa-v5';
 
 const urlsToCache = [
   './',
