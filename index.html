@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<script>
-        (function() {
-            // 주소에 mode=notice가 있으면
-            if (location.search.includes('mode=notice')) {
-                // 1. 선생님 화면(등록창)을 아예 안 보이게 숨김
-                document.write('<style>.container, .kiosk-exit-btn, .tabs { display:none !important; } #noticeModeSection { display:block !important; }</style>');
-            }
-        })();
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>미래엔수학 능동해냄 교실 관리</title>
@@ -2610,14 +2601,18 @@ const SMS_API_URL = "/api/send-sms";
     };
 
    
-  // 1. [수정] 연결할 페이지를 'index.html'로 변경
-  window.__NOTICE_PAGE_NAME__ = 'index.html';
+  // =========================================================
+  // [추가] 카카오 공유용 토큰 & URL 생성 (token -> Firestore 매핑)
+  // =========================================================
+  window.__NOTICE_PAGE_NAME__ = 'notice.html';
 
-  // 2. 토큰 생성 함수
+  // ✅ async로 바꿔야 await 사용 가능
   window.createNoticeToken = async function(studentId, target){
-    const token = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
-    
-    // 로컬 스토리지 저장 (테스트용)
+    const token =
+      Date.now().toString(36) + '-' +
+      Math.random().toString(36).slice(2, 10);
+
+    // 같은 기기에서 file://로 테스트할 때도 notice.html이 token을 찾을 수 있도록 저장
     try {
       localStorage.setItem('noticeToken:' + token, JSON.stringify({
         studentId: studentId,
@@ -2626,88 +2621,66 @@ const SMS_API_URL = "/api/send-sms";
       }));
     } catch(e) {}
 
-    // Firestore 저장
+    // ✅ 실제 공유(다른 폰/기기)에서도 열리게 Firestore에 저장
     try {
       await setDoc(doc(db, "noticeTokens", token), {
         studentId: studentId,
         target: target,
         createdAt: serverTimestamp()
       });
-    } catch(e) { console.warn("토큰 저장 실패:", e); }
+    } catch(e) {
+      console.warn("noticeTokens 저장 실패(권한/규칙 확인):", e);
+    }
 
     return token;
   };
 
-  // 3. [수정] URL 생성 함수 (mode=notice 추가 및 주소 자동 감지)
+  // ✅ 이것도 async여야 token 생성 await 가능
   window.buildNoticeUrl = async function(studentId, target){
     const token = await window.createNoticeToken(studentId, target);
 
-    // 현재 접속한 주소(origin)를 기준으로 링크 생성
-    const origin = location.origin; 
-    const path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
-    
-    // ★ 핵심 1: index.html로 연결
-    // ★ 핵심 2: ?mode=notice 를 붙여서 학부모 화면이 뜨게 함
-    // ★ 핵심 3: &v=시간 을 붙여서 카톡 캐시 방지 (무조건 새 링크로 인식)
-    const url = `${origin}${path}/index.html?mode=notice&token=${encodeURIComponent(token)}&v=${Date.now()}`;
-    
+    // GitHub Pages처럼 /shee0777/ 하위 경로면 pathname이 필요할 수 있음
+    const base = (location.origin && location.origin !== 'null') ? location.origin : '';
+    const dir  = location.pathname.replace(/\/[^\/]*$/, '/'); // 현재 폴더 경로
+    const page = window.__NOTICE_PAGE_NAME__ || 'notice.html';
+
+    const url = (base ? (base + dir + page) : (dir + page)) + '?token=' + encodeURIComponent(token);
     return { url, token };
   };
 
-  // ============================================================
-  // [수정] 카톡 전송 (옛날 주소 박멸 + 이미지 자동 설정)
-  // ============================================================
+  // =========================================================
+  // [수정] 카카오톡 공유 링크를 notice.html?token=... 으로 보내기
+  // =========================================================
   window.sendNoticeKakao = async () => {
-        if (!window.Kakao) return alert("카카오 SDK 로드 실패");
-        if (!Kakao.isInitialized()) Kakao.init('0a302951dba10cb82dbfc0b603784155'); 
-        
-        const s = allStudents.find(st => st.id === currentStudentId);
-        const text = document.getElementById('dailyProgress').value;
-        if(!text) return alert("내용을 입력해주세요.");
+    if (window.Kakao && !Kakao.isInitialized()) Kakao.init('0a302951dba10cb82dbfc0b603784155');
 
-        // 1. DB 저장
-        try {
-            await updateDoc(doc(db, "students", currentStudentId), { lastNotice: text });
-        } catch(e) {}
+    const msg = window.generateNotice();
+    if(!msg) return;
 
-        // 2. 링크 생성 (위에서 만든 buildNoticeUrl 사용)
-        const { url } = await window.buildNoticeUrl(currentStudentId, 'parent');
-        
-        console.log("생성된 링크:", url);
+    const share = await window.buildNoticeUrl(currentStudentId, 'parent');
 
-        // 3. [수정] 이미지 주소도 현재 사이트 기준으로 자동 설정 (옛날 주소 삭제됨)
-        const origin = location.origin;
-        const path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
-        const imageUrl = `${origin}${path}/nam-512.png`;
+    // ✅ 디버그 로그는 여기!
+    console.log('카카오 공유 URL:', share.url);
 
-        // 4. 전송
-        try {
-            Kakao.Share.sendDefault({
-                objectType: 'feed',
-                content: {
-                    title: `[미래엔수학] ${s.name} 학생 알림장`,
-                    description: `${text.slice(0, 100)}${text.length > 100 ? '...' : ''}\n\n👇 아래 버튼을 눌러 확인하세요.`,
-                    imageUrl: imageUrl, 
-                    link: { mobileWebUrl: url, webUrl: url }
-                },
-                buttons: [
-                    {
-                        title: '알림장 보기',
-                        link: { mobileWebUrl: url, webUrl: url }
-                    }
-                ]
-            });
-        } catch(e) { alert("전송 실패: " + e); }
-    };
-   
+    Kakao.Share.sendDefault({
+      objectType: 'text',
+      text: msg,
+      link: { mobileWebUrl: share.url, webUrl: share.url },
+      buttonTitle: '출결/학습 안내 보기'
+    });
+  };
+
   window.sendKakaoToTarget = async function (target) {
     if (!window.Kakao) return alert("카카오 SDK 로드 실패");
+
     if (!Kakao.isInitialized()) Kakao.init('0a302951dba10cb82dbfc0b603784155');
 
     const s = allStudents.find(st => st.id === currentStudentId);
     if (!s) return alert("학생 정보 없음");
 
     const share = await window.buildNoticeUrl(currentStudentId, target);
+
+    // ✅ 디버그 로그는 여기!
     console.log('카카오 공유 URL:', share.url);
 
     const who = target === 'parent' ? '학부모님' : '학생';
@@ -2725,18 +2698,25 @@ const SMS_API_URL = "/api/send-sms";
     });
   };
 
-    // [수정] 월말 정산/교육비 안내 양식
+
+
+
+// [수정됨] 월말 정산/교육비 안내 양식 (자동 계산 + 계좌 양식 포함)
     window.generateSettlement = () => {
         const s = allStudents.find(st => st.id === currentStudentId);
         const now = new Date();
-        const currentMonth = now.getMonth() + 1; 
+        const currentMonth = now.getMonth() + 1; // 이번 달
+        
+        // 다음 달 계산 (12월이면 내년 1월로 표시)
         const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
 
+        // 이번 달 출석 횟수 정확히 계산
         const logs = (s.attendanceLog || []).filter(ts => {
             const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
             return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
         });
 
+        // 정산 안내 템플릿
         const msg = `[미래엔수학] ${nextMonth}월 교육비 안내 📄\n\n` +
                     `안녕하세요, 학부모님.\n` +
                     `어느덧 ${currentMonth}월 학습을 잘 마무리하였습니다.\n\n` +
@@ -2754,6 +2734,7 @@ const SMS_API_URL = "/api/send-sms";
     };
     window.copyText = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText); alert("복사됨"); };
 
+    // 출석 통계 계산
     window.calcStats = (s) => {
         const logs = s.attendanceLog || [];
         const total = logs.length;
@@ -2879,138 +2860,21 @@ const SMS_API_URL = "/api/send-sms";
         if(e.target == document.getElementById('scheduleModal')) document.getElementById('scheduleModal').style.display = "none";
     };
 
-   // =========================================================
-    // [수정] 실행 모드 감지 (학부모 알림장 vs 선생님 앱)
-    // =========================================================
-    window.onload = async () => {
-        const params = new URLSearchParams(location.search);
-        const mode = params.get('mode'); // 주소에 ?mode=notice 가 있는지 확인
-        const token = params.get('token');
-
-        if (mode === 'notice' && token) {
-            // [CASE 1] 학부모 알림장 모드일 때
-            
-            // 1. 선생님용 화면 다 숨기기 (키오스크 버튼 포함)
-            const container = document.querySelector('.container');
-            if(container) container.style.display = 'none';
-            
-            const lockBtn = document.querySelector('.kiosk-exit-btn');
-            if(lockBtn) lockBtn.style.display = 'none';
-
-            document.body.style.background = "#f1f5f9"; // 배경색 차분하게 변경
-
-            // 2. 학부모용 화면 보여주기
-            const noticeSection = document.getElementById('noticeModeSection');
-            if(noticeSection) noticeSection.style.display = 'block';
-
-            // 3. 데이터 불러오기 함수 실행
-            loadParentViewData(token);
-
-        } else {
-            // [CASE 2] 기존 선생님/키오스크 모드일 때
-            document.body.classList.add('kiosk-mode');
-            
-            // 선생님(관리자) 모드 해제
-            document.body.classList.remove('show-admin');
-            const chk = document.getElementById('adminToggle');
-            if(chk) chk.checked = false;
-
-            // 리스트 갱신
-            if(window.filterList) window.filterList();
-            
-            // 소리 권한 획득 이벤트 연결
-            document.body.addEventListener('click', unlockAudio);
-            document.body.addEventListener('touchstart', unlockAudio);
-        }
-    };
-
-    // [추가] 학부모 화면 데이터 불러오기
-    async function loadParentViewData(token) {
-        try {
-            // 1. 토큰으로 학생ID 찾기
-            let studentId = null;
-            // Firestore에서 조회
-            const tSnap = await getDoc(doc(db, "noticeTokens", token));
-            if (tSnap.exists()) {
-                studentId = tSnap.data().studentId;
-            } else {
-                // (백업) 로컬스토리지 조회
-                const raw = localStorage.getItem("noticeToken:" + token);
-                if(raw) studentId = JSON.parse(raw).studentId;
-            }
-
-            if (!studentId) return alert("유효하지 않은 링크입니다.");
-
-            // 2. 학생 정보 가져오기
-            const sSnap = await getDoc(doc(db, "students", studentId));
-            if (!sSnap.exists()) return alert("학생 정보를 찾을 수 없습니다.");
-            
-            const s = sSnap.data();
-            
-            // 전역변수에 저장 (답장 보낼 때 사용)
-            window.currentNoticeStudentId = studentId;
-            window.currentToken = token;
-
-            // 3. 화면에 정보 채우기
-            if(document.getElementById('n_name')) document.getElementById('n_name').innerText = `${s.name} 학생`;
-            if(document.getElementById('n_info')) document.getElementById('n_info').innerText = `${s.school || ''} | ${s.belt || ''}`;
-            
-            // 등원 횟수
-            const now = new Date();
-            const logs = (s.attendanceLog || []).map(ts => ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000));
-            const count = logs.filter(d => d.getMonth() === now.getMonth()).length;
-            if(document.getElementById('n_attCount')) document.getElementById('n_attCount').innerText = count;
-
-            // 선생님 알림 (없으면 기본 멘트)
-            if(document.getElementById('n_notice')) document.getElementById('n_notice').innerText = s.lastNotice || "등록된 알림 내용이 없습니다.";
-
-            // 상담 내역 (최신순 정렬)
-            const cList = document.getElementById('n_counselList');
-            if(cList) {
-                cList.innerHTML = "";
-                const cLogs = s.counselLog || [];
-                if(cLogs.length > 0) {
-                    cLogs.reverse().forEach(log => {
-                        cList.innerHTML += `
-                            <div style="border-bottom:1px dashed #ddd; padding:8px 0;">
-                                <span style="color:#0369a1; font-weight:bold;">[${log.date}]</span> 
-                                ${log.text}
-                            </div>`;
-                    });
-                } else {
-                    cList.innerHTML = "<div style='text-align:center; padding:10px; color:#999;'>기록된 내역이 없습니다.</div>";
-                }
-            }
-
-        } catch(e) {
-            console.error(e);
-            alert("정보를 불러오는데 실패했습니다.");
-        }
-    }
-
-    // [추가] 학부모 답장 보내기
-    window.sendParentReply = async () => {
-        const msgEl = document.getElementById('n_replyMsg');
-        if(!msgEl) return;
-        const msg = msgEl.value.trim();
+    // [수정] 새로고침/접속 시 무조건 '출석부 모드'로 고정
+    window.onload = () => {
+        // 1. 강제로 키오스크 모드 클래스 주입
+        document.body.classList.add('kiosk-mode');
         
-        if(!msg) return alert("내용을 입력해주세요.");
+        // 2. 선생님(관리자) 모드 해제
+        document.body.classList.remove('show-admin');
+        const chk = document.getElementById('adminToggle');
+        if(chk) chk.checked = false;
+
+        // 3. (혹시 데이터가 이미 로드된 상태라면) 리스트 갱신
+        if(window.filterList) window.filterList();
         
-        if(confirm("선생님께 메시지를 보내시겠습니까?")) {
-            try {
-                await addDoc(collection(db, "parentMessages"), {
-                    token: window.currentToken,
-                    studentId: window.currentNoticeStudentId,
-                    message: msg,
-                    createdAt: serverTimestamp(),
-                    read: false
-                });
-                alert("전송되었습니다! ✅");
-                msgEl.value = "";
-            } catch(e) {
-                alert("전송 실패: " + e.message);
-            }
-        }
+        // 4. 모바일 소리 권한 요청 (터치 대기)
+        // (이전에 추가한 unlockAudio 이벤트는 그대로 유지됩니다)
     };
 // =========================================================
     // [추가] 모바일 좌우 슬라이드(스와이프) 기능
@@ -3105,42 +2969,141 @@ const SMS_API_URL = "/api/send-sms";
         <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
     </div>
 </div>
-<div id="noticeModeSection" style="display:none; max-width:600px; margin:0 auto; padding:20px; font-family:'Pretendard', sans-serif;">
-    
-    <div style="background:#fff; border-radius:20px; padding:25px; margin-bottom:15px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.08);">
-        <img src="nam-192.png" style="width:70px; height:70px; border-radius:20px; box-shadow:0 4px 10px rgba(0,0,0,0.1); margin-bottom:10px;">
-        <h2 id="n_name" style="margin:0; font-size:22px; color:#333;">-</h2>
-        <p id="n_info" style="color:#666; font-size:14px; margin:5px 0 0;">-</p>
-        <div style="margin-top:15px; padding:10px; background:#f0f9ff; border-radius:12px; color:#0369a1; font-weight:bold;">
-            이번 달 등원: <span id="n_attCount">0</span>회
-        </div>
-    </div>
 
-    <div style="background:#fff; border-radius:20px; padding:20px; margin-bottom:15px; border:1px solid #e2e8f0;">
-        <h3 style="margin:0 0 10px; font-size:17px; display:flex; align-items:center; gap:8px;">
-            📢 선생님 알림
-        </h3>
-        <div id="n_notice" style="background:#fffbeb; padding:15px; border-radius:12px; border:1px solid #fcd34d; line-height:1.6; white-space:pre-wrap;">(등록된 내용이 없습니다)</div>
-    </div>
 
-    <div style="background:#fff; border-radius:20px; padding:20px; margin-bottom:15px; border:1px solid #e2e8f0;">
-        <h3 style="margin:0 0 10px; font-size:17px;">💬 상담 및 지도 내역</h3>
-        <div id="n_counselList" style="max-height:200px; overflow-y:auto; background:#f8fafc; padding:10px; border-radius:12px; font-size:13px; color:#555;">
-            <div style="text-align:center; color:#999;">기록된 상담 내역이 없습니다.</div>
-        </div>
-    </div>
+<!-- =========================================================
+     [최종 안정화] 카카오 공유: 링크카드/미리보기(OG) 완전 배제
+     - 카카오가 링크를 예전 도메인으로 고정하는 문제를 피하기 위해
+       '텍스트 공유'만 사용합니다.
+     - URL은 텍스트 안에만 넣습니다(카카오가 변조/캐시 적용 불가).
+========================================================= -->
+<script>
+(function(){
+  // 현재 도메인을 강제로 기준값으로 사용
+  try {
+    window.PUBLIC_BASE_URL = ((location.origin && location.origin !== 'null') ? location.origin : '');
+  } catch(e) {}
 
-    <div style="background:#fff; border-radius:20px; padding:20px; border:1px solid #e2e8f0;">
-        <h3 style="margin:0 0 10px; font-size:17px;">✏️ 선생님께 답장하기</h3>
-        <textarea id="n_replyMsg" style="width:100%; height:80px; padding:10px; border:1px solid #cbd5e1; border-radius:10px; resize:none;" placeholder="선생님께 드릴 말씀이나 궁금한 점을 남겨주세요."></textarea>
-        <button onclick="sendParentReply()" style="width:100%; margin-top:10px; background:#3b82f6; color:white; border:none; padding:12px; border-radius:12px; font-weight:bold; font-size:15px; cursor:pointer;">
-            메시지 보내기
-        </button>
-    </div>
+  function ensureKakao(){
+    if (!window.Kakao) {
+      alert('카카오 SDK 로드 실패');
+      return false;
+    }
+    try {
+      if (!Kakao.isInitialized()) Kakao.init('0a302951dba10cb82dbfc0b603784155');
+    } catch(e) {
+      // 초기화 실패는 다음 단계에서 throw
+    }
+    return true;
+  }
 
-    <div style="text-align:center; margin-top:30px; color:#94a3b8; font-size:12px;">
-        미래엔수학 능동해냄 교실
-    </div>
-</div>
+  function buildParentUrl(){
+    var base = (location.origin && location.origin !== 'null') ? location.origin : '';
+    var rand = Math.random().toString(36).slice(2);
+    return base + '/parent.html?t=' + Date.now() + '&r=' + rand;
+  }
+
+  function composeNoticeText(studentName){
+    // 기존 generateNotice()가 있으면 그대로 사용
+    var notice = '';
+    try {
+      if (typeof window.generateNotice === 'function') notice = String(window.generateNotice() || '').trim();
+    } catch(e) {}
+
+    // generateNotice가 비었으면, dailyProgress 입력값이라도 사용
+    if (!notice) {
+      try {
+        var el = document.getElementById('dailyProgress');
+        if (el && el.value) notice = String(el.value).trim();
+      } catch(e) {}
+    }
+
+    if (!notice) notice = '(내용 없음)';
+
+    var url = buildParentUrl();
+
+    var header = '[미래엔수학]\n' + (studentName ? (studentName + ' 학생 안내') : '오늘의 안내') + '\n\n';
+    var footer = '\n\n────────────────\n✍️ 학부모 의견/상담 작성\n아래 링크를 눌러주세요.\n' + url;
+
+    // 카카오 텍스트 제한을 대비해 너무 길면 뒤를 줄임
+    var maxLen = 900;
+    var body = notice;
+    var msg = header + body + footer;
+    if (msg.length > maxLen) {
+      var keep = Math.max(0, maxLen - (header.length + footer.length + 20));
+      body = body.slice(0, keep) + '\n...(내용이 길어 일부만 표시됩니다)';
+      msg = header + body + footer;
+    }
+
+    return { text: msg, url: url };
+  }
+
+  // ✅ 최종: 카톡 전송(알림장)
+  window.sendNoticeKakao = async function(){
+    if (!ensureKakao()) return;
+
+    try {
+      // 학생명 가져오기(없으면 빈 값)
+      var studentName = '';
+      try {
+        var s = (window.allStudents || []).find(function(st){ return st.id === window.currentStudentId; });
+        if (s && s.name) studentName = s.name;
+      } catch(e) {}
+
+      // (기존 기능 유지) DB에 lastNotice 저장은 그대로 시도
+      try {
+        if (window.db && window.updateDoc && window.doc && window.currentStudentId) {
+          var el = document.getElementById('dailyProgress');
+          var text = el ? String(el.value || '').trim() : '';
+          if (text) {
+            await updateDoc(doc(db, 'students', currentStudentId), { lastNotice: text });
+          }
+        }
+      } catch(e) {
+        console.log('DB lastNotice 저장 실패(무시 가능):', e);
+      }
+
+      var composed = composeNoticeText(studentName);
+
+      // 디버그: 실제로 어떤 링크가 들어가는지 확인
+      console.log('[KAKAO TEXT ONLY] parentUrl=', composed.url);
+
+      Kakao.Share.sendDefault({
+        objectType: 'text',
+        text: composed.text
+        // ❗ link / buttons / imageUrl 절대 넣지 않음
+      });
+    } catch(e) {
+      alert('카톡 전송 오류: ' + e);
+    }
+  };
+
+  // ✅ 최종: 대상별 전송(학부모/학생)도 텍스트만
+  window.sendKakaoToTarget = async function(target){
+    if (!ensureKakao()) return;
+
+    var who = (target === 'parent') ? '학부모님' : '학생';
+    var studentName = '';
+    try {
+      var s = (window.allStudents || []).find(function(st){ return st.id === window.currentStudentId; });
+      if (s && s.name) studentName = s.name;
+    } catch(e) {}
+
+    var url = buildParentUrl();
+    var msg = '[미래엔수학]\n' + who + '께 안내드립니다.\n\n' +
+              (studentName ? (studentName + ' 학생 ') : '') + '출결/학습 안내 및 상담 작성 링크입니다.\n\n' +
+              url;
+
+    console.log('[KAKAO TEXT ONLY] parentUrl=', url);
+
+    Kakao.Share.sendDefault({
+      objectType: 'text',
+      text: msg
+    });
+  };
+
+})();
+</script>
+
 </body>
 </html>
