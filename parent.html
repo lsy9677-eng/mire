@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학부모 전용 | 미래엔수학</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 20px; font-family: 'Pretendard', sans-serif; background: #f1f5f9; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        /* 로그인 화면 */
+        #login-screen { text-align: center; margin-top: 60px; }
+        .login-card { background: white; padding: 40px 20px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .login-input { width: 100%; padding: 16px; font-size: 18px; border: 2px solid #e2e8f0; border-radius: 12px; margin: 20px 0; box-sizing: border-box; text-align: center; outline: none; transition: 0.2s; }
+        .login-input:focus { border-color: #3b82f6; }
+        .login-btn { width: 100%; padding: 16px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; }
+        .login-btn:active { transform: scale(0.98); }
+
+        /* 메인 화면 */
+        .card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { margin: 0 0 5px; font-size: 22px; color: #1e293b; }
+        .tag { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
+        .tag-notice { background: #fff7ed; color: #c2410c; }
+        .tag-counsel { background: #eff6ff; color: #1d4ed8; }
+        .log-item { border-bottom: 1px dashed #e2e8f0; padding: 12px 0; }
+        
+        textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; box-sizing: border-box; resize: none; font-size: 15px; }
+        .send-btn { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="login-screen">
+            <div class="login-card">
+                <img src="nam-192.png" style="width:80px; border-radius:20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin-bottom:20px;">
+                <h2 style="margin-bottom:10px;">학부모 인증</h2>
+                <p style="color:#64748b; font-size:15px; line-height:1.5;">
+                    선생님께 등록된 <b>학부모님 전화번호</b>를<br>입력해주세요. (숫자만 입력)
+                </p>
+                <input type="tel" id="inputPhone" class="login-input" placeholder="01012345678">
+                <button class="login-btn" onclick="checkParent()">내 자녀 조회하기</button>
+            </div>
+        </div>
+
+        <div id="content-screen" style="display:none;">
+            <div class="card" style="text-align:center;">
+                <h2 id="sName">-</h2>
+                <p id="sInfo" style="color:#64748b;">-</p>
+                <div style="background:#f0f9ff; color:#0369a1; padding:12px; border-radius:12px; font-weight:bold; margin-top:15px;">
+                    📅 이번 달 등원: <span id="sAtt" style="font-size:1.2em;">0</span>회
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0;">📢 최신 알림장</h3>
+                <div id="sNotice" style="background:#fffbeb; padding:15px; border-radius:12px; border:1px solid #fcd34d; line-height:1.6; white-space:pre-wrap; color:#451a03;">(내용 없음)</div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0;">🗂️ 지난 학습/상담 기록</h3>
+                <div id="historyList" style="max-height:300px; overflow-y:auto;"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0;">💬 선생님께 답장하기</h3>
+                <textarea id="replyMsg" placeholder="선생님께 드릴 말씀이나 궁금한 점을 적어주세요."></textarea>
+                <button class="send-btn" onclick="sendReply()">메시지 보내기</button>
+            </div>
+            
+            <button onclick="location.reload()" style="width:100%; padding:12px; background:#94a3b8; color:white; border:none; border-radius:12px; margin-top:20px; font-weight:bold;">로그아웃</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
+            authDomain: "namyang-f3a98.firebaseapp.com",
+            projectId: "namyang-f3a98",
+            storageBucket: "namyang-f3a98.firebasestorage.app",
+            messagingSenderId: "641432133626",
+            appId: "1:641432133626:web:4d31e36d5dbb0db4df4e43",
+            measurementId: "G-23L6KZERMF"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let currentStudent = null;
+
+        window.checkParent = async () => {
+            const phoneInput = document.getElementById('inputPhone');
+            const phone = phoneInput.value.replace(/-/g, '').trim();
+            
+            if(phone.length < 8) return alert("전화번호를 올바르게 입력해주세요.");
+
+            const btn = document.querySelector('.login-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "조회 중...";
+            btn.disabled = true;
+
+            try {
+                // 부모님 번호로 학생 검색
+                const q = query(collection(db, "students"), where("phone", "==", phone));
+                const snap = await getDocs(q);
+
+                if(snap.empty) {
+                    alert("등록된 번호가 없습니다.\n선생님께 확인해주세요.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+
+                currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                showData();
+
+            } catch(e) {
+                console.error(e);
+                alert("조회 중 오류가 발생했습니다.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        function showData() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('content-screen').style.display = 'block';
+            
+            const s = currentStudent;
+            document.getElementById('sName').innerText = s.name + " 학생";
+            document.getElementById('sInfo').innerText = `${s.school||''} | ${s.belt||''}`;
+            document.getElementById('sNotice').innerText = s.lastNotice || "최신 알림이 없습니다.";
+
+            // 출석 수
+            const now = new Date();
+            const logs = (s.attendanceLog || []).map(ts => ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000));
+            const count = logs.filter(d => d.getMonth() === now.getMonth()).length;
+            document.getElementById('sAtt').innerText = count;
+
+            // 기록 (상담 + 알림장)
+            const list = document.getElementById('historyList');
+            list.innerHTML = "";
+            const history = s.counselLog || [];
+            
+            if(history.length === 0) list.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>기록이 없습니다.</div>";
+            else {
+                history.reverse().forEach(h => {
+                    const isNotice = h.text.includes("[알림장]");
+                    const tag = isNotice ? '<span class="tag tag-notice">알림장</span>' : '<span class="tag tag-counsel">지도내역</span>';
+                    const cleanText = h.text.replace("[알림장]", "").trim();
+                    list.innerHTML += `
+                        <div class="log-item">
+                            <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">${h.date}</div>
+                            ${tag}
+                            <div style="margin-top:4px; line-height:1.4;">${cleanText}</div>
+                        </div>`;
+                });
+            }
+        }
+
+        window.sendReply = async () => {
+            const msg = document.getElementById('replyMsg').value.trim();
+            if(!msg) return alert("내용을 입력해주세요.");
+            
+            try {
+                await addDoc(collection(db, "parentMessages"), {
+                    studentId: currentStudent.id,
+                    studentName: currentStudent.name,
+                    message: msg,
+                    createdAt: serverTimestamp(),
+                    read: false
+                });
+                alert("선생님께 메시지를 보냈습니다! ✅");
+                document.getElementById('replyMsg').value = "";
+            } catch(e) { alert("전송 실패: " + e.message); }
+        };
+    </script>
+</body>
+</html>
