@@ -30,6 +30,11 @@
 
   --brand-yellow:#FACC15;
   --brand-yellow-soft:#FEF9C3;
+  --primary: var(--brand-blue);
+  --secondary: var(--brand-yellow);
+  --text-main: var(--ink);
+  --text-sub: var(--ink-sub);
+
 
   --ink:#0F172A;
   --ink-sub:#475569;
@@ -1312,7 +1317,6 @@ body.kiosk-mode .kiosk-exit-btn {
         <button class="tab-btn active" onclick="showPage('register')"><i class="fas fa-user-plus"></i> 신규 등록</button>
         <button class="tab-btn" onclick="showPage('list')"><i class="fas fa-users"></i> 원생 관리</button>
         <button class="tab-btn" onclick="showPage('calendar')"><i class="fas fa-calendar-alt"></i> 학습 일정</button>
-        <button class="tab-btn admin-only" onclick="showPage('inbox')"><i class="fas fa-inbox"></i> 학부모 의견 <span id="inboxBadge" style="display:none; margin-left:6px; background:#ef4444; color:white; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:900;">0</span></button>
     </div>
 
     <div id="register" class="page active">
@@ -1397,24 +1401,6 @@ body.kiosk-mode .kiosk-exit-btn {
         <div id="studentListArea">로딩중...</div>
     </div>
 
-    <!-- ===============================
-         학부모 의견함 (parentMessages)
-         =============================== -->
-    <div id="inbox" class="page">
-        <div class="card" style="margin-top:10px;">
-            <h3 style="margin:0 0 8px 0; display:flex; align-items:center; justify-content:space-between;">
-                <span>📥 학부모 의견함</span>
-                <button class="action-btn" onclick="refreshInboxOnce()" style="width:auto; padding:10px 14px; background:#0ea5e9; color:white;">새로고침</button>
-            </h3>
-            <div style="color:#64748b; font-size:13px; line-height:1.4;">
-                학부모가 parent.html에서 보낸 메시지가 여기로 모입니다. (최근순)
-            </div>
-        </div>
-        <div class="card">
-            <div id="inboxList" style="min-height:120px;"></div>
-        </div>
-    </div>
-
 <div id="calendar" class="page">
     <div class="calendar-controls">
         <button class="cal-btn" onclick="changeCalDate(-1)"><i class="fas fa-chevron-left"></i></button>
@@ -1447,22 +1433,6 @@ body.kiosk-mode .kiosk-exit-btn {
         </h3>
         
         <div id="dailyEventList" style="max-height:300px; overflow-y:auto;"></div>
-    </div>
-</div>
-
-<!-- ===========================
-     학부모 의견함 (선생님 전용)
-     =========================== -->
-<div id="inbox" class="page">
-    <div class="card" style="margin-top:10px;">
-        <h3 style="margin:0 0 6px 0;">📨 학부모 의견함</h3>
-        <div style="font-size:13px; color:#64748b; line-height:1.5;">
-            학부모가 <b>parent.html</b>에서 보낸 메시지가 여기 모입니다.
-            <br>각 메시지에서 <b>학생 열기</b>를 눌러 바로 해당 학생 상세로 이동할 수 있습니다.
-        </div>
-    </div>
-    <div class="card">
-        <div id="inboxList" style="max-height:520px; overflow-y:auto;"></div>
     </div>
 </div>
 
@@ -1739,89 +1709,6 @@ const SMS_API_URL = "/api/send-sms";
         snapshot.forEach((doc) => { allSchedules.push({ id: doc.id, ...doc.data() }); });
         if(window.renderCalendar) renderCalendar();
     });
-
-    // =========================
-    // 학부모 메시지(의견함) 로드
-    // - parent.html 에서 parentMessages 컬렉션으로 저장된 내용을 선생님이 확인
-    // =========================
-    const inboxListEl = document.getElementById('inboxList');
-    const inboxBadgeEl = document.getElementById('inboxBadge');
-
-    if (inboxListEl) {
-        onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
-            const items = [];
-            let unreadCount = 0;
-
-            snapshot.forEach(d => {
-                const data = d.data() || {};
-                if (data.read === false) unreadCount++;
-                items.push({ id: d.id, ...data });
-            });
-
-            // 뱃지
-            if (inboxBadgeEl) {
-                if (unreadCount > 0) {
-                    inboxBadgeEl.style.display = 'inline-block';
-                    inboxBadgeEl.innerText = unreadCount;
-                } else {
-                    inboxBadgeEl.style.display = 'none';
-                }
-            }
-
-            // 리스트 렌더
-            inboxListEl.innerHTML = '';
-            if (items.length === 0) {
-                inboxListEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:18px;'>아직 받은 메시지가 없습니다.</div>";
-                return;
-            }
-
-            // 너무 길어지면 최근 100개만 표시(성능)
-            items.slice(0, 100).forEach(m => {
-                const createdAt = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate() : null;
-                const dateStr = createdAt ? createdAt.toLocaleString() : '';
-                const isUnread = (m.read === false);
-
-                const box = document.createElement('div');
-                box.style.padding = '12px 0';
-                box.style.borderBottom = '1px dashed #e2e8f0';
-
-                box.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                        <div>
-                            <div style="font-weight:900; color:#0f172a;">
-                                ${isUnread ? '🟥 ' : ''}${(m.studentName || '학생')} · ${(m.studentId || '').slice(0,6)}
-                            </div>
-                            <div style="font-size:12px; color:#94a3b8; margin-top:2px;">${dateStr}</div>
-                        </div>
-                        <div style="display:flex; gap:8px;">
-                            <button class="action-btn" style="width:auto; padding:10px 12px; margin:0; font-size:12px; background:#0ea5e9; color:white;" onclick="openMessageStudent('${m.studentId || ''}')">학생 열기</button>
-                            <button class="action-btn" style="width:auto; padding:10px 12px; margin:0; font-size:12px; background:#10b981; color:white;" onclick="markMessageRead('${m.id}')">읽음</button>
-                        </div>
-                    </div>
-                    <div style="margin-top:8px; font-size:14px; line-height:1.5; white-space:pre-wrap; color:#334155;">${(m.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-                `;
-
-                inboxListEl.appendChild(box);
-            });
-        });
-    }
-
-    window.markMessageRead = async (msgId) => {
-        if(!msgId) return;
-        try {
-            await updateDoc(doc(db, "parentMessages", msgId), { read: true, readAt: serverTimestamp() });
-        } catch(e) {
-            console.warn(e);
-            alert('읽음 처리 실패: ' + (e.message || e));
-        }
-    };
-
-    window.openMessageStudent = (studentId) => {
-        if(!studentId) return alert('학생 ID가 없습니다.');
-        // 원생 관리 화면으로 이동 후 상세 열기
-        showPage('list');
-        setTimeout(()=> window.openDetailById(studentId), 0);
-    };
 
     function updateSchoolOptions() {
         const schools = new Set();
@@ -3087,5 +2974,87 @@ const SMS_API_URL = "/api/send-sms";
         <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
     </div>
 </div>
+
+
+<!-- =========================================================
+     Kakao 공유(토큰 없이) : 카톡 메시지 + '상담/의견 입력' 폼 버튼
+     ✅ 사용법: 아래 REPLY_FORM_URL에 구글폼(또는 원하는 페이지) 주소만 붙여넣으세요.
+     ========================================================= -->
+<script>
+  // ✅ 여기만 본인 주소로 바꿔주세요 (구글폼/상담페이지 URL)
+  window.REPLY_FORM_URL = window.REPLY_FORM_URL || "https://forms.gle/여기에_구글폼_주소_붙여넣기";
+
+  // ✅ 카톡 버튼(🟡 카톡)을 누르면 이 함수가 실행됩니다.
+  //    기존 '토큰 notice.html' 방식은 포기하고, 메시지 + 폼 버튼으로 전환합니다.
+  window.sendNoticeKakao = async function () {
+    try {
+      // 1) 메시지 만들기 (기존 generateNotice() 결과를 재사용)
+      if (typeof window.generateNotice === 'function') {
+        window.generateNotice();
+      }
+
+      const msgEl = document.getElementById('noticeText');
+      let message = (msgEl && msgEl.value) ? msgEl.value.trim() : "";
+      if (!message) {
+        return alert('먼저 알림 내용을 생성해 주세요. (📝 양식 버튼)');
+      }
+
+      // 2) 폼 URL 검사
+      const formUrl = (window.REPLY_FORM_URL || "").trim();
+      if (!formUrl || formUrl.includes('여기에_구글폼_주소')) {
+        return alert('REPLY_FORM_URL(구글폼 주소)이 비어있습니다.\n\nindex.html에서\nwindow.REPLY_FORM_URL = "..."\n부분에 본인 폼 주소를 붙여넣어 주세요.');
+      }
+
+      // 3) 카카오 SDK 준비
+      if (!window.Kakao) {
+        return alert('카카오 SDK 로드 실패입니다. (kakao.min.js)');
+      }
+
+      // 이미 init 돼있으면 재호출해도 문제 없도록 try/catch
+      if (!window.Kakao.isInitialized()) {
+        // ⚠️ 기존에 쓰던 자바스크립트 키가 이미 index.html 어딘가에 있을 가능성이 큽니다.
+        //    아래는 "기존 코드에서 쓰던 키"를 찾아서 대체할 수 있게 변수로 받습니다.
+        const key = window.KAKAO_JS_KEY || window.__KAKAO_JS_KEY__ || window.KAKAO_APP_KEY;
+        if (key) {
+          window.Kakao.init(key);
+        } else {
+          // 키를 못 찾으면 기존 코드에 있는 Kakao.init('...')가 이미 실행됐을 확률이 높습니다.
+          // 그래도 혹시 몰라 사용자에게 안내.
+          console.warn('Kakao.init 키를 찾지 못했지만, 이미 초기화되어 있을 수 있습니다.');
+        }
+      }
+
+      // 4) 메시지 길이 정리 (카톡 텍스트 길이 제한 대비)
+      const footer = "\n\n[상담/의견 입력하기]";
+      const maxLen = 900; // 안전하게
+      if (message.length > maxLen) message = message.slice(0, maxLen) + "…";
+      const finalText = message + footer;
+
+      // 5) 카톡 공유 (메시지 + 버튼)
+      window.Kakao.Share.sendDefault({
+        objectType: 'text',
+        text: finalText,
+        link: {
+          mobileWebUrl: formUrl,
+          webUrl: formUrl
+        },
+        buttons: [
+          {
+            title: '상담/의견 입력',
+            link: {
+              mobileWebUrl: formUrl,
+              webUrl: formUrl
+            }
+          }
+        ]
+      });
+
+    } catch (e) {
+      console.error(e);
+      alert('카톡 공유 실패: ' + (e && e.message ? e.message : e));
+    }
+  };
+</script>
+
 </body>
 </html>
