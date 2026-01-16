@@ -2770,7 +2770,7 @@ const SMS_API_URL = "/api/send-sms";
   // [수정] 카카오톡 공유 링크를 notice.html?token=... 으로 보내기
   // =========================================================
   window.sendNoticeKakao = async () => {
-    if (window.Kakao && !Kakao.isInitialized()) Kakao.init(dcefb7d07deb53cbd714d68b71392292);
+    if (window.Kakao && !Kakao.isInitialized()) Kakao.init('dcefb7d07deb53cbd714d68b71392292');
 
     const msg = window.generateNotice();
     if(!msg) return;
