@@ -2606,16 +2606,18 @@ const SMS_API_URL = "/api/send-sms";
     // - 휴대폰에서는 '공유'를 누르면 카카오톡을 선택해서 보낼 수 있습니다.
     // - PC/공유 불가 환경에서는 링크+문구를 자동으로 복사합니다.
     // ============================================================
-    window.sendNoticeShare = async () => {
+window.sendNoticeShare = async () => {
         const s = allStudents.find(st => st.id === currentStudentId);
         if(!s) return alert('학생 정보 없음');
 
         const text = document.getElementById('dailyProgress').value;
         if(!text) return alert('내용을 입력해주세요.');
 
-        // ✅ 항상 현재 도메인 기준으로 parent.html 생성
+        // 1. 현재 주소 가져오기
         const base = (location.origin || '').replace(/\/$/, '');
-        const parentUrl = base + '/parent.html';
+        
+        // ★ 핵심: 뒤에 시간을 붙여서(?v=...) 매번 새로운 링크로 인식시킴
+        const parentUrl = base + '/parent.html?v=' + Date.now();
 
         // DB 저장
         try {
@@ -2625,9 +2627,9 @@ const SMS_API_URL = "/api/send-sms";
             });
         } catch(e) { console.log('저장 오류:', e); }
 
-        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n(학부모 전용 화면) ${parentUrl}`;
+        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모님 확인하기\n${parentUrl}`;
 
-        // Web Share 지원(모바일)
+        // Web Share (모바일)
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -2639,7 +2641,7 @@ const SMS_API_URL = "/api/send-sms";
             } catch(e) {}
         }
 
-        // fallback: 복사 (▼ 여기 따옴표를 수정했습니다!)
+        // 복사 (오류 수정됨: 엔터 제거하고 \n 사용)
         try {
             await navigator.clipboard.writeText(msg);
             alert('공유용 문구/링크를 복사했습니다.\n카톡 대화창에 붙여넣어 보내세요!');
@@ -2647,15 +2649,17 @@ const SMS_API_URL = "/api/send-sms";
             prompt('아래 내용을 복사해서 카톡으로 보내세요.', msg);
         }
     };
-
   
   // ============================================================
-  window.shareToTarget = async function(target){
+window.shareToTarget = async function(target){
     const s = allStudents.find(st => st.id === currentStudentId);
     if(!s) return alert('학생 정보 없음');
 
     const base = (location.origin || '').replace(/\/$/, '');
-    const parentUrl = base + '/parent.html';
+    
+    // ★ 핵심: 여기도 시간을 붙여서 캐시 방지
+    const parentUrl = base + '/parent.html?v=' + Date.now();
+    
     const who = target === 'parent' ? '학부모님' : '학생';
 
     const msg = `[미래엔수학]\n${who}께 안내드립니다.\n\n${s.name} 학생 출결/학습 안내 화면 링크입니다.\n${parentUrl}`;
@@ -2667,7 +2671,7 @@ const SMS_API_URL = "/api/send-sms";
       } catch(e) {}
     }
 
-    // (▼ 여기 따옴표를 수정했습니다!)
+    // 복사 (오류 수정됨)
     try {
       await navigator.clipboard.writeText(msg);
       alert('공유용 문구/링크를 복사했습니다.\n카톡에 붙여넣어 보내세요!');
