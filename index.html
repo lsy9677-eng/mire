@@ -2610,18 +2610,14 @@ const SMS_API_URL = "/api/send-sms";
     };
 
    
-  // =========================================================
-  // [추가] 카카오 공유용 토큰 & URL 생성 (token -> Firestore 매핑)
-  // =========================================================
-  window.__NOTICE_PAGE_NAME__ = 'notice.html';
+  // 1. [수정] 연결할 페이지를 'index.html'로 변경
+  window.__NOTICE_PAGE_NAME__ = 'index.html';
 
-  // ✅ async로 바꿔야 await 사용 가능
+  // 2. 토큰 생성 함수
   window.createNoticeToken = async function(studentId, target){
-    const token =
-      Date.now().toString(36) + '-' +
-      Math.random().toString(36).slice(2, 10);
-
-    // 같은 기기에서 file://로 테스트할 때도 notice.html이 token을 찾을 수 있도록 저장
+    const token = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    
+    // 로컬 스토리지 저장 (테스트용)
     try {
       localStorage.setItem('noticeToken:' + token, JSON.stringify({
         studentId: studentId,
@@ -2630,37 +2626,38 @@ const SMS_API_URL = "/api/send-sms";
       }));
     } catch(e) {}
 
-    // ✅ 실제 공유(다른 폰/기기)에서도 열리게 Firestore에 저장
+    // Firestore 저장
     try {
       await setDoc(doc(db, "noticeTokens", token), {
         studentId: studentId,
         target: target,
         createdAt: serverTimestamp()
       });
-    } catch(e) {
-      console.warn("noticeTokens 저장 실패(권한/규칙 확인):", e);
-    }
+    } catch(e) { console.warn("토큰 저장 실패:", e); }
 
     return token;
   };
 
-  // ✅ 이것도 async여야 token 생성 await 가능
+  // 3. [수정] URL 생성 함수 (mode=notice 추가 및 주소 자동 감지)
   window.buildNoticeUrl = async function(studentId, target){
     const token = await window.createNoticeToken(studentId, target);
 
-    // GitHub Pages처럼 /shee0777/ 하위 경로면 pathname이 필요할 수 있음
-    const base = (location.origin && location.origin !== 'null') ? location.origin : '';
-    const dir  = location.pathname.replace(/\/[^\/]*$/, '/'); // 현재 폴더 경로
-    const page = window.__NOTICE_PAGE_NAME__ || 'notice.html';
-
-    const url = (base ? (base + dir + page) : (dir + page)) + '?token=' + encodeURIComponent(token);
+    // 현재 접속한 주소(origin)를 기준으로 링크 생성
+    const origin = location.origin; 
+    const path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
+    
+    // ★ 핵심 1: index.html로 연결
+    // ★ 핵심 2: ?mode=notice 를 붙여서 학부모 화면이 뜨게 함
+    // ★ 핵심 3: &v=시간 을 붙여서 카톡 캐시 방지 (무조건 새 링크로 인식)
+    const url = `${origin}${path}/index.html?mode=notice&token=${encodeURIComponent(token)}&v=${Date.now()}`;
+    
     return { url, token };
   };
 
-// ============================================================
-    // [강제 해결] 카톡 전송 (타임스탬프 치트키 적용)
-    // ============================================================
-   window.sendNoticeKakao = async () => {
+  // ============================================================
+  // [수정] 카톡 전송 (옛날 주소 박멸 + 이미지 자동 설정)
+  // ============================================================
+  window.sendNoticeKakao = async () => {
         if (!window.Kakao) return alert("카카오 SDK 로드 실패");
         if (!Kakao.isInitialized()) Kakao.init('0a302951dba10cb82dbfc0b603784155'); 
         
@@ -2673,21 +2670,15 @@ const SMS_API_URL = "/api/send-sms";
             await updateDoc(doc(db, "students", currentStudentId), { lastNotice: text });
         } catch(e) {}
 
-        // 2. 토큰 생성
-        const token = Date.now().toString(36) + Math.random().toString(36).substr(2);
-        await setDoc(doc(db, "noticeTokens", token), {
-            studentId: currentStudentId,
-            createdAt: serverTimestamp()
-        });
-
-        // 3. [핵심] 무적 링크 생성 (매번 주소가 달라짐!)
-        const origin = location.origin; 
-        const path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
-        // index.html 뒤에 v=숫자 를 붙여서 카톡이 "새로운 페이지"로 인식하게 함
-        const timeStamp = Date.now(); 
-        const finalUrl = `${origin}${path}/index.html?mode=notice&token=${token}&v=${timeStamp}`;
+        // 2. 링크 생성 (위에서 만든 buildNoticeUrl 사용)
+        const { url } = await window.buildNoticeUrl(currentStudentId, 'parent');
         
-        console.log("학부모 링크:", finalUrl);
+        console.log("생성된 링크:", url);
+
+        // 3. [수정] 이미지 주소도 현재 사이트 기준으로 자동 설정 (옛날 주소 삭제됨)
+        const origin = location.origin;
+        const path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
+        const imageUrl = `${origin}${path}/nam-512.png`;
 
         // 4. 전송
         try {
@@ -2696,13 +2687,13 @@ const SMS_API_URL = "/api/send-sms";
                 content: {
                     title: `[미래엔수학] ${s.name} 학생 알림장`,
                     description: `${text.slice(0, 100)}${text.length > 100 ? '...' : ''}\n\n👇 아래 버튼을 눌러 확인하세요.`,
-                    imageUrl: 'https://shee0777.vercel.app/nam-512.png', 
-                    link: { mobileWebUrl: finalUrl, webUrl: finalUrl }
+                    imageUrl: imageUrl, 
+                    link: { mobileWebUrl: url, webUrl: url }
                 },
                 buttons: [
                     {
                         title: '알림장 보기',
-                        link: { mobileWebUrl: finalUrl, webUrl: finalUrl }
+                        link: { mobileWebUrl: url, webUrl: url }
                     }
                 ]
             });
@@ -2711,15 +2702,12 @@ const SMS_API_URL = "/api/send-sms";
    
   window.sendKakaoToTarget = async function (target) {
     if (!window.Kakao) return alert("카카오 SDK 로드 실패");
-
     if (!Kakao.isInitialized()) Kakao.init('0a302951dba10cb82dbfc0b603784155');
 
     const s = allStudents.find(st => st.id === currentStudentId);
     if (!s) return alert("학생 정보 없음");
 
     const share = await window.buildNoticeUrl(currentStudentId, target);
-
-    // ✅ 디버그 로그는 여기!
     console.log('카카오 공유 URL:', share.url);
 
     const who = target === 'parent' ? '학부모님' : '학생';
@@ -2737,25 +2725,18 @@ const SMS_API_URL = "/api/send-sms";
     });
   };
 
-
-
-
-// [수정됨] 월말 정산/교육비 안내 양식 (자동 계산 + 계좌 양식 포함)
+    // [수정] 월말 정산/교육비 안내 양식
     window.generateSettlement = () => {
         const s = allStudents.find(st => st.id === currentStudentId);
         const now = new Date();
-        const currentMonth = now.getMonth() + 1; // 이번 달
-        
-        // 다음 달 계산 (12월이면 내년 1월로 표시)
+        const currentMonth = now.getMonth() + 1; 
         const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
 
-        // 이번 달 출석 횟수 정확히 계산
         const logs = (s.attendanceLog || []).filter(ts => {
             const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
             return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
         });
 
-        // 정산 안내 템플릿
         const msg = `[미래엔수학] ${nextMonth}월 교육비 안내 📄\n\n` +
                     `안녕하세요, 학부모님.\n` +
                     `어느덧 ${currentMonth}월 학습을 잘 마무리하였습니다.\n\n` +
@@ -2773,7 +2754,6 @@ const SMS_API_URL = "/api/send-sms";
     };
     window.copyText = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText); alert("복사됨"); };
 
-    // 출석 통계 계산
     window.calcStats = (s) => {
         const logs = s.attendanceLog || [];
         const total = logs.length;
