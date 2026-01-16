@@ -2933,62 +2933,6 @@ const SMS_API_URL = "/api/send-sms";
             }
         }
     }, {passive: true});
-
-
-// =====================================================================
-// [FINAL OVERRIDE] Kakao share: TEXT ONLY (no cards, no buttons, no OG cache)
-// - Always uses current domain (location.origin)
-// - Always uses parent.html with cache-busting query
-// =====================================================================
-window.__KAKAO_TEXT_ONLY_MODE__ = true;
-
-window.sendNoticeKakao = async function () {
-  try {
-    if (!window.Kakao) return alert('카카오 SDK 로드 실패');
-    if (!Kakao.isInitialized()) Kakao.init('0a302951dba10cb82dbfc0b603784155');
-
-    const s = (window.allStudents || []).find(st => st.id === window.currentStudentId);
-    const text = (document.getElementById('dailyProgress')?.value || '').trim();
-    if (!s) return alert('학생 정보 없음');
-    if (!text) return alert('내용을 입력해주세요.');
-
-    // Save last notice (existing behavior, but safe)
-    try {
-      await updateDoc(doc(db, 'students', window.currentStudentId), {
-        lastNotice: text,
-        counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
-      });
-    } catch (e) {
-      console.log('저장 오류:', e);
-    }
-
-    const parentUrl = location.origin + '/parent.html?t=' + Date.now() + '&r=' + Math.random().toString(36).slice(2);
-    const today = new Date();
-    const dateStr = (today.getMonth() + 1) + '월 ' + today.getDate() + '일';
-
-    const msg =
-      '[미래엔수학] ' + dateStr + ' 알림장 📢\n\n' +
-      '안녕하세요, 학부모님!\n' +
-      '오늘 ' + s.name + ' 학생이 공부한 내용 안내드립니다.\n\n' +
-      '📚 오늘의 학습\n' +
-      text + '\n\n' +
-      '✍️ 학부모 의견/상담 작성(클릭)\n' +
-      parentUrl + '\n\n' +
-      '감사합니다. 😊';
-
-    // TEXT ONLY: do NOT pass link/buttons. Kakao cannot force old domain.
-    Kakao.Share.sendDefault({ objectType: 'text', text: msg });
-  } catch (e) {
-    alert('카톡 전송 오류: ' + e);
-  }
-};
-
-// Some screens may call sendKakaoToTarget(target). Override it too.
-window.sendKakaoToTarget = async function (target) {
-  // target is ignored; we always send the safe parent.html link.
-  return window.sendNoticeKakao();
-};
-
 </script>
 
 
@@ -3025,5 +2969,141 @@ window.sendKakaoToTarget = async function (target) {
         <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
     </div>
 </div>
+
+
+<!-- =========================================================
+     [최종 안정화] 카카오 공유: 링크카드/미리보기(OG) 완전 배제
+     - 카카오가 링크를 예전 도메인으로 고정하는 문제를 피하기 위해
+       '텍스트 공유'만 사용합니다.
+     - URL은 텍스트 안에만 넣습니다(카카오가 변조/캐시 적용 불가).
+========================================================= -->
+<script>
+(function(){
+  // 현재 도메인을 강제로 기준값으로 사용
+  try {
+    window.PUBLIC_BASE_URL = ((location.origin && location.origin !== 'null') ? location.origin : '');
+  } catch(e) {}
+
+  function ensureKakao(){
+    if (!window.Kakao) {
+      alert('카카오 SDK 로드 실패');
+      return false;
+    }
+    try {
+      if (!Kakao.isInitialized()) Kakao.init('0a302951dba10cb82dbfc0b603784155');
+    } catch(e) {
+      // 초기화 실패는 다음 단계에서 throw
+    }
+    return true;
+  }
+
+  function buildParentUrl(){
+    var base = (location.origin && location.origin !== 'null') ? location.origin : '';
+    var rand = Math.random().toString(36).slice(2);
+    return base + '/parent.html?t=' + Date.now() + '&r=' + rand;
+  }
+
+  function composeNoticeText(studentName){
+    // 기존 generateNotice()가 있으면 그대로 사용
+    var notice = '';
+    try {
+      if (typeof window.generateNotice === 'function') notice = String(window.generateNotice() || '').trim();
+    } catch(e) {}
+
+    // generateNotice가 비었으면, dailyProgress 입력값이라도 사용
+    if (!notice) {
+      try {
+        var el = document.getElementById('dailyProgress');
+        if (el && el.value) notice = String(el.value).trim();
+      } catch(e) {}
+    }
+
+    if (!notice) notice = '(내용 없음)';
+
+    var url = buildParentUrl();
+
+    var header = '[미래엔수학]\n' + (studentName ? (studentName + ' 학생 안내') : '오늘의 안내') + '\n\n';
+    var footer = '\n\n────────────────\n✍️ 학부모 의견/상담 작성\n아래 링크를 눌러주세요.\n' + url;
+
+    // 카카오 텍스트 제한을 대비해 너무 길면 뒤를 줄임
+    var maxLen = 900;
+    var body = notice;
+    var msg = header + body + footer;
+    if (msg.length > maxLen) {
+      var keep = Math.max(0, maxLen - (header.length + footer.length + 20));
+      body = body.slice(0, keep) + '\n...(내용이 길어 일부만 표시됩니다)';
+      msg = header + body + footer;
+    }
+
+    return { text: msg, url: url };
+  }
+
+  // ✅ 최종: 카톡 전송(알림장)
+  window.sendNoticeKakao = async function(){
+    if (!ensureKakao()) return;
+
+    try {
+      // 학생명 가져오기(없으면 빈 값)
+      var studentName = '';
+      try {
+        var s = (window.allStudents || []).find(function(st){ return st.id === window.currentStudentId; });
+        if (s && s.name) studentName = s.name;
+      } catch(e) {}
+
+      // (기존 기능 유지) DB에 lastNotice 저장은 그대로 시도
+      try {
+        if (window.db && window.updateDoc && window.doc && window.currentStudentId) {
+          var el = document.getElementById('dailyProgress');
+          var text = el ? String(el.value || '').trim() : '';
+          if (text) {
+            await updateDoc(doc(db, 'students', currentStudentId), { lastNotice: text });
+          }
+        }
+      } catch(e) {
+        console.log('DB lastNotice 저장 실패(무시 가능):', e);
+      }
+
+      var composed = composeNoticeText(studentName);
+
+      // 디버그: 실제로 어떤 링크가 들어가는지 확인
+      console.log('[KAKAO TEXT ONLY] parentUrl=', composed.url);
+
+      Kakao.Share.sendDefault({
+        objectType: 'text',
+        text: composed.text
+        // ❗ link / buttons / imageUrl 절대 넣지 않음
+      });
+    } catch(e) {
+      alert('카톡 전송 오류: ' + e);
+    }
+  };
+
+  // ✅ 최종: 대상별 전송(학부모/학생)도 텍스트만
+  window.sendKakaoToTarget = async function(target){
+    if (!ensureKakao()) return;
+
+    var who = (target === 'parent') ? '학부모님' : '학생';
+    var studentName = '';
+    try {
+      var s = (window.allStudents || []).find(function(st){ return st.id === window.currentStudentId; });
+      if (s && s.name) studentName = s.name;
+    } catch(e) {}
+
+    var url = buildParentUrl();
+    var msg = '[미래엔수학]\n' + who + '께 안내드립니다.\n\n' +
+              (studentName ? (studentName + ' 학생 ') : '') + '출결/학습 안내 및 상담 작성 링크입니다.\n\n' +
+              url;
+
+    console.log('[KAKAO TEXT ONLY] parentUrl=', url);
+
+    Kakao.Share.sendDefault({
+      objectType: 'text',
+      text: msg
+    });
+  };
+
+})();
+</script>
+
 </body>
 </html>
