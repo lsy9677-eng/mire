@@ -1,5 +1,5 @@
-// [강제 초기화 버전] 모든 캐시를 삭제하고 매번 네트워크에서 새로 받아옵니다.
-const CACHE_NAME = 'namyang-pwa-v2026_inbox_fix';
+
+const CACHE_NAME = 'namyang-pwa-v2026_final_fix'; // v2 -> v2026 등으로 확 바꾸세요!
 
 self.addEventListener('install', (event) => {
   self.skipWaiting(); // 대기 없이 즉시 설치
