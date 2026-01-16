@@ -2613,11 +2613,11 @@ const SMS_API_URL = "/api/send-sms";
         const text = document.getElementById('dailyProgress').value;
         if(!text) return alert('내용을 입력해주세요.');
 
-        // ✅ 항상 현재 도메인 기준으로 parent.html 생성 (어떤 Vercel 도메인이든 자동)
+        // ✅ 항상 현재 도메인 기준으로 parent.html 생성
         const base = (location.origin || '').replace(/\/$/, '');
         const parentUrl = base + '/parent.html';
 
-        // DB 저장(기존 동작 유지)
+        // DB 저장
         try {
             await updateDoc(doc(db, 'students', currentStudentId), {
                 lastNotice: text,
@@ -2625,11 +2625,7 @@ const SMS_API_URL = "/api/send-sms";
             });
         } catch(e) { console.log('저장 오류:', e); }
 
-        const msg = `[미래엔수학] ${s.name} 학생 알림장
-
-${text}
-
-(학부모 전용 화면) ${parentUrl}`;
+        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n(학부모 전용 화면) ${parentUrl}`;
 
         // Web Share 지원(모바일)
         if (navigator.share) {
@@ -2640,24 +2636,19 @@ ${text}
                     url: parentUrl
                 });
                 return;
-            } catch(e) {
-                // 사용자가 공유를 취소한 경우도 여기로 올 수 있음
-            }
+            } catch(e) {}
         }
 
-        // fallback: 복사
+        // fallback: 복사 (▼ 여기 따옴표를 수정했습니다!)
         try {
             await navigator.clipboard.writeText(msg);
-            alert('공유용 문구/링크를 복사했습니다.
-카톡 대화창에 붙여넣어 보내세요!');
+            alert('공유용 문구/링크를 복사했습니다.\n카톡 대화창에 붙여넣어 보내세요!');
         } catch(e) {
             prompt('아래 내용을 복사해서 카톡으로 보내세요.', msg);
         }
     };
 
   
-  // ============================================================
-  // [공유] 연락처 옆 노란 버튼(학생/학부모)도 동일하게 '공유'로 처리
   // ============================================================
   window.shareToTarget = async function(target){
     const s = allStudents.find(st => st.id === currentStudentId);
@@ -2667,11 +2658,7 @@ ${text}
     const parentUrl = base + '/parent.html';
     const who = target === 'parent' ? '학부모님' : '학생';
 
-    const msg = `[미래엔수학]
-${who}께 안내드립니다.
-
-${s.name} 학생 출결/학습 안내 화면 링크입니다.
-${parentUrl}`;
+    const msg = `[미래엔수학]\n${who}께 안내드립니다.\n\n${s.name} 학생 출결/학습 안내 화면 링크입니다.\n${parentUrl}`;
 
     if (navigator.share) {
       try {
@@ -2680,10 +2667,10 @@ ${parentUrl}`;
       } catch(e) {}
     }
 
+    // (▼ 여기 따옴표를 수정했습니다!)
     try {
       await navigator.clipboard.writeText(msg);
-      alert('공유용 문구/링크를 복사했습니다.
-카톡에 붙여넣어 보내세요!');
+      alert('공유용 문구/링크를 복사했습니다.\n카톡에 붙여넣어 보내세요!');
     } catch(e) {
       prompt('아래 내용을 복사해서 카톡으로 보내세요.', msg);
     }
