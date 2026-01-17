@@ -391,8 +391,8 @@ button.action-btn:disabled{
   padding: 18px;
 }
 .modal{
-  width: min(560px, 92vw);
-  max-height: 90vh;
+  width: min(1100px, 98vw);
+  max-height: 94vh;
   overflow:auto;
   border-radius: 26px;
   background: rgba(255,255,255,.92);
@@ -1267,6 +1267,20 @@ body.kiosk-mode .kiosk-exit-btn {
     cursor: pointer;
     transform: translateY(-1px);     /* 글자와 높이 미세 조정 */
 }
+
+
+/* Fullscreen detail modal */
+.modal.modal-full{
+  width: min(1200px, 100vw);
+  height: 94vh;
+  max-height: 94vh;
+}
+@media (max-width: 640px){
+  .modal{ width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; }
+  .modal.modal-full{ width: 100vw !important; height: 100vh !important; max-height: 100vh !important; }
+  .modal-overlay{ padding: 0 !important; }
+}
+
 </style>
 </head>
 <body>
@@ -1697,7 +1711,50 @@ const SMS_API_URL = "/api/send-sms";
     let myChart = null; // 차트 객체 저장용
 
     // =========================================================
+    // [추가] 선생님/출석부 모드 상태 저장 (localStorage)
+    // =========================================================
+    const LS_TEACHER = 'teacherMode';
+    const LS_KIOSK = 'kioskMode';
+
+    function isTeacherMode(){ return localStorage.getItem(LS_TEACHER) === '1'; }
+    function setTeacherMode(on){
+        if(on) localStorage.setItem(LS_TEACHER,'1');
+        else localStorage.removeItem(LS_TEACHER);
+    }
+    function isKioskSaved(){ return localStorage.getItem(LS_KIOSK) === '1'; }
+    function setKioskSaved(on){
+        if(on) localStorage.setItem(LS_KIOSK,'1');
+        else localStorage.removeItem(LS_KIOSK);
+    }
+
+    function applyAccessUI(){
+        const teacher = isTeacherMode();
+        const kiosk = document.body.classList.contains('kiosk-mode');
+
+        // 선생님 모드 CSS(키오스크에서는 숨김)
+        document.body.classList.toggle('show-admin', teacher && !kiosk);
+
+        // 토글 체크 유지
+        const chk = document.getElementById('adminToggle');
+        if(chk) chk.checked = teacher;
+
+        // 키오스크 시작 버튼 노출
+        const btnKiosk = document.getElementById('btnKioskStart');
+        if(btnKiosk) btnKiosk.style.display = (teacher && !kiosk) ? 'inline-block' : 'none';
+
+        // 탭 버튼: 선생님 로그인이 아니면 '학습일정'만 보이게
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const oc = btn.getAttribute('onclick') || '';
+            const restricted = oc.includes("showPage('register')") || oc.includes("showPage('list')") || oc.includes("showPage('inbox')");
+            if(!teacher && !kiosk && restricted) btn.style.display = 'none';
+            else btn.style.display = '';
+        });
+    }
+
+    // =========================================================
     // 4. 데이터 실시간 동기화 (onSnapshot)
+
+
     // =========================================================
     
     // 학생 데이터 로드
@@ -2006,6 +2063,9 @@ const SMS_API_URL = "/api/send-sms";
     window.openDetail = (s) => {
         currentStudentId = s.id;
         document.getElementById('detailModal').style.display = 'flex';
+        const modalBox = document.querySelector('#detailModal .modal');
+        if(modalBox) modalBox.classList.add('modal-full');
+        try { document.querySelector('#detailModal .modal').classList.add('modal-full'); } catch(e) {}
         
         // 기본 정보
         document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
@@ -2405,18 +2465,23 @@ const SMS_API_URL = "/api/send-sms";
     // =========================================================
     window.startKioskMode = () => {
         if (confirm("출석부 모드를 실행합니다.")) {
+            setKioskSaved(true);
             document.body.classList.add('kiosk-mode');
-            const chk = document.getElementById('adminToggle');
-            if(chk) chk.checked = false;
-            document.body.classList.remove('show-admin');
+            applyAccessUI();
+            showPage('list');
             filterList();
         }
     };
     window.exitKioskMode = () => {
         if (!document.body.classList.contains('kiosk-mode')) return;
-        if (prompt("비밀번호:") === "1234") { 
+        if (prompt("비밀번호:") === "1234") {
+            setKioskSaved(false);
             document.body.classList.remove('kiosk-mode');
-            alert("선생님 모드로 돌아왔습니다.");
+            alert("기본 모드로 돌아왔습니다.");
+            applyAccessUI();
+            // 선생님 로그인 유지 여부에 따라 시작 화면 결정
+            if(isTeacherMode()) showPage('list');
+            else showPage('calendar');
             filterList();
         } else {
             alert("비밀번호 불일치");
@@ -2494,53 +2559,61 @@ const SMS_API_URL = "/api/send-sms";
     
     // 페이지 전환
     window.showPage = (id) => {
-        if (document.body.classList.contains('kiosk-mode') && id !== 'list') return;
+        const teacher = (typeof isTeacherMode === 'function') ? isTeacherMode() : false;
+        const kiosk = document.body.classList.contains('kiosk-mode');
+
+        // 선생님 로그인이 아니면 학습 일정 외에는 못 봄
+        if(!teacher && !kiosk && id !== 'calendar') id = 'calendar';
+
+        // 키오스크에서는 리스트(출석부)만 유지
+        if(kiosk && id !== 'list') return;
+
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        
+
         document.getElementById(id).classList.add('active');
-        // 탭 버튼 활성화 로직
-        const idx = id === 'register' ? 0 : id === 'list' ? 1 : 2;
+        // 탭 버튼 활성화 로직 (register/list/calendar/inbox)
         const tabs = document.querySelectorAll('.tab-btn');
-        if(tabs[idx]) tabs[idx].classList.add('active');
-        
+        tabs.forEach(btn => {
+            const oc = btn.getAttribute('onclick') || '';
+            if(oc.includes("showPage('"+id+"')")) btn.classList.add('active');
+        });
+
         if(id === 'calendar' && window.renderCalendar) window.renderCalendar();
     };
 
     // [수정] 선생님 모드 전환 (입력창 즉시 띄우기)
     window.toggleAdminMode = async () => {
         const chk = document.getElementById('adminToggle');
-        const btnKiosk = document.getElementById('btnKioskStart');
-        
-        if(chk.checked) {
-            // 1. [변경점] 서버에 다녀오기 전에 '먼저' 물어봅니다 (딜레이 해결)
-            const pw = prompt("관리자 비밀번호를 입력하세요:");
-            
-            // 취소 버튼을 눌렀을 때
-            if (pw === null) {
-                chk.checked = false;
-                return;
-            }
+        if(!chk) return;
 
-            // 2. 그 다음 서버에서 진짜 비밀번호를 가져옵니다
-            let dbPw = "1234"; // 기본값
+        if(chk.checked){
+            const pw = prompt("관리자 비밀번호를 입력하세요:");
+            if(pw === null){ chk.checked = false; return; }
+
+            let dbPw = "1234";
             try {
                 const docSnap = await getDoc(doc(db, "settings", "admin"));
                 if (docSnap.exists()) dbPw = docSnap.data().password;
             } catch(e) {}
 
-            // 3. 입력한 값과 서버 값을 비교
-            if(pw === dbPw) { 
-                document.body.classList.add('show-admin');
-                if(btnKiosk) btnKiosk.style.display = 'inline-block';
+            if(pw === dbPw){
+                setTeacherMode(true);
+                applyAccessUI();
+                // 기본 시작 화면은 원생관리
+                if(!document.body.classList.contains('kiosk-mode')) showPage('list');
             } else {
                 alert("비밀번호가 틀렸습니다.");
                 chk.checked = false;
+                setTeacherMode(false);
+                applyAccessUI();
+                showPage('calendar');
             }
         } else {
-            // 체크 해제 시
-            document.body.classList.remove('show-admin');
-            if(btnKiosk) btnKiosk.style.display = 'none';
+            // 로그아웃(게스트 모드)
+            setTeacherMode(false);
+            applyAccessUI();
+            showPage('calendar');
         }
     };
 
@@ -2964,27 +3037,38 @@ const SMS_API_URL = "/api/send-sms";
     };
     
     // 모달 닫기 유틸
-    window.closeModal = () => { document.getElementById('detailModal').style.display = 'none'; currentStudentId = null; };
+    window.closeModal = () => {
+        document.getElementById('detailModal').style.display = 'none';
+        try { document.querySelector('#detailModal .modal').classList.remove('modal-full'); } catch(e) {}
+        currentStudentId = null;
+    };
     window.onclick = (e) => {
         if(e.target == document.getElementById('detailModal')) window.closeModal();
         if(e.target == document.getElementById('scheduleModal')) document.getElementById('scheduleModal').style.display = "none";
     };
 
-    // [수정] 새로고침/접속 시 무조건 '출석부 모드'로 고정
+    // [수정] 새로고침/접속 시: 기본은 '원생관리', 모드는 localStorage로 유지
     window.onload = () => {
-        // 1. 강제로 키오스크 모드 클래스 주입
-        document.body.classList.add('kiosk-mode');
-        
-        // 2. 선생님(관리자) 모드 해제
-        document.body.classList.remove('show-admin');
-        const chk = document.getElementById('adminToggle');
-        if(chk) chk.checked = false;
+        // 1) 저장된 모드 복원
+        const teacherSaved = isTeacherMode();
+        const kioskSaved = isKioskSaved();
 
-        // 3. (혹시 데이터가 이미 로드된 상태라면) 리스트 갱신
+        if(kioskSaved) document.body.classList.add('kiosk-mode');
+        else document.body.classList.remove('kiosk-mode');
+
+        applyAccessUI();
+
+        // 2) 시작 화면
+        if(document.body.classList.contains('kiosk-mode')) {
+            showPage('list');
+        } else {
+            // 기본: 선생님이면 원생관리, 아니면 학습일정만
+            showPage(teacherSaved ? 'list' : 'calendar');
+        }
+
+        // 3) 리스트/달력 갱신
         if(window.filterList) window.filterList();
-        
-        // 4. 모바일 소리 권한 요청 (터치 대기)
-        // (이전에 추가한 unlockAudio 이벤트는 그대로 유지됩니다)
+        if(window.renderCalendar) window.renderCalendar();
     };
 // =========================================================
     // [추가] 모바일 좌우 슬라이드(스와이프) 기능
