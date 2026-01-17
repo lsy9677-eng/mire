@@ -29,6 +29,7 @@
         textarea { width: 100%; height: 160px; padding: 14px; border: 1px solid #cbd5e1; border-radius: 14px; box-sizing: border-box; resize: vertical; font-size: 16px; line-height: 1.5; }
         .send-btn { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -65,6 +66,14 @@
             </div>
 
             <div class="card">
+                <h3 style="margin-top:0;">📈 성적 그래프/기록</h3>
+                <div style="background:#f5f3ff; border:1px solid #ddd6fe; padding:14px; border-radius:12px;">
+                    <canvas id="parentScoreChart" height="180"></canvas>
+                    <div id="parentScoreList" style="margin-top:12px; font-size:14px; line-height:1.5; color:#475569;"></div>
+                </div>
+            </div>
+
+            <div class="card">
                 <h3 style="margin-top:0;">💬 선생님께 답장하기</h3>
                 <textarea id="replyMsg" placeholder="선생님께 드릴 말씀이나 궁금한 점을 적어주세요."></textarea>
                 <button class="send-btn" onclick="sendReply()">메시지 보내기</button>
@@ -92,6 +101,7 @@
         const db = getFirestore(app);
         let currentStudent = null;
         let unsubStudent = null;
+        let parentChart = null;
 
         window.checkParent = async () => {
             const phoneInput = document.getElementById('inputPhone');
@@ -134,6 +144,59 @@
             }
         };
 
+        function renderParentScore(scoreLog = []) {
+            const canvas = document.getElementById('parentScoreChart');
+            const listEl = document.getElementById('parentScoreList');
+            if(!canvas || !listEl) return;
+
+            // 리스트
+            if(!Array.isArray(scoreLog) || scoreLog.length === 0) {
+                listEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:10px;'>등록된 성적이 없습니다.</div>";
+            } else {
+                const rows = scoreLog.slice().reverse().map(s => {
+                    const date = s.date || '';
+                    const title = s.title || '시험';
+                    const score = (s.score ?? '');
+                    return `<div style="padding:8px 0; border-bottom:1px dashed #e2e8f0;">
+                        <div style="font-size:12px; color:#94a3b8;">${date}</div>
+                        <div style="display:flex; justify-content:space-between; gap:10px;">
+                            <div style="font-weight:800; color:#1e293b;">${title}</div>
+                            <div style="font-weight:900; color:#7c3aed;">${score}점</div>
+                        </div>
+                    </div>`;
+                }).join('');
+                listEl.innerHTML = rows;
+            }
+
+            // 차트
+            if(!window.Chart) return;
+            const ctx = canvas.getContext('2d');
+            if(parentChart) { try { parentChart.destroy(); } catch(e){} }
+
+            const labels = (scoreLog || []).map(s => s.title || '');
+            const data = (scoreLog || []).map(s => Number(s.score || 0));
+
+            parentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '성적',
+                        data,
+                        tension: 0.25,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, suggestedMax: 100 }
+                    }
+                }
+            });
+        }
+
         function showData() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('content-screen').style.display = 'block';
@@ -142,6 +205,9 @@
             document.getElementById('sName').innerText = s.name + " 학생";
             document.getElementById('sInfo').innerText = `${s.school||''} | ${s.belt||''}`;
             document.getElementById('sNotice').innerText = s.lastNotice || "최신 알림이 없습니다.";
+
+            // 성적(읽기 전용)
+            renderParentScore(s.scoreLog || []);
 
             // 출석 수
             const now = new Date();
@@ -176,6 +242,7 @@
             
             try {
                 await addDoc(collection(db, "parentMessages"), {
+                    parentPhone: (currentStudent.phone || '').toString(),
                     studentId: currentStudent.id,
                     studentName: currentStudent.name,
                     message: msg,
