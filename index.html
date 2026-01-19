@@ -3140,25 +3140,19 @@ const SMS_API_URL = "/api/send-sms";
             }
         }
     }, {passive: true});
-    // =========================================================
-    // [추가] 학부모 의견함(메시지) 불러오기 & 읽음 처리
-    // =========================================================
-    
-    // 이 코드가 실행되어야 학부모 메시지가 보입니다!
    // =========================================================
-   // =========================================================
-    // [필수] 학부모 의견함 & 상담 등록 기능 (최종 수정)
+    // [통합 복구] 학부모 의견함 + 알림장 저장 + 카톡 공유
     // =========================================================
 
-    // 1. 학부모 의견함 로드
+    // 1. 학부모 의견함 불러오기 (자동 실행)
     (function initInbox() {
         const inboxArea = document.getElementById('inboxListArea');
         const inboxBadge = document.getElementById('inboxBadge');
         
-        // 화면에 의견함이 없으면 중단
+        // 화면에 영역이 없으면 중단 (에러 방지)
         if (!inboxArea) return;
 
-        // ★★★ 핵심: orderBy를 절대 넣지 마세요! (데이터 차단 원인) ★★★
+        // ★ 핵심: 에러를 피하기 위해 정렬(orderBy) 없이 가져옵니다.
         const q = query(collection(db, "parentMessages"));
 
         onSnapshot(q, (snapshot) => {
@@ -3171,20 +3165,20 @@ const SMS_API_URL = "/api/send-sms";
                 if (data.read === false) unreadCount++;
             });
 
-            // 자바스크립트가 알아서 최신순 정렬
+            // 자바스크립트로 최신순(날짜순) 정렬
             items.sort((a, b) => {
                 const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
                 const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
                 return tB - tA; 
             });
 
-            // 뱃지 업데이트
+            // 뱃지(빨간 숫자) 업데이트
             if (inboxBadge) {
                 inboxBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
                 inboxBadge.innerText = unreadCount;
             }
 
-            // 목록 그리기
+            // 목록 화면에 그리기
             if (items.length === 0) {
                 inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
             } else {
@@ -3219,29 +3213,107 @@ const SMS_API_URL = "/api/send-sms";
         });
     })();
 
-    // 2. 상담 등록 함수 (색상 문제 해결된 HTML과 연결)
-    window.addCounselLog = async () => {
-        const input = document.getElementById('newCounsel');
-        const text = input.value;
+    // 2. [핵심] 알림장 보내기 + DB 저장 + 카톡 공유
+    window.sendNoticeShare = async () => {
+        // 학생 선택 여부 확인
+        if(!window.currentStudentId) return alert('학생을 선택해주세요.');
         
-        if(!text) return alert("상담 내용을 입력해주세요.");
-        if(!window.currentStudentId) return alert("학생이 선택되지 않았습니다.");
+        const s = (window.allStudents || []).find(st => st.id === window.currentStudentId);
+        if(!s) return alert('학생 정보 오류');
 
+        const text = document.getElementById('dailyProgress').value;
+        if(!text) return alert('내용을 입력해주세요.');
+
+        // 공유 링크 생성
+        const base = (location.origin || '').replace(/\/$/, '');
+        const parentUrl = base + '/parent.html?v=' + Date.now();
+
+        // ★ [여기가 중요!] DB에 알림장 내용 저장 (이게 있어야 학부모 사이트에 기록됨)
+        try {
+            await updateDoc(doc(db, 'students', window.currentStudentId), {
+                lastNotice: text, // 최신 알림장 갱신
+                counselLog: arrayUnion({ // 기록장에 추가
+                    date: new Date().toLocaleDateString(), 
+                    text: '[알림장] ' + text 
+                })
+            });
+            console.log("알림장 저장 완료");
+        } catch(e) { 
+            console.error("저장 실패:", e);
+            alert("저장에 실패했지만 공유는 계속합니다."); 
+        }
+
+        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모님 확인하기\n${parentUrl}`;
+
+        // 모바일 공유하기
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `[미래엔수학] ${s.name} 학생 알림장`,
+                    text: msg,
+                    url: parentUrl
+                });
+                return;
+            } catch(e) {}
+        }
+
+        // PC 복사하기
+        try {
+            await navigator.clipboard.writeText(msg);
+            alert('링크가 복사되었습니다! 카톡에 붙여넣으세요.');
+        } catch(e) {
+            prompt('복사해서 보내세요:', msg);
+        }
+    };
+
+    // 3. 기타 기능 (읽음 처리, 상담 등록 등)
+    window.markMessageRead = async (id) => {
+        try { await updateDoc(doc(db, "parentMessages", id), { read: true }); } 
+        catch(e) { console.error(e); }
+    };
+    
+    window.openMessageStudent = (sid) => {
+        if(!document.body.classList.contains('show-admin')) {
+             document.body.classList.add('show-admin');
+             const chk = document.getElementById('adminToggle');
+             if(chk) chk.checked = true;
+        }
+        window.showPage('list');
+        const s = (window.allStudents || []).find(st => st.id === sid);
+        if(s) window.openDetail(s);
+    };
+
+    window.addCounselLog = async () => {
+        const text = document.getElementById('newCounsel').value;
+        if(!text) return alert("내용을 입력해주세요.");
         try {
             await updateDoc(doc(db, "students", window.currentStudentId), {
                 counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text })
             });
-            alert("✅ 상담 내용이 등록되었습니다.");
-            input.value = ""; // 입력창 비우기
-            
-            // 화면 즉시 갱신
+            alert("저장되었습니다.");
+            document.getElementById('newCounsel').value = "";
             const s = window.allStudents.find(st => st.id === window.currentStudentId);
-            if(s) {
-                 if(!s.counselLog) s.counselLog = [];
-                 s.counselLog.push({ date: new Date().toLocaleDateString(), text: text });
-                 window.renderCounselLog(s); // 상세화면 갱신
-            }
-        } catch(e) { alert("저장 실패: " + e.message); }
+            if(s) window.openDetail(s);
+        } catch(e) { alert("오류: " + e.message); }
+    };
+    
+    window.saveEdit = async () => {
+        const id = document.getElementById('editId').value;
+        if (!id) return;
+        try {
+            await updateDoc(doc(db, "students", id), {
+                name: document.getElementById('editName').value,
+                birth: document.getElementById('editBirth').value,
+                gender: document.getElementById('editGender').value,
+                school: document.getElementById('editSchool').value,
+                belt: document.getElementById('editGrade').value,
+                phone: document.getElementById('editParentPhone').value,
+                studentPhone: document.getElementById('editStudentPhone').value,
+                address: document.getElementById('editAddress').value,
+                notes: document.getElementById('editNotes').value
+            });
+            alert("수정되었습니다.");
+        } catch(e) { alert("오류: " + e.message); }
     };
 </script>
 
