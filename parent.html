@@ -38,6 +38,7 @@
         .btn-edit { background: #e0f2fe; color: #0284c7; margin-right: 4px; }
         .btn-del { background: #fee2e2; color: #dc2626; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -73,6 +74,23 @@
                 <div id="historyList" style="max-height:400px; overflow-y:auto;"></div>
             </div>
 
+
+
+            <div class="card">
+                <h3>📈 성적 & 성적 그래프</h3>
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px;">
+                    <canvas id="scoreChart" height="180"></canvas>
+                </div>
+                <div id="scoreList" style="margin-top:12px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>📝 상담 게시판</h3>
+                <div style="font-size:13px; color:#64748b; line-height:1.5; margin-bottom:10px;">
+                    선생님 기록(알림장/지도내역)과 학부모 의견을 시간순으로 모아 보여줍니다.
+                </div>
+                <div id="boardList" style="max-height:420px; overflow-y:auto;"></div>
+            </div>
             <div class="card">
                 <h3>💬 선생님께 답장하기</h3>
                 <textarea id="replyMsg" placeholder="선생님께 드릴 말씀이나 궁금한 점을 적어주세요."></textarea>
@@ -135,6 +153,18 @@
                 currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data() };
                 showData();
                 loadMyMessages(); // 내 메시지 불러오기 시작
+                loadBoard();
+                renderScores();
+
+                // 학생 정보/점수/상담 기록이 변경되면 실시간 반영
+                if(typeof __studentUnsub === 'function') { try { __studentUnsub(); } catch(e){} }
+                __studentUnsub = onSnapshot(doc(db, 'students', currentStudent.id), (d) => {
+                    if(!d.exists()) return;
+                    currentStudent = { id: d.id, ...d.data() };
+                    showData();
+                    renderScores();
+                    loadBoard();
+                });
 
             } catch(e) {
                 console.error(e);
@@ -264,6 +294,251 @@
                 await deleteDoc(doc(db, "parentMessages", id));
             } catch(e) { alert("삭제 실패: " + e.message); }
         };
+
+        // =========================================================
+        // [추가] 성적(그래프) + 상담 게시판(선생님 기록 + 학부모 의견) 렌더링
+        // =========================================================
+        let __scoreChart = null;
+        let __boardUnsub = null;
+        let __studentUnsub = null;
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function tsToLabel(sec) {
+            try {
+                const d = new Date(sec * 1000);
+                return d.toLocaleString();
+            } catch(e) {
+                return '';
+            }
+        }
+
+        function koreanDateToTs(dateStr) {
+            // 예: 2026. 1. 19. / 2026-01-19 / 2026/1/19
+            const s = String(dateStr || '').trim();
+            if(!s) return 0;
+            const m = s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+            if(m) {
+                const y = int(m[1]);
+                const mo = int(m[2]);
+                const d = int(m[3]);
+                const dt = new Date(y, mo-1, d);
+                return Math.floor(dt.getTime()/1000);
+            }
+            const t = Date.parse(s);
+            if(!isNaN(t)) return Math.floor(t/1000);
+            return 0;
+        }
+
+        function int(x){
+            const n = parseInt(x, 10);
+            return isNaN(n) ? 0 : n;
+        }
+
+        window.renderScores = function renderScores() {
+            if(!currentStudent) return;
+            const scoreLog = Array.isArray(currentStudent.scoreLog) ? currentStudent.scoreLog : [];
+            const listEl = document.getElementById('scoreList');
+            const canvas = document.getElementById('scoreChart');
+            if(!listEl || !canvas) return;
+
+            // 리스트
+            if(scoreLog.length === 0) {
+                listEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:10px;'>등록된 성적이 없습니다.</div>";
+            } else {
+                const sorted = [...scoreLog].sort((a,b)=>{
+                    const ta = koreanDateToTs(a.date) || 0;
+                    const tb = koreanDateToTs(b.date) || 0;
+                    return tb - ta;
+                });
+                listEl.innerHTML = sorted.map(s => {
+                    return `
+                        <div style="padding:10px; margin-bottom:8px; border-radius:12px; background:#fff; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                            <div>
+                                <div style="font-weight:900; color:#0f172a;">${escapeHtml(s.title || '시험')}</div>
+                                <div style="font-size:12px; color:#64748b; margin-top:2px;">${escapeHtml(s.date || '')}</div>
+                            </div>
+                            <div style="font-weight:900; font-size:16px; color:#7c3aed;">${escapeHtml(s.score)}점</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 그래프 데이터 (오래된 -> 최신)
+            const sortedAsc = [...scoreLog].sort((a,b)=>{
+                const ta = koreanDateToTs(a.date) || 0;
+                const tb = koreanDateToTs(b.date) || 0;
+                return ta - tb;
+            });
+            const labels = sortedAsc.map(s => (s.date || '').toString().slice(5) || s.title || '');
+            const values = sortedAsc.map(s => int(s.score));
+
+            // 3D 느낌: 막대 뒤에 살짝 "그림자" 막대를 한 번 더 그려주는 플러그인
+            const bar3dPlugin = {
+                id: 'bar3d',
+                afterDatasetsDraw(chart, args, pluginOptions) {
+                    const { ctx } = chart;
+                    const meta = chart.getDatasetMeta(0);
+                    if(!meta || !meta.data) return;
+                    ctx.save();
+                    ctx.globalAlpha = 0.25;
+                    meta.data.forEach((bar) => {
+                        if(!bar || !bar.getProps) return;
+                        const props = bar.getProps(['x','y','base','width'], true);
+                        const x = props.x;
+                        const y = props.y;
+                        const base = props.base;
+                        const w = props.width;
+                        const dx = 6;
+                        const dy = 6;
+                        // 뒤쪽 면(기울기)
+                        ctx.fillRect(x - w/2 + dx, y + dy, w, base - y);
+                    });
+                    ctx.restore();
+                }
+            };
+
+            // 막대 색 그라데이션(깔끔한 시인성)
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(124, 58, 237, 0.85)');
+            gradient.addColorStop(1, 'rgba(124, 58, 237, 0.20)');
+
+            if(__scoreChart) {
+                __scoreChart.destroy();
+                __scoreChart = null;
+            }
+
+            __scoreChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '성적',
+                        data: values,
+                        backgroundColor: gradient,
+                        borderColor: 'rgba(124, 58, 237, 0.9)',
+                        borderWidth: 1,
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: {
+                            label: (ctx) => `${ctx.parsed.y}점`
+                        }}
+                    },
+                    scales: {
+                        y: { beginAtZero: true, suggestedMax: 100, grid: { display: true } },
+                        x: { grid: { display: false } }
+                    }
+                },
+                plugins: [bar3dPlugin]
+            });
+        }
+
+        window.loadBoard = function loadBoard() {
+            if(!currentStudent) return;
+            const boardEl = document.getElementById('boardList');
+            if(!boardEl) return;
+
+            // 기존 구독 해제(재로그인 대비)
+            if(typeof __boardUnsub === 'function') {
+                try { __boardUnsub(); } catch(e) {}
+            }
+
+            const q = query(
+                collection(db, 'parentMessages'),
+                where('studentId', '==', currentStudent.id)
+            );
+
+            __boardUnsub = onSnapshot(q, (snapshot) => {
+                const parentItems = [];
+                snapshot.forEach(d => parentItems.push({ id: d.id, ...d.data() }));
+
+                const teacherLogs = Array.isArray(currentStudent.counselLog) ? currentStudent.counselLog : [];
+
+                const items = [];
+
+                // 선생님 기록
+                teacherLogs.forEach((h, idx) => {
+                    const ts = koreanDateToTs(h.date) || (idx + 1);
+                    const isNotice = String(h.text || '').includes('[알림장]');
+                    const clean = String(h.text || '').replace('[알림장]', '').trim();
+                    items.push({
+                        type: 'teacher',
+                        ts,
+                        dateLabel: h.date || '',
+                        title: isNotice ? '알림장' : '지도내역',
+                        text: clean
+                    });
+                });
+
+                // 학부모 의견
+                parentItems.forEach((m) => {
+                    const ts = (m.createdAt && m.createdAt.seconds) ? m.createdAt.seconds : 0;
+                    items.push({
+                        type: 'parent',
+                        ts,
+                        id: m.id,
+                        dateLabel: ts ? tsToLabel(ts) : '방금 전',
+                        text: m.message || '',
+                        read: m.read === true
+                    });
+                });
+
+                // 시간순(오래된 -> 최신) / 동률이면 선생님 먼저
+                items.sort((a,b)=>{
+                    if(a.ts === b.ts) {
+                        if(a.type === b.type) return 0;
+                        return a.type === 'teacher' ? -1 : 1;
+                    }
+                    return a.ts - b.ts;
+                });
+
+                if(items.length === 0) {
+                    boardEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:18px;'>상담 내역이 없습니다.</div>";
+                    return;
+                }
+
+                boardEl.innerHTML = items.map((it) => {
+                    const who = it.type === 'teacher' ? '선생님' : '학부모';
+                    const badgeBg = it.type === 'teacher' ? '#eff6ff' : '#ecfeff';
+                    const badgeColor = it.type === 'teacher' ? '#1d4ed8' : '#0e7490';
+                    const oldJson = JSON.stringify(it.text || '').replace(/</g, '\u003c');
+
+                    const action = (it.type === 'parent')
+                        ? `<div style="display:flex; gap:6px;">
+                               <button class="btn-edit" onclick="window.editMsg('${it.id}', ${oldJson})">수정</button>
+                               <button class="btn-del" onclick="window.delMsg('${it.id}')">삭제</button>
+                           </div>`
+                        : '';
+
+                    return `
+                        <div style="padding:12px; margin-bottom:10px; border-radius:14px; background:#fff; border:1px solid #e2e8f0;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;">
+                                <div>
+                                    <span style="display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:900; background:${badgeBg}; color:${badgeColor};">${who}${it.type==='teacher' ? ' · ' + escapeHtml(it.title||'') : (it.read ? ' · 읽음' : ' · 안읽음')}</span>
+                                    <div style="font-size:12px; color:#94a3b8; margin-top:4px;">${escapeHtml(it.dateLabel||'')}</div>
+                                </div>
+                                ${action}
+                            </div>
+                            <div style="white-space:pre-wrap; font-size:14px; line-height:1.55; color:#0f172a;">${escapeHtml(it.text||'')}</div>
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+
     </script>
 </body>
 </html>
