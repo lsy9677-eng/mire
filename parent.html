@@ -233,13 +233,12 @@
             } catch(e) { alert("전송 실패: " + e.message); }
         };
 
-        // 4. [추가] 내가 보낸 메시지 불러오기 & 수정/삭제 기능
+       // [수정] 내가 보낸 메시지 불러오기 (정렬 에러 해결)
         function loadMyMessages() {
             if(!currentStudent) return;
             const listArea = document.getElementById('myMsgList');
 
-            // 내 학생 ID로 된 메시지만 실시간 감시
-            // (주의: 인덱스 오류 방지를 위해 orderBy는 js에서 처리하거나, 에러나면 생성 링크 클릭 필요)
+            // [핵심] orderBy 제거
             const q = query(
                 collection(db, "parentMessages"), 
                 where("studentId", "==", currentStudent.id)
@@ -249,7 +248,7 @@
                 const msgs = [];
                 snapshot.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
                 
-                // 최신순 정렬 (클라이언트 측 정렬)
+                // [핵심] 자바스크립트로 최신순 정렬
                 msgs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
                 if(msgs.length === 0) {
@@ -262,12 +261,15 @@
                     const date = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleString() : "방금 전";
                     const isRead = m.read ? '<span style="color:#3b82f6;">(읽음)</span>' : '<span style="color:#ef4444;">(안읽음)</span>';
                     
+                    // 메시지 수정/삭제 시 텍스트 깨짐 방지 처리
+                    const safeMsg = (m.message || '').replace(/'/g, "\\'"); 
+                    
                     listArea.innerHTML += `
                         <div class="my-msg-item">
                             <div class="msg-meta">
                                 <span>${date} ${isRead}</span>
                                 <div class="msg-actions">
-                                    <button class="btn-edit" onclick="window.editMsg('${m.id}', '${m.message.replace(/'/g, "\\'")}')">수정</button>
+                                    <button class="btn-edit" onclick="window.editMsg('${m.id}', '${safeMsg}')">수정</button>
                                     <button class="btn-del" onclick="window.delMsg('${m.id}')">삭제</button>
                                 </div>
                             </div>
@@ -277,7 +279,6 @@
                 });
             });
         }
-
         // 수정 기능
         window.editMsg = async (id, oldText) => {
             const newText = prompt("메시지를 수정하세요:", oldText);
@@ -542,3 +543,4 @@
     </script>
 </body>
 </html>
+
