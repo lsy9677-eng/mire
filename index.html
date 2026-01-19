@@ -1546,6 +1546,9 @@ body.kiosk-mode .kiosk-exit-btn {
     </div>
 </div>
         <div id="tabScore" class="modal-tab-pane">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h4 style="margin:0; color:var(--text-main);">💬 상담 및 학습 로그</h4>
+                <span style="font-size:12px; color:#999;">최근 순으로 표시됩니다</span>
             
             <div class="admin-only" style="background:#f0f9ff; padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid #bae6fd;">
                 <div style="font-weight:bold; color:#0369a1; margin-bottom:8px;">💬 상담/지도 내용 등록</div>
@@ -1555,6 +1558,11 @@ body.kiosk-mode .kiosk-exit-btn {
                 </div>
             </div>
 
+            <div id="modalCounselLog" style="background:#f5f7f9; border-radius:8px; padding:15px; height:250px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;"></div>
+
+            <div class="admin-only" style="display:flex; gap:5px; margin-bottom:20px;">
+                <input type="text" id="newCounsel" placeholder="상담 내용 기록" style="flex:1;">
+                <button onclick="addCounselLog()" style="background:var(--primary); color:white; border:none; padding:0 20px; border-radius:8px; font-weight:bold;">등록</button>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h4 style="margin:0; color:var(--text-main);">기록 목록</h4>
                 <span style="font-size:12px; color:#999;">최근 순</span>
@@ -1564,21 +1572,31 @@ body.kiosk-mode .kiosk-exit-btn {
             
             <details style="background:white; border:1px solid #e0e0e0; border-radius:10px; padding:10px;">
                 <summary style="font-weight:bold; color:#7b1fa2; cursor:pointer; padding:5px; list-style:none; display:flex; align-items:center; justify-content:space-between;">
+                    <span>📈 성적 그래프 및 기록 관리</span>
                     <span>📈 성적 관리 (클릭)</span>
                     <i class="fas fa-chevron-down" style="font-size:12px; color:#aaa;"></i>
                 </summary>
+
+                <div style="margin-top:15px; padding-top:15px; border-top:1px dashed #eee;">
                 <div style="margin-top:15px;">
                     <div class="chart-container" style="padding:0; margin-bottom:15px; border:none;">
                         <canvas id="scoreChart" height="180"></canvas>
                     </div>
+
                     <div class="admin-only" style="background:#f3e5f5; padding:12px; border-radius:8px; margin-bottom:15px;">
+                        <div style="font-size:12px; font-weight:bold; color:#7b1fa2; margin-bottom:5px;">새 성적 등록</div>
                         <div style="font-size:12px; font-weight:bold; color:#7b1fa2; margin-bottom:5px;">성적 입력</div>
                         <div class="score-input-group">
+                            <input type="text" id="scoreTitle" placeholder="시험명" style="flex:1.5;">
+                            <input type="number" id="scoreValue" placeholder="점수" style="flex:1;">
+                            <button onclick="addScore()" style="background:#7b1fa2; color:white; border:none; padding:0 15px; border-radius:6px;">추가</button>
                             <input type="text" id="scoreTitle" placeholder="시험명">
                             <input type="number" id="scoreValue" placeholder="점수">
                             <button onclick="addScore()" style="background:#7b1fa2; color:white;">추가</button>
                         </div>
                     </div>
+
+                    <h5 style="margin:0 0 8px 0; color:#555;">📝 성적 기록 상세</h5>
                     <div id="scoreList" style="font-size:13px; max-height:150px; overflow-y:auto; color:#666;"></div>
                 </div>
             </details>
@@ -3140,19 +3158,28 @@ const SMS_API_URL = "/api/send-sms";
             }
         }
     }, {passive: true});
-   // =========================================================
-    // [통합 복구] 학부모 의견함 + 알림장 저장 + 카톡 공유
+    // =========================================================
+    // [추가] 학부모 의견함(메시지) 불러오기 & 읽음 처리
     // =========================================================
 
-    // 1. 학부모 의견함 불러오기 (자동 실행)
+    // 이 코드가 실행되어야 학부모 메시지가 보입니다!
+   // =========================================================
+    // [최종 수정] 학부모 의견함 로드 (안전한 버전)
+   // =========================================================
+    // [필수] 학부모 의견함 & 상담 등록 기능 (최종 수정)
+    // =========================================================
+
+    // 1. 학부모 의견함 로드
     (function initInbox() {
+        // ID가 맞는지 확인 (inboxListArea)
         const inboxArea = document.getElementById('inboxListArea');
         const inboxBadge = document.getElementById('inboxBadge');
         
-        // 화면에 영역이 없으면 중단 (에러 방지)
+        // 화면에 의견함이 없으면 중단
         if (!inboxArea) return;
 
-        // ★ 핵심: 에러를 피하기 위해 정렬(orderBy) 없이 가져옵니다.
+        // ★ 핵심: orderBy 제거! (DB 에러 원인 해결)
+        // ★★★ 핵심: orderBy를 절대 넣지 마세요! (데이터 차단 원인) ★★★
         const q = query(collection(db, "parentMessages"));
 
         onSnapshot(q, (snapshot) => {
@@ -3165,20 +3192,49 @@ const SMS_API_URL = "/api/send-sms";
                 if (data.read === false) unreadCount++;
             });
 
-            // 자바스크립트로 최신순(날짜순) 정렬
+            // ★ 자바스크립트로 최신순 정렬 (날짜순)
+            // 자바스크립트가 알아서 최신순 정렬
             items.sort((a, b) => {
                 const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
                 const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
+                return tB - tA; // 최신이 위로
                 return tB - tA; 
             });
 
             // 뱃지(빨간 숫자) 업데이트
+            // 뱃지 업데이트
             if (inboxBadge) {
                 inboxBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
                 inboxBadge.innerText = unreadCount;
             }
 
-            // 목록 화면에 그리기
+            // 화면 그리기
+            if (inboxArea) {
+                if (items.length === 0) {
+                    inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
+                } else {
+                    inboxArea.innerHTML = "";
+                    items.forEach(m => {
+                        const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
+                        const dateStr = dateObj.toLocaleString();
+                        const isUnread = (m.read === false);
+                        const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
+
+                        const div = document.createElement('div');
+                        div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
+                        div.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                                <div>
+                                    <div style="font-weight:bold; font-size:15px; color:#333;">
+                                        ${isUnread ? '<span style="color:red;">●</span>' : ''} 
+                                        ${m.studentName || '이름없음'} 
+                                    </div>
+                                    <div style="font-size:12px; color:#999;">${dateStr}</div>
+                                </div>
+                                <div style="display:flex; gap:6px;">
+                                    <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
+                                    ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc; padding:6px;">읽음</span>'}
+            // 목록 그리기
             if (items.length === 0) {
                 inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
             } else {
@@ -3200,6 +3256,11 @@ const SMS_API_URL = "/api/send-sms";
                                 </div>
                                 <div style="font-size:12px; color:#999;">${dateStr}</div>
                             </div>
+                            <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
+                        `;
+                        inboxArea.appendChild(div);
+                    });
+                }
                             <div style="display:flex; gap:6px;">
                                 <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
                                 ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc; padding:6px;">읽음</span>'}
@@ -3213,151 +3274,46 @@ const SMS_API_URL = "/api/send-sms";
         });
     })();
 
-    // 2. [핵심] 알림장 보내기 + DB 저장 + 카톡 공유
-    window.sendNoticeShare = async () => {
-        // 학생 선택 여부 확인
-        if(!window.currentStudentId) return alert('학생을 선택해주세요.');
-        
-        const s = (window.allStudents || []).find(st => st.id === window.currentStudentId);
-        if(!s) return alert('학생 정보 오류');
-
-        const text = document.getElementById('dailyProgress').value;
-        if(!text) return alert('내용을 입력해주세요.');
-
-        // 공유 링크 생성
-        const base = (location.origin || '').replace(/\/$/, '');
-        const parentUrl = base + '/parent.html?v=' + Date.now();
-
-        // ★ [여기가 중요!] DB에 알림장 내용 저장 (이게 있어야 학부모 사이트에 기록됨)
-        try {
-            await updateDoc(doc(db, 'students', window.currentStudentId), {
-                lastNotice: text, // 최신 알림장 갱신
-                counselLog: arrayUnion({ // 기록장에 추가
-                    date: new Date().toLocaleDateString(), 
-                    text: '[알림장] ' + text 
-                })
-            });
-            console.log("알림장 저장 완료");
-        } catch(e) { 
-            console.error("저장 실패:", e);
-            alert("저장에 실패했지만 공유는 계속합니다."); 
-        }
-
-        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모님 확인하기\n${parentUrl}`;
-
-        // 모바일 공유하기
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `[미래엔수학] ${s.name} 학생 알림장`,
-                    text: msg,
-                    url: parentUrl
-                });
-                return;
-            } catch(e) {}
-        }
-
-        // PC 복사하기
-        try {
-            await navigator.clipboard.writeText(msg);
-            alert('링크가 복사되었습니다! 카톡에 붙여넣으세요.');
-        } catch(e) {
-            prompt('복사해서 보내세요:', msg);
-        }
-    };
-
-    // 3. 기타 기능 (읽음 처리, 상담 등록 등)
+    // [기능] 읽음 처리 함수
     window.markMessageRead = async (id) => {
-        try { await updateDoc(doc(db, "parentMessages", id), { read: true }); } 
-        catch(e) { console.error(e); }
+        try {
+            await updateDoc(doc(db, "parentMessages", id), { read: true });
+        } catch(e) { console.error(e); }
     };
-    
+    // 2. 상담 등록 함수 (색상 문제 해결된 HTML과 연결)
+    window.addCounselLog = async () => {
+        const input = document.getElementById('newCounsel');
+        const text = input.value;
+        
+        if(!text) return alert("상담 내용을 입력해주세요.");
+        if(!window.currentStudentId) return alert("학생이 선택되지 않았습니다.");
+
+    // [기능] 학생 바로가기 함수
     window.openMessageStudent = (sid) => {
         if(!document.body.classList.contains('show-admin')) {
              document.body.classList.add('show-admin');
              const chk = document.getElementById('adminToggle');
              if(chk) chk.checked = true;
         }
-        window.showPage('list');
-        const s = (window.allStudents || []).find(st => st.id === sid);
+        showPage('list');
+        const s = allStudents.find(st => st.id === sid);
         if(s) window.openDetail(s);
-    };
-
-    window.addCounselLog = async () => {
-        const text = document.getElementById('newCounsel').value;
-        if(!text) return alert("내용을 입력해주세요.");
+        else alert("해당 학생 정보를 찾을 수 없습니다.");
         try {
             await updateDoc(doc(db, "students", window.currentStudentId), {
                 counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text })
             });
-            alert("저장되었습니다.");
-            document.getElementById('newCounsel').value = "";
+            alert("✅ 상담 내용이 등록되었습니다.");
+            input.value = ""; // 입력창 비우기
+            
+            // 화면 즉시 갱신
             const s = window.allStudents.find(st => st.id === window.currentStudentId);
-            if(s) window.openDetail(s);
-        } catch(e) { alert("오류: " + e.message); }
-    };
-    
-    window.saveEdit = async () => {
-        const id = document.getElementById('editId').value;
-        if (!id) return;
-        try {
-            await updateDoc(doc(db, "students", id), {
-                name: document.getElementById('editName').value,
-                birth: document.getElementById('editBirth').value,
-                gender: document.getElementById('editGender').value,
-                school: document.getElementById('editSchool').value,
-                belt: document.getElementById('editGrade').value,
-                phone: document.getElementById('editParentPhone').value,
-                studentPhone: document.getElementById('editStudentPhone').value,
-                address: document.getElementById('editAddress').value,
-                notes: document.getElementById('editNotes').value
-            });
-            alert("수정되었습니다.");
-        } catch(e) { alert("오류: " + e.message); }
-    };
-    window.generateSettlement = () => {
-        if(!window.currentStudentId) return alert("학생 정보가 없습니다.");
-        const s = (window.allStudents || []).find(st => st.id === window.currentStudentId);
-        if(!s) return alert("학생 데이터를 찾을 수 없습니다.");
-        
-        // 날짜 계산 (오늘 기준, 이번 달 안내)
-        const now = new Date();
-        const month = now.getMonth() + 1;
-        
-        // 안내 문구 만들기
-        const msg = `[미래엔수학] ${month}월 교육비 결제 안내\n\n안녕하세요, ${s.name} 학부모님.\n${month}월 교육비 정산 기간입니다.\n\n- 학생명: ${s.name}\n- 기간: 매월 25일 ~ 다음달 5일\n\n원활한 학습 운영을 위해 기한 내 납부 부탁드립니다.\n감사합니다.`;
-        
-        const preview = document.getElementById('settlementPreview');
-        if(preview) preview.innerText = msg;
-        else alert(msg); // 화면이 없으면 창으로 띄움
-    };
-
-    // 2. 텍스트 복사 기능 (문구 복사 버튼용)
-    window.copyText = (elementId) => {
-        const el = document.getElementById(elementId);
-        const text = el ? el.innerText : "";
-        if(!text) return alert("복사할 내용이 없습니다. 먼저 '문구 생성'을 누르세요.");
-        
-        navigator.clipboard.writeText(text).then(() => {
-            alert("복사되었습니다! 카톡에 붙여넣으세요.");
-        }).catch(err => {
-            prompt("Ctrl+C를 눌러 복사하세요:", text);
-        });
-    };
-
-    // 3. 학생 정보 삭제 기능 (빨간 버튼용)
-    window.deleteStudent = async () => {
-        if(!window.currentStudentId) return;
-        if(!confirm("정말 이 학생 정보를 영구 삭제하시겠습니까?\n(복구할 수 없습니다!)")) return;
-
-        try {
-            await deleteDoc(doc(db, "students", window.currentStudentId));
-            alert("삭제되었습니다.");
-            document.getElementById('modalDetail').style.display = 'none'; // 상세창 닫기
-            window.showPage('list'); // 목록 새로고침
-        } catch(e) {
-            alert("삭제 실패: " + e.message);
-        }
+            if(s) {
+                 if(!s.counselLog) s.counselLog = [];
+                 s.counselLog.push({ date: new Date().toLocaleDateString(), text: text });
+                 window.renderCounselLog(s); // 상세화면 갱신
+            }
+        } catch(e) { alert("저장 실패: " + e.message); }
     };
 </script>
 
