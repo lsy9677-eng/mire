@@ -1785,80 +1785,75 @@ const SMS_API_URL = "/api/send-sms";
         if(window.renderCalendar) renderCalendar();
     });
 
-    // =========================
-    // 학부모 메시지(의견함) 로드
-    // - parent.html 에서 parentMessages 컬렉션으로 저장된 내용을 선생님이 확인
-    // =========================
+// =========================================================
+    // [수정] 학부모 의견함 로드 (정렬 에러 해결 & 안전한 로딩)
+    // =========================================================
     const inboxListEl = document.getElementById('inboxList');
     const inboxBadgeEl = document.getElementById('inboxBadge');
 
     if (inboxListEl) {
-        onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
-            const items = [];
-            let unreadCount = 0;
+        // [핵심 수정] orderBy 제거 -> DB 에러 원인 차단
+        const q = query(collection(db, "parentMessages"));
 
-            snapshot.forEach(d => {
-                const data = d.data() || {};
-                if (data.read === false) unreadCount++;
-                items.push({ id: d.id, ...data });
+        onSnapshot(q, (snapshot) => {
+            let unread = 0;
+            const msgs = [];
+            
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.read === false) unread++;
+                msgs.push({ id: doc.id, ...data });
             });
 
-            // 뱃지
+            // [핵심 수정] 자바스크립트로 최신순 정렬 (에러 없이 작동)
+            msgs.sort((a, b) => {
+                const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
+                const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
+                return tB - tA; // 최신이 위로
+            });
+
+            // 뱃지 업데이트
             if (inboxBadgeEl) {
-                if (unreadCount > 0) {
-                    inboxBadgeEl.style.display = 'inline-block';
-                    inboxBadgeEl.innerText = unreadCount;
-                } else {
-                    inboxBadgeEl.style.display = 'none';
-                }
+                inboxBadgeEl.style.display = unread > 0 ? 'inline-block' : 'none';
+                inboxBadgeEl.innerText = unread;
             }
 
-            // 리스트 렌더
-            inboxListEl.innerHTML = '';
-            if (items.length === 0) {
-                inboxListEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:18px;'>아직 받은 메시지가 없습니다.</div>";
-                return;
-            }
-
-            // 너무 길어지면 최근 100개만 표시(성능)
-            items.slice(0, 100).forEach(m => {
-                const createdAt = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate() : null;
-                const dateStr = createdAt ? createdAt.toLocaleString() : '';
-                const isUnread = (m.read === false);
-
-                const box = document.createElement('div');
-                box.style.padding = '12px 0';
-                box.style.borderBottom = '1px dashed #e2e8f0';
-
-                box.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                        <div>
-                            <div style="font-weight:900; color:#0f172a;">
-                                ${isUnread ? '🟥 ' : ''}${(m.studentName || '학생')} · ${(m.studentId || '').slice(0,6)}
+            // 목록 그리기
+            if (msgs.length === 0) {
+                inboxListEl.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">도착한 메시지가 없습니다.</div>';
+            } else {
+                inboxListEl.innerHTML = '';
+                msgs.forEach(msg => {
+                    const dateObj = msg.createdAt ? (msg.createdAt.toDate ? msg.createdAt.toDate() : new Date((msg.createdAt.seconds||0)*1000)) : new Date();
+                    const dateStr = dateObj.toLocaleString();
+                    const isUnread = (msg.read === false);
+                    
+                    const el = document.createElement('div');
+                    el.className = 'inbox-item';
+                    el.style.cssText = `padding:15px; border-bottom:1px solid #eee; ${isUnread ? 'background:#fff7ed;' : 'background:white;'}`;
+                    el.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <div>
+                                <strong style="color:#333;">${msg.studentName || '학부모'}</strong>
+                                <span style="font-size:12px; color:#888; margin-left:5px;">${dateStr}</span>
                             </div>
-                            <div style="font-size:12px; color:#94a3b8; margin-top:2px;">${dateStr}</div>
+                            <div style="display:flex; gap:5px;">
+                                <button onclick="openDetail({id:'${msg.studentId}'})" style="font-size:12px; padding:3px 8px; border:1px solid #ddd; background:white; border-radius:4px;">학생이동</button>
+                                ${isUnread ? `<button onclick="markRead('${msg.id}')" style="font-size:12px; padding:3px 8px; border:none; background:#10b981; color:white; border-radius:4px;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc;">읽음</span>'}
+                            </div>
                         </div>
-                        <div style="display:flex; gap:8px;">
-                            <button class="action-btn" style="width:auto; padding:10px 12px; margin:0; font-size:12px; background:#0ea5e9; color:white;" onclick="openMessageStudent('${m.studentId || ''}')">학생 열기</button>
-                            <button class="action-btn" style="width:auto; padding:10px 12px; margin:0; font-size:12px; background:#10b981; color:white;" onclick="markMessageRead('${m.id}')">읽음</button>
-                        </div>
-                    </div>
-                    <div style="margin-top:8px; font-size:14px; line-height:1.5; white-space:pre-wrap; color:#334155;">${(m.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-                `;
-
-                inboxListEl.appendChild(box);
-            });
+                        <div style="font-size:14px; color:#555; white-space:pre-wrap;">${(msg.message || '').replace(/</g, "&lt;")}</div>
+                    `;
+                    inboxListEl.appendChild(el);
+                });
+            }
         });
     }
 
-    window.markMessageRead = async (msgId) => {
-        if(!msgId) return;
-        try {
-            await updateDoc(doc(db, "parentMessages", msgId), { read: true, readAt: serverTimestamp() });
-        } catch(e) {
-            console.warn(e);
-            alert('읽음 처리 실패: ' + (e.message || e));
-        }
+    // 읽음 처리 함수
+    window.markRead = async (id) => {
+        try { await updateDoc(doc(db, "parentMessages", id), { read: true }); } 
+        catch(e) { console.error(e); }
     };
 
     window.openMessageStudent = (studentId) => {
