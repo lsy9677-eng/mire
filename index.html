@@ -1585,6 +1585,9 @@ body.kiosk-mode .kiosk-exit-btn {
         </div>
 
         </div> </div>
+</div>
+ <div id="tabInfo" class="modal-tab-pane">
+
             <!-- [추가] 학부모 의견 (학생별) -->
             <div style="background:#fff7ed; padding:12px; border-radius:12px; margin-bottom:15px; border:1px solid #fed7aa;">
                 <div style="font-weight:bold; color:#9a3412; margin-bottom:8px;">📝 학부모 의견 (학생별)</div>
@@ -1592,20 +1595,7 @@ body.kiosk-mode .kiosk-exit-btn {
                     <div style="text-align:center; color:#9ca3af; padding:10px;">불러오는 중...</div>
                 </div>
             </div>
- <div id="inbox" class="page">
-    <div class="card" style="margin-top:10px;">
-        <h3 style="margin:0 0 6px 0;">📨 학부모 의견함</h3>
-        <div style="font-size:13px; color:#64748b; line-height:1.5; margin-bottom:10px;">
-            학부모가 <b>parent.html</b>에서 보낸 메시지가 여기 모입니다.<br>
-            (선생님 모드에서만 내용이 보입니다)
-        </div>
-        <div id="inboxListArea" style="min-height:100px; background:#f8fafc; border-radius:8px; padding:10px;">
-            <div style="text-align:center; padding:20px; color:#94a3b8;">로딩 중...</div>
-        </div>
-    </div>
-</div>
 
-        <div id="tabInfo" class="modal-tab-pane">
             <div class="settlement-box" style="margin-top:0;">
                 <h4 class="settlement-title" style="margin-top:0;"><i class="fas fa-file-invoice-dollar"></i> 교육비 정산 안내</h4>
                 <div id="settlementPreview" style="background:white; padding:10px; border:1px solid #bbdefb; font-size:12px; white-space:pre-wrap; margin-bottom:8px; color:#333;"></div>
@@ -2486,6 +2476,11 @@ const SMS_API_URL = "/api/send-sms";
     // =========================================================
     window.startKioskMode = () => {
         if (confirm("출석부 모드를 실행합니다.")) {
+            // [안정화] 출석부 모드 전환 시 설정/모달 닫기
+            try{ document.getElementById('settingsModal').style.display='none'; }catch(e){}
+            try{ document.getElementById('detailModal').style.display='none'; }catch(e){}
+            try{ document.getElementById('scheduleModal').style.display='none'; }catch(e){}
+
             setKioskSaved(true);
             document.body.classList.add('kiosk-mode');
             applyAccessUI();
@@ -3155,10 +3150,20 @@ const SMS_API_URL = "/api/send-sms";
     // 1. 학부모 의견함 불러오기 (자동 실행)
     (function initInbox() {
         const inboxArea = document.getElementById('inboxListArea');
+        const inboxList = document.getElementById('inboxList');
         const inboxBadge = document.getElementById('inboxBadge');
-        
+
         // 화면에 영역이 없으면 중단 (에러 방지)
-        if (!inboxArea) return;
+        if (!inboxArea && !inboxList) return;
+
+        const setHtml = (html) => {
+            if(inboxArea) inboxArea.innerHTML = html;
+            if(inboxList) inboxList.innerHTML = html;
+        };
+        const append = (el) => {
+            if(inboxArea) inboxArea.appendChild(el.cloneNode(true));
+            if(inboxList) inboxList.appendChild(el);
+        };
 
         // ★ 핵심: 에러를 피하기 위해 정렬(orderBy) 없이 가져옵니다.
         const q = query(collection(db, "parentMessages"));
@@ -3188,9 +3193,9 @@ const SMS_API_URL = "/api/send-sms";
 
             // 목록 화면에 그리기
             if (items.length === 0) {
-                inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
+                setHtml("<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>");
             } else {
-                inboxArea.innerHTML = "";
+                setHtml("");
                 items.forEach(m => {
                     const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
                     const dateStr = dateObj.toLocaleString();
@@ -3215,7 +3220,7 @@ const SMS_API_URL = "/api/send-sms";
                         </div>
                         <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
                     `;
-                    inboxArea.appendChild(div);
+                    append(div);
                 });
             }
         });
@@ -3393,16 +3398,22 @@ function fmtTs(ts){
   }catch(e){ return ''; }
 }
 
-function renderParentMsgList(docs){
+function renderParentMsgList(docsOrArr){
   const box = document.getElementById('parentMsgList');
   if(!box) return;
-  if(!docs || docs.length===0){
+  const items = (docsOrArr||[]).map(d=> (d && typeof d.data==='function') ? ({__id:d.id, ...((d.data()||{}))}) : (d||{}));
+  // createdAtMs(숫자) 우선, 없으면 createdAt(타임스탬프)
+  items.sort((a,b)=>{
+    const ta = (a.createdAtMs ?? (a.createdAt?.seconds ? a.createdAt.seconds*1000 : 0));
+    const tb = (b.createdAtMs ?? (b.createdAt?.seconds ? b.createdAt.seconds*1000 : 0));
+    return tb - ta;
+  });
+  if(items.length===0){
     box.innerHTML = `<div style="text-align:center; color:#9ca3af; padding:10px;">등록된 학부모 의견이 없습니다.</div>`;
     return;
   }
-  box.innerHTML = docs.map(d=>{
-    const data = d.data();
-    const when = fmtTs(data.createdAt);
+  box.innerHTML = items.map(data=>{
+    const when = fmtTs(data.createdAt) || (data.createdAtMs ? new Date(data.createdAtMs).toLocaleString() : '');
     const txt = (data.text||'').toString().replace(/[<>&]/g, s=>({ '<':'&lt;','>':'&gt;','&':'&amp;' }[s]));
     return `
       <div style="border:1px solid #fed7aa; background:#fff; border-radius:10px; padding:10px;">
@@ -3416,18 +3427,20 @@ function renderParentMsgList(docs){
   }).join('');
 }
 
+
 function subscribeParentMessages(studentId){
+  const box = document.getElementById('parentMsgList');
+  if(box){ box.innerHTML = `<div style="text-align:center; color:#9ca3af; padding:10px;">불러오는 중...</div>`; }
   try{
-    if(typeof __parentMsgUnsub === 'function'){ try{ __parentMsgUnsub(); }catch(e){} }
-    const q = query(collection(db,'students',studentId,'parentMessages'), orderBy('createdAt','desc'));
-    __parentMsgUnsub = onSnapshot(q, (snap)=>{
-      renderParentMsgList(snap.docs || []);
-    }, (err)=>{
-      console.warn('parentMessages 구독 실패:', err);
-      renderParentMsgList([]);
-    });
+    // ✅ 가장 안정적인 방식: 학생 문서의 parentOpinions 배열을 사용
+    const s = (window.allStudents||[]).find(x=>x.id===studentId);
+    const arr = Array.isArray(s?.parentOpinions) ? s.parentOpinions : [];
+    renderParentMsgList(arr);
   }catch(e){
     console.warn('subscribeParentMessages 오류:', e);
+    if(box){
+      box.innerHTML = `<div style="text-align:center; color:#9ca3af; padding:10px;">학부모 의견을 불러오지 못했습니다.</div>`;
+    }
   }
 }
 
