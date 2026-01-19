@@ -115,7 +115,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         // [수정] 필요한 기능(onSnapshot, updateDoc, deleteDoc 등) 모두 추가
-        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import {getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, onSnapshot, doc, updateDoc, deleteDoc, orderBy, arrayUnion} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
@@ -152,19 +152,35 @@ window.submitParentMsg = async () => {
   const ta = document.getElementById('parentMsgText');
   const text = (ta?.value || '').trim();
   if(!text) return alert("내용을 입력해주세요.");
+  const phone = (document.getElementById('inputPhone')?.value || '').replace(/-/g,'').trim();
+  const payload = {
+    text,
+    createdAtMs: Date.now(),
+    authorPhone: phone,
+    role: 'parent'
+  };
   try{
-    await addDoc(collection(db,'students',currentStudent.id,'parentMessages'), {
-      text,
-      createdAt: serverTimestamp(),
-      authorPhone: (document.getElementById('inputPhone')?.value || '').replace(/-/g,'').trim(),
-      role: 'parent'
+    // ✅ 가장 안정적인 방식: 학생 문서에 배열로 저장(권한/서브컬렉션 이슈 회피)
+    await updateDoc(doc(db,'students',currentStudent.id), {
+      parentOpinions: arrayUnion(payload),
+      // 상담내역에도 함께 남겨 선생님/학부모 모두 히스토리에 보이게
+      counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[학부모의견] ' + text })
     });
+
+    // 로컬 상태에도 즉시 반영(리로드 없이 바로 보이게)
+    const arr = Array.isArray(currentStudent.parentOpinions) ? currentStudent.parentOpinions.slice() : [];
+    arr.unshift(payload);
+    currentStudent.parentOpinions = arr;
+
     window.closeParentMsgPopup();
-    alert("의견이 등록되었습니다.");
-    // 목록 즉시 반영은 onSnapshot에서 처리
+    alert('의견이 등록되었습니다.');
+    // 화면 갱신
+    try{ showData(); }catch(e){}
+    try{ attachParentMsgFeed(); }catch(e){}
   }catch(e){
     console.error(e);
-    alert("저장 중 오류가 발생했습니다.\n" + (e?.message || e));
+    alert('저장 중 오류가 발생했습니다.
+' + (e?.message || e));
   }
 };
 
@@ -184,45 +200,56 @@ function fmtTs(ts){
 
 function attachParentMsgFeed(){
   try{
-    if(typeof __parentMsgUnsub === 'function'){ try{ __parentMsgUnsub(); }catch(e){} }
-    const q2 = query(collection(db,'students',currentStudent.id,'parentMessages'), orderBy('createdAt','desc'));
-    __parentMsgUnsub = onSnapshot(q2, (snap)=>{
-      // historyList 영역에 "학부모 의견" 섹션을 위쪽에 렌더
-      const host = document.getElementById('historyList');
-      if(!host) return;
-      // 기존 showData()가 상담기록을 그린 다음, 위에 prepend
-      const wrapId = 'parentMsgFeed';
-      let wrap = document.getElementById(wrapId);
-      if(!wrap){
-        wrap = document.createElement('div');
-        wrap.id = wrapId;
-        wrap.style.marginBottom = '12px';
-        host.prepend(wrap);
-      }
-      const docs = snap.docs || [];
-      if(docs.length===0){
-        wrap.innerHTML = `<div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px; color:#9a3412;">
-          <b>📝 학부모 의견</b><div style="margin-top:6px; color:#94a3b8;">등록된 의견이 없습니다.</div>
-        </div>`;
-        return;
-      }
-      wrap.innerHTML = `<div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px;">
-        <div style="font-weight:bold; color:#9a3412; margin-bottom:8px;">📝 학부모 의견</div>
-        ${docs.map(d=>{
-          const v=d.data()||{};
-          const t=(v.text||'').toString().replace(/[<>&]/g, s=>({ '<':'&lt;','>':'&gt;','&':'&amp;' }[s]));
-          return `<div style="background:#fff; border:1px solid #fed7aa; border-radius:10px; padding:10px; margin-top:8px;">
-            <div style="display:flex; justify-content:space-between; gap:10px;">
-              <div style="font-weight:bold; color:#7c2d12;">의견</div>
-              <div style="font-size:12px; color:#9ca3af;">${fmtTs(v.createdAt)}</div>
-            </div>
-            <div style="white-space:pre-wrap; margin-top:6px; line-height:1.45;">${t}</div>
-          </div>`;
-        }).join('')}
+    const host = document.getElementById('historyList');
+    if(!host || !currentStudent) return;
+
+    const wrapId = 'parentMsgFeed';
+    let wrap = document.getElementById(wrapId);
+    if(!wrap){
+      wrap = document.createElement('div');
+      wrap.id = wrapId;
+      wrap.style.marginBottom = '12px';
+      host.prepend(wrap);
+    }
+
+    const arr = Array.isArray(currentStudent.parentOpinions) ? currentStudent.parentOpinions.slice() : [];
+    // 최신순
+    arr.sort((a,b)=>(b?.createdAtMs||0)-(a?.createdAtMs||0));
+
+    if(arr.length===0){
+      wrap.innerHTML = `<div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px; color:#9a3412;">
+        <b>📝 학부모 의견</b><div style="margin-top:6px; color:#94a3b8;">등록된 의견이 없습니다.</div>
       </div>`;
-    });
+      return;
+    }
+
+    const esc = (s)=>String(s||'').replace(/[<>&]/g, c=>({ '<':'&lt;','>':'&gt;','&':'&amp;' }[c]));
+    const fmt = (ms)=>{
+      try{
+        const d = new Date(ms);
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const dd = String(d.getDate()).padStart(2,'0');
+        const hh = String(d.getHours()).padStart(2,'0');
+        const mi = String(d.getMinutes()).padStart(2,'0');
+        return `${d.getFullYear()}-${mm}-${dd} ${hh}:${mi}`;
+      }catch(e){ return ''; }
+    };
+
+    wrap.innerHTML = `<div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px;">
+      <div style="font-weight:bold; color:#9a3412; margin-bottom:8px;">📝 학부모 의견</div>
+      ${arr.map(v=>{
+        const t = esc(v.text);
+        return `<div style="background:#fff; border:1px solid #fed7aa; border-radius:10px; padding:10px; margin-top:8px;">
+          <div style="display:flex; justify-content:space-between; gap:10px;">
+            <div style="font-weight:bold; color:#7c2d12;">의견</div>
+            <div style="font-size:12px; color:#9ca3af;">${fmt(v.createdAtMs)}</div>
+          </div>
+          <div style="white-space:pre-wrap; margin-top:6px; line-height:1.45;">${t}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
   }catch(e){
-    console.warn(e);
+    console.error(e);
   }
 }
 
