@@ -1546,43 +1546,56 @@ body.kiosk-mode .kiosk-exit-btn {
     </div>
 </div>
         <div id="tabScore" class="modal-tab-pane">
+            
+            <div class="admin-only" style="background:#f0f9ff; padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid #bae6fd;">
+                <div style="font-weight:bold; color:#0369a1; margin-bottom:8px;">💬 상담/지도 내용 등록</div>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="newCounsel" placeholder="내용을 입력하세요" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px; color:#333; background:#fff;">
+                    <button class="action-btn" onclick="addCounselLog()" style="width:70px; margin:0; padding:0; background:#0284c7; color:#ffffff; border-radius:8px; font-weight:bold;">등록</button>
+                </div>
+            </div>
+
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h4 style="margin:0; color:var(--text-main);">💬 상담 및 학습 로그</h4>
-                <span style="font-size:12px; color:#999;">최근 순으로 표시됩니다</span>
+                <h4 style="margin:0; color:var(--text-main);">기록 목록</h4>
+                <span style="font-size:12px; color:#999;">최근 순</span>
             </div>
 
-            <div id="modalCounselLog" style="background:#f5f7f9; border-radius:8px; padding:15px; height:250px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;"></div>
-
-            <div class="admin-only" style="display:flex; gap:5px; margin-bottom:20px;">
-                <input type="text" id="newCounsel" placeholder="상담 내용 기록" style="flex:1;">
-                <button onclick="addCounselLog()" style="background:var(--primary); color:white; border:none; padding:0 20px; border-radius:8px; font-weight:bold;">등록</button>
-            </div>
-
+            <div id="modalCounselLog" style="background:#f8fafc; border-radius:8px; padding:15px; height:200px; overflow-y:auto; margin-bottom:15px; border:1px solid #e2e8f0; color:#333;"></div>
+            
             <details style="background:white; border:1px solid #e0e0e0; border-radius:10px; padding:10px;">
                 <summary style="font-weight:bold; color:#7b1fa2; cursor:pointer; padding:5px; list-style:none; display:flex; align-items:center; justify-content:space-between;">
-                    <span>📈 성적 그래프 및 기록 관리</span>
+                    <span>📈 성적 관리 (클릭)</span>
                     <i class="fas fa-chevron-down" style="font-size:12px; color:#aaa;"></i>
                 </summary>
-
-                <div style="margin-top:15px; padding-top:15px; border-top:1px dashed #eee;">
+                <div style="margin-top:15px;">
                     <div class="chart-container" style="padding:0; margin-bottom:15px; border:none;">
                         <canvas id="scoreChart" height="180"></canvas>
                     </div>
-
                     <div class="admin-only" style="background:#f3e5f5; padding:12px; border-radius:8px; margin-bottom:15px;">
-                        <div style="font-size:12px; font-weight:bold; color:#7b1fa2; margin-bottom:5px;">새 성적 등록</div>
+                        <div style="font-size:12px; font-weight:bold; color:#7b1fa2; margin-bottom:5px;">성적 입력</div>
                         <div class="score-input-group">
-                            <input type="text" id="scoreTitle" placeholder="시험명" style="flex:1.5;">
-                            <input type="number" id="scoreValue" placeholder="점수" style="flex:1;">
-                            <button onclick="addScore()" style="background:#7b1fa2; color:white; border:none; padding:0 15px; border-radius:6px;">추가</button>
+                            <input type="text" id="scoreTitle" placeholder="시험명">
+                            <input type="number" id="scoreValue" placeholder="점수">
+                            <button onclick="addScore()" style="background:#7b1fa2; color:white;">추가</button>
                         </div>
                     </div>
-
-                    <h5 style="margin:0 0 8px 0; color:#555;">📝 성적 기록 상세</h5>
                     <div id="scoreList" style="font-size:13px; max-height:150px; overflow-y:auto; color:#666;"></div>
                 </div>
             </details>
         </div>
+
+        </div> </div> <div id="inbox" class="page">
+    <div class="card" style="margin-top:10px;">
+        <h3 style="margin:0 0 6px 0;">📨 학부모 의견함</h3>
+        <div style="font-size:13px; color:#64748b; line-height:1.5; margin-bottom:10px;">
+            학부모가 <b>parent.html</b>에서 보낸 메시지가 여기 모입니다.<br>
+            (선생님 모드에서만 내용이 보입니다)
+        </div>
+        <div id="inboxListArea" style="min-height:100px; background:#f8fafc; border-radius:8px; padding:10px;">
+            <div style="text-align:center; padding:20px; color:#94a3b8;">로딩 중...</div>
+        </div>
+    </div>
+</div>
 
         <div id="tabInfo" class="modal-tab-pane">
             <div class="settlement-box" style="margin-top:0;">
@@ -3133,14 +3146,19 @@ const SMS_API_URL = "/api/send-sms";
     
     // 이 코드가 실행되어야 학부모 메시지가 보입니다!
    // =========================================================
-    // [최종 수정] 학부모 의견함 로드 (안전한 버전)
+   // =========================================================
+    // [필수] 학부모 의견함 & 상담 등록 기능 (최종 수정)
     // =========================================================
+
+    // 1. 학부모 의견함 로드
     (function initInbox() {
-        // ID가 맞는지 확인 (inboxListArea)
         const inboxArea = document.getElementById('inboxListArea');
         const inboxBadge = document.getElementById('inboxBadge');
+        
+        // 화면에 의견함이 없으면 중단
+        if (!inboxArea) return;
 
-        // ★ 핵심: orderBy 제거! (DB 에러 원인 해결)
+        // ★★★ 핵심: orderBy를 절대 넣지 마세요! (데이터 차단 원인) ★★★
         const q = query(collection(db, "parentMessages"));
 
         onSnapshot(q, (snapshot) => {
@@ -3153,74 +3171,77 @@ const SMS_API_URL = "/api/send-sms";
                 if (data.read === false) unreadCount++;
             });
 
-            // ★ 자바스크립트로 최신순 정렬 (날짜순)
+            // 자바스크립트가 알아서 최신순 정렬
             items.sort((a, b) => {
                 const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
                 const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
-                return tB - tA; // 최신이 위로
+                return tB - tA; 
             });
 
-            // 뱃지(빨간 숫자) 업데이트
+            // 뱃지 업데이트
             if (inboxBadge) {
                 inboxBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
                 inboxBadge.innerText = unreadCount;
             }
 
-            // 화면 그리기
-            if (inboxArea) {
-                if (items.length === 0) {
-                    inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
-                } else {
-                    inboxArea.innerHTML = "";
-                    items.forEach(m => {
-                        const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
-                        const dateStr = dateObj.toLocaleString();
-                        const isUnread = (m.read === false);
-                        const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
+            // 목록 그리기
+            if (items.length === 0) {
+                inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
+            } else {
+                inboxArea.innerHTML = "";
+                items.forEach(m => {
+                    const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
+                    const dateStr = dateObj.toLocaleString();
+                    const isUnread = (m.read === false);
+                    const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
 
-                        const div = document.createElement('div');
-                        div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
-                        div.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                                <div>
-                                    <div style="font-weight:bold; font-size:15px; color:#333;">
-                                        ${isUnread ? '<span style="color:red;">●</span>' : ''} 
-                                        ${m.studentName || '이름없음'} 
-                                    </div>
-                                    <div style="font-size:12px; color:#999;">${dateStr}</div>
+                    const div = document.createElement('div');
+                    div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                            <div>
+                                <div style="font-weight:bold; font-size:15px; color:#333;">
+                                    ${isUnread ? '<span style="color:red;">●</span>' : ''} 
+                                    ${m.studentName || '이름없음'} 
                                 </div>
-                                <div style="display:flex; gap:6px;">
-                                    <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
-                                    ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc; padding:6px;">읽음</span>'}
-                                </div>
+                                <div style="font-size:12px; color:#999;">${dateStr}</div>
                             </div>
-                            <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
-                        `;
-                        inboxArea.appendChild(div);
-                    });
-                }
+                            <div style="display:flex; gap:6px;">
+                                <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
+                                ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc; padding:6px;">읽음</span>'}
+                            </div>
+                        </div>
+                        <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
+                    `;
+                    inboxArea.appendChild(div);
+                });
             }
         });
     })();
 
-    // [기능] 읽음 처리 함수
-    window.markMessageRead = async (id) => {
-        try {
-            await updateDoc(doc(db, "parentMessages", id), { read: true });
-        } catch(e) { console.error(e); }
-    };
+    // 2. 상담 등록 함수 (색상 문제 해결된 HTML과 연결)
+    window.addCounselLog = async () => {
+        const input = document.getElementById('newCounsel');
+        const text = input.value;
+        
+        if(!text) return alert("상담 내용을 입력해주세요.");
+        if(!window.currentStudentId) return alert("학생이 선택되지 않았습니다.");
 
-    // [기능] 학생 바로가기 함수
-    window.openMessageStudent = (sid) => {
-        if(!document.body.classList.contains('show-admin')) {
-             document.body.classList.add('show-admin');
-             const chk = document.getElementById('adminToggle');
-             if(chk) chk.checked = true;
-        }
-        showPage('list');
-        const s = allStudents.find(st => st.id === sid);
-        if(s) window.openDetail(s);
-        else alert("해당 학생 정보를 찾을 수 없습니다.");
+        try {
+            await updateDoc(doc(db, "students", window.currentStudentId), {
+                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text })
+            });
+            alert("✅ 상담 내용이 등록되었습니다.");
+            input.value = ""; // 입력창 비우기
+            
+            // 화면 즉시 갱신
+            const s = window.allStudents.find(st => st.id === window.currentStudentId);
+            if(s) {
+                 if(!s.counselLog) s.counselLog = [];
+                 s.counselLog.push({ date: new Date().toLocaleDateString(), text: text });
+                 window.renderCounselLog(s); // 상세화면 갱신
+            }
+        } catch(e) { alert("저장 실패: " + e.message); }
     };
 </script>
 
