@@ -3132,16 +3132,14 @@ const SMS_API_URL = "/api/send-sms";
     // (중복 구독/ID 불일치로 인해 저장된 메시지가 안 보이는 문제가 있어 정리)
     // =========================================================
     // =========================================================
-    // [필수] 학부모 의견함 & 상담 등록 기능 복구
+// =========================================================
+    // [최종 수정] 학부모 의견함 로드 (정렬 에러 해결됨)
     // =========================================================
-
-    // 1. 학부모 의견함 로드 (정렬 에러 해결됨)
     (function initInbox() {
-        const inboxArea = document.getElementById('inboxListArea');
+        const inboxArea = document.getElementById('inboxListArea'); // ID 확인 필수
         const inboxBadge = document.getElementById('inboxBadge');
-        if (!inboxArea) return;
-
-        // orderBy 제거 (에러 방지)
+        
+        // ★ 핵심 수정: orderBy를 제거하여 DB 에러를 막습니다.
         const q = query(collection(db, "parentMessages"));
 
         onSnapshot(q, (snapshot) => {
@@ -3154,48 +3152,53 @@ const SMS_API_URL = "/api/send-sms";
                 if (data.read === false) unreadCount++;
             });
 
-            // 자바스크립트로 최신순 정렬
+            // ★ 자바스크립트가 알아서 최신순(날짜순)으로 정렬합니다.
             items.sort((a, b) => {
                 const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
                 const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
                 return tB - tA; 
             });
 
+            // 뱃지 업데이트
             if (inboxBadge) {
                 inboxBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
                 inboxBadge.innerText = unreadCount;
             }
 
-            if (items.length === 0) {
-                inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
-            } else {
-                inboxArea.innerHTML = "";
-                items.forEach(m => {
-                    const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
-                    const dateStr = dateObj.toLocaleString();
-                    const isUnread = (m.read === false);
-                    const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
+            // 목록 그리기
+            if (inboxArea) {
+                if (items.length === 0) {
+                    inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
+                } else {
+                    inboxArea.innerHTML = "";
+                    items.forEach(m => {
+                        const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
+                        const dateStr = dateObj.toLocaleString();
+                        const isUnread = (m.read === false);
+                        const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
 
-                    const div = document.createElement('div');
-                    div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
-                    div.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                            <div>
-                                <div style="font-weight:bold; font-size:15px; color:#333;">
-                                    ${isUnread ? '<span style="color:red;">●</span>' : ''} 
-                                    ${m.studentName || '이름없음'} 
+                        const div = document.createElement('div');
+                        div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
+                        div.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                                <div>
+                                    <div style="font-weight:bold; font-size:15px; color:#333;">
+                                        ${isUnread ? '<span style="color:red;">●</span>' : ''} 
+                                        ${m.studentName || '이름없음'} 
+                                        <span style="font-size:12px; color:#666; font-weight:normal;">(${m.studentId ? m.studentId.slice(0,4)+'**' : 'ID없음'})</span>
+                                    </div>
+                                    <div style="font-size:12px; color:#999;">${dateStr}</div>
                                 </div>
-                                <div style="font-size:12px; color:#999;">${dateStr}</div>
+                                <div style="display:flex; gap:6px;">
+                                    <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
+                                    ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc; padding:6px;">읽음</span>'}
+                                </div>
                             </div>
-                            <div style="display:flex; gap:6px;">
-                                <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
-                                ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc;">읽음</span>'}
-                            </div>
-                        </div>
-                        <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
-                    `;
-                    inboxArea.appendChild(div);
-                });
+                            <div style="font-size:14px; color:#444; line-height:1.5; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
+                        `;
+                        inboxArea.appendChild(div);
+                    });
+                }
             }
         });
     })();
