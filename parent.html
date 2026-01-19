@@ -233,12 +233,11 @@
             } catch(e) { alert("전송 실패: " + e.message); }
         };
 
-       // [수정] 내가 보낸 메시지 불러오기 (정렬 에러 해결)
-        function loadMyMessages() {
+    function loadMyMessages() {
             if(!currentStudent) return;
             const listArea = document.getElementById('myMsgList');
 
-            // [핵심] orderBy 제거
+            // ★ 핵심: 여기도 orderBy 없이 where만 써야 합니다!
             const q = query(
                 collection(db, "parentMessages"), 
                 where("studentId", "==", currentStudent.id)
@@ -248,7 +247,7 @@
                 const msgs = [];
                 snapshot.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
                 
-                // [핵심] 자바스크립트로 최신순 정렬
+                // 자바스크립트로 정렬
                 msgs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
                 if(msgs.length === 0) {
@@ -543,4 +542,5 @@
     </script>
 </body>
 </html>
+
 
