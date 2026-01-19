@@ -111,7 +111,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         // [수정] 필요한 기능(onSnapshot, updateDoc, deleteDoc 등) 모두 추가
-        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, query, where, addDoc, serverTimestamp, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
@@ -126,6 +126,85 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let currentStudent = null;
+
+        // =========================================
+        // [추가] token 링크(카톡 공유)로 들어온 경우: parent.html?token=...
+        // - 별도 notice.html 없이, 이 페이지에서 '알림장 확인' 화면을 제공
+        // - 전화번호 인증을 하면 전체 기능(게시판/성적/내메시지)을 사용
+        // =========================================
+        const __qs = new URLSearchParams(location.search);
+        const __token = (__qs.get('token')||'').trim();
+        const __tokenMode = !!__token;
+
+        async function initFromTokenIfNeeded(){
+            if(!__tokenMode) return false;
+            try {
+                // 로그인 화면 숨기고, 내용 화면을 보여주되 일부 영역은 숨김(읽기전용)
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('content-screen').style.display = 'block';
+
+                // 읽기전용 모드 안내
+                const banner = document.createElement('div');
+                banner.className = 'card';
+                banner.style.background = '#0ea5e9';
+                banner.style.color = 'white';
+                banner.style.padding = '16px 18px';
+                banner.style.borderRadius = '18px';
+                banner.style.marginBottom = '16px';
+                banner.innerHTML = `📌 카톡 링크로 열린 <b>알림장 확인</b> 화면입니다.
+
+전체 상담게시판/성적/내 메시지는 아래에서 <b>전화번호 인증</b> 후 이용할 수 있어요.`.replace(/\n/g,'<br>');
+                const container = document.querySelector('.container');
+                container.insertBefore(banner, container.firstChild);
+
+                // 일부 기능 숨김(읽기전용): 게시판/답장/내메시지/성적
+                const hideIds = ['boardList','myMsgList','scoreChart','scoreList','replyMsg'];
+                hideIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        // 상위 card 단위로 숨기는게 보기 좋음
+                        const card = el.closest('.card');
+                        if(card) card.style.display = 'none';
+                    }
+                });
+
+                // 토큰 -> 학생ID 매핑 불러오기
+                const tdoc = await getDoc(doc(db,'noticeTokens', __token));
+                if(!tdoc.exists()){
+                    document.getElementById('sName').innerText = '링크 오류';
+                    document.getElementById('sInfo').innerText = '유효하지 않은 토큰입니다.';
+                    document.getElementById('sNotice').innerText = '선생님께서 다시 보내주신 링크로 확인해주세요.';
+                    return true;
+                }
+                const { studentId } = tdoc.data() || {};
+                if(!studentId){
+                    document.getElementById('sName').innerText = '링크 오류';
+                    document.getElementById('sInfo').innerText = '학생 정보가 없습니다.';
+                    return true;
+                }
+
+                // 학생 문서 로드
+                const sdoc = await getDoc(doc(db,'students', studentId));
+                if(!sdoc.exists()){
+                    document.getElementById('sName').innerText = '학생 없음';
+                    document.getElementById('sInfo').innerText = '학생 정보가 삭제되었습니다.';
+                    return true;
+                }
+                currentStudent = { id: sdoc.id, ...sdoc.data() };
+                showData();
+
+                // 토큰으로 들어온 경우에는 '최신 알림장'이 제일 중요하니, history도 최신순으로 노출
+                return true;
+            } catch(e){
+                console.error(e);
+                alert('링크 확인 중 오류가 발생했습니다.');
+                return true;
+            }
+        }
+
+
+        // [추가] 토큰 링크로 들어온 경우 우선 처리
+        initFromTokenIfNeeded();
 
         // 1. 로그인 및 학생 조회
         window.checkParent = async () => {
@@ -233,11 +312,12 @@
             } catch(e) { alert("전송 실패: " + e.message); }
         };
 
-    function loadMyMessages() {
+       // [수정] 내가 보낸 메시지 불러오기 (정렬 에러 해결)
+        function loadMyMessages() {
             if(!currentStudent) return;
             const listArea = document.getElementById('myMsgList');
 
-            // ★ 핵심: 여기도 orderBy 없이 where만 써야 합니다!
+            // [핵심] orderBy 제거
             const q = query(
                 collection(db, "parentMessages"), 
                 where("studentId", "==", currentStudent.id)
@@ -247,7 +327,7 @@
                 const msgs = [];
                 snapshot.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
                 
-                // 자바스크립트로 정렬
+                // [핵심] 자바스크립트로 최신순 정렬
                 msgs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
                 if(msgs.length === 0) {
@@ -542,5 +622,4 @@
     </script>
 </body>
 </html>
-
 
