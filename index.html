@@ -3132,76 +3132,69 @@ const SMS_API_URL = "/api/send-sms";
     // =========================================================
     
     // 이 코드가 실행되어야 학부모 메시지가 보입니다!
+   // =========================================================
+    // [최종 수정] 학부모 의견함 로드 (안전한 버전)
+    // =========================================================
     (function initInbox() {
+        // ID가 맞는지 확인 (inboxListArea)
         const inboxArea = document.getElementById('inboxListArea');
         const inboxBadge = document.getElementById('inboxBadge');
 
-        // 메시지 데이터베이스 연결 (orderBy 제거로 에러 방지)
+        // ★ 핵심: orderBy 제거! (DB 에러 원인 해결)
         const q = query(collection(db, "parentMessages"));
 
         onSnapshot(q, (snapshot) => {
             let unreadCount = 0;
             const items = [];
 
-            // 1. 데이터 가져오기
             snapshot.forEach(doc => {
                 const data = doc.data();
                 items.push({ id: doc.id, ...data });
                 if (data.read === false) unreadCount++;
             });
 
-            // 2. 최신순 정렬 (자바스크립트로 안전하게 처리)
+            // ★ 자바스크립트로 최신순 정렬 (날짜순)
             items.sort((a, b) => {
                 const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
                 const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
                 return tB - tA; // 최신이 위로
             });
 
-            // 3. 뱃지(빨간 숫자) 표시
+            // 뱃지(빨간 숫자) 업데이트
             if (inboxBadge) {
-                if (unreadCount > 0) {
-                    inboxBadge.style.display = 'inline-block';
-                    inboxBadge.innerText = unreadCount;
-                } else {
-                    inboxBadge.style.display = 'none';
-                }
+                inboxBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                inboxBadge.innerText = unreadCount;
             }
 
-            // 4. 화면에 그리기
+            // 화면 그리기
             if (inboxArea) {
                 if (items.length === 0) {
                     inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
                 } else {
-                    inboxArea.innerHTML = ""; // 초기화
-                    
+                    inboxArea.innerHTML = "";
                     items.forEach(m => {
-                        // 날짜 변환
                         const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
                         const dateStr = dateObj.toLocaleString();
                         const isUnread = (m.read === false);
-                        
-                        // 안 읽은 글은 배경색 다르게
                         const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
 
                         const div = document.createElement('div');
                         div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
-                        
                         div.innerHTML = `
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                                 <div>
                                     <div style="font-weight:bold; font-size:15px; color:#333;">
                                         ${isUnread ? '<span style="color:red;">●</span>' : ''} 
                                         ${m.studentName || '이름없음'} 
-                                        <span style="font-size:12px; color:#666; font-weight:normal;">(${m.studentId ? m.studentId.slice(0,4)+'**' : 'ID없음'})</span>
                                     </div>
-                                    <div style="font-size:12px; color:#999; margin-top:2px;">${dateStr}</div>
+                                    <div style="font-size:12px; color:#999;">${dateStr}</div>
                                 </div>
                                 <div style="display:flex; gap:6px;">
                                     <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
                                     ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc; padding:6px;">읽음</span>'}
                                 </div>
                             </div>
-                            <div style="font-size:14px; color:#444; line-height:1.5; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
+                            <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
                         `;
                         inboxArea.appendChild(div);
                     });
