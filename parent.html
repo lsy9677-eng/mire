@@ -6,17 +6,12 @@
     <title>학부모 전용 | 미래엔수학</title>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
     <style>
+        body { margin: 0; padding: 20px; font-family: 'Pretendard', sans-serif; background: #f1f5f9; color: #333; }
         body { margin: 0; padding: 20px; font-family: 'Pretendard', sans-serif; background: #f1f5f9; color: #333; padding-bottom: 80px; }
         .container { max-width: 600px; margin: 0 auto; }
-        
-        /* 로그인 화면 */
-        #login-screen { text-align: center; margin-top: 60px; }
-        .login-card { background: white; padding: 40px 20px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-        .login-input { width: 100%; padding: 16px; font-size: 18px; border: 2px solid #e2e8f0; border-radius: 12px; margin: 20px 0; box-sizing: border-box; text-align: center; outline: none; transition: 0.2s; }
-        .login-input:focus { border-color: #3b82f6; }
-        .login-btn { width: 100%; padding: 16px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; }
-        .login-btn:active { transform: scale(0.98); }
 
+        /* 로그인 화면 */
+@@ -20,16 +20,24 @@
         /* 메인 화면 */
         .card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { margin: 0 0 5px; font-size: 22px; color: #1e293b; }
@@ -25,9 +20,12 @@
         .tag { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
         .tag-notice { background: #fff7ed; color: #c2410c; }
         .tag-counsel { background: #eff6ff; color: #1d4ed8; }
+        .log-item { border-bottom: 1px dashed #e2e8f0; padding: 12px 0; }
         .log-item { border-bottom: 1px dashed #e2e8f0; padding: 15px 0; }
         .log-item:last-child { border-bottom: none; }
-        
+
+        /* 학부모 입력창: 작아서 안 보인다는 피드백 반영 */
+        textarea { width: 100%; height: 160px; padding: 14px; border: 1px solid #cbd5e1; border-radius: 14px; box-sizing: border-box; resize: vertical; font-size: 16px; line-height: 1.5; }
         textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; box-sizing: border-box; resize: none; font-size: 15px; }
         .send-btn { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
 
@@ -38,60 +36,36 @@
         .btn-edit { background: #e0f2fe; color: #0284c7; margin-right: 4px; }
         .btn-del { background: #fee2e2; color: #dc2626; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-    <div class="container">
-        <div id="login-screen">
-            <div class="login-card">
-                <img src="nam-192.png" style="width:80px; border-radius:20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin-bottom:20px;">
-                <h2 style="margin-bottom:10px;">학부모 인증</h2>
-                <p style="color:#64748b; font-size:15px; line-height:1.5;">
-                    선생님께 등록된 <b>학부모님 전화번호</b>를<br>입력해주세요. (숫자만 입력)
-                </p>
-                <input type="tel" id="inputPhone" class="login-input" placeholder="01012345678">
-                <button class="login-btn" onclick="checkParent()">내 자녀 조회하기</button>
-            </div>
-        </div>
-
-        <div id="content-screen" style="display:none;">
-            <div class="card" style="text-align:center;">
-                <h2 id="sName">-</h2>
-                <p id="sInfo" style="color:#64748b;">-</p>
-                <div style="background:#f0f9ff; color:#0369a1; padding:12px; border-radius:12px; font-weight:bold; margin-top:15px;">
-                    📅 이번 달 등원: <span id="sAtt" style="font-size:1.2em;">0</span>회
-                </div>
+@@ -56,36 +64,36 @@
             </div>
 
             <div class="card">
+                <h3 style="margin-top:0;">📢 최신 알림장</h3>
                 <h3>📢 최신 알림장</h3>
                 <div id="sNotice" style="background:#fffbeb; padding:15px; border-radius:12px; border:1px solid #fcd34d; line-height:1.6; white-space:pre-wrap; color:#451a03;">(내용 없음)</div>
             </div>
 
             <div class="card">
+                <h3 style="margin-top:0;">🗂️ 지난 학습/상담 기록</h3>
+                <div id="historyList" style="max-height:420px; overflow-y:auto;"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0;">📈 성적 그래프/기록</h3>
+                <div style="background:#f5f3ff; border:1px solid #ddd6fe; padding:14px; border-radius:12px;">
+                    <canvas id="parentScoreChart" height="180"></canvas>
+                    <div id="parentScoreList" style="margin-top:12px; font-size:14px; line-height:1.5; color:#475569;"></div>
+                </div>
                 <h3>🗂️ 전체 학습/상담 기록</h3>
                 <div id="historyList" style="max-height:400px; overflow-y:auto;"></div>
             </div>
 
-
-
             <div class="card">
-                <h3>📈 성적 & 성적 그래프</h3>
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px;">
-                    <canvas id="scoreChart" height="180"></canvas>
-                </div>
-                <div id="scoreList" style="margin-top:12px;"></div>
-            </div>
-
-            <div class="card">
-                <h3>📝 상담 게시판</h3>
-                <div style="font-size:13px; color:#64748b; line-height:1.5; margin-bottom:10px;">
-                    선생님 기록(알림장/지도내역)과 학부모 의견을 시간순으로 모아 보여줍니다.
-                </div>
-                <div id="boardList" style="max-height:420px; overflow-y:auto;"></div>
-            </div>
-            <div class="card">
+                <h3 style="margin-top:0;">💬 선생님께 답장하기</h3>
                 <h3>💬 선생님께 답장하기</h3>
                 <textarea id="replyMsg" placeholder="선생님께 드릴 말씀이나 궁금한 점을 적어주세요."></textarea>
                 <button class="send-btn" onclick="sendReply()">메시지 보내기</button>
@@ -103,165 +77,125 @@
                     </div>
                 </div>
             </div>
-            
+
+            <button onclick="location.reload()" style="width:100%; padding:12px; background:#94a3b8; color:white; border:none; border-radius:12px; margin-top:20px; font-weight:bold;">로그아웃</button>
             <button onclick="location.reload()" style="width:100%; padding:12px; background:#94a3b8; color:white; border:none; border-radius:12px; margin-top:10px; font-weight:bold;">로그아웃</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         // [수정] 필요한 기능(onSnapshot, updateDoc, deleteDoc 등) 모두 추가
-        import { getFirestore, collection, getDocs, getDoc, query, where, addDoc, serverTimestamp, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
-            authDomain: "namyang-f3a98.firebaseapp.com",
-            projectId: "namyang-f3a98",
-            storageBucket: "namyang-f3a98.firebasestorage.app",
-            messagingSenderId: "641432133626",
-            appId: "1:641432133626:web:4d31e36d5dbb0db4df4e43",
-            measurementId: "G-23L6KZERMF"
-        };
-
+@@ -100,9 +108,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let currentStudent = null;
-
-        // =========================================
-        // [추가] token 링크(카톡 공유)로 들어온 경우: parent.html?token=...
-        // - 별도 notice.html 없이, 이 페이지에서 '알림장 확인' 화면을 제공
-        // - 전화번호 인증을 하면 전체 기능(게시판/성적/내메시지)을 사용
-        // =========================================
-        const __qs = new URLSearchParams(location.search);
-        const __token = (__qs.get('token')||'').trim();
-        const __tokenMode = !!__token;
-
-        async function initFromTokenIfNeeded(){
-            if(!__tokenMode) return false;
-            try {
-                // 로그인 화면 숨기고, 내용 화면을 보여주되 일부 영역은 숨김(읽기전용)
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('content-screen').style.display = 'block';
-
-                // 읽기전용 모드 안내
-                const banner = document.createElement('div');
-                banner.className = 'card';
-                banner.style.background = '#0ea5e9';
-                banner.style.color = 'white';
-                banner.style.padding = '16px 18px';
-                banner.style.borderRadius = '18px';
-                banner.style.marginBottom = '16px';
-                banner.innerHTML = `📌 카톡 링크로 열린 <b>알림장 확인</b> 화면입니다.
-
-전체 상담게시판/성적/내 메시지는 아래에서 <b>전화번호 인증</b> 후 이용할 수 있어요.`.replace(/\n/g,'<br>');
-                const container = document.querySelector('.container');
-                container.insertBefore(banner, container.firstChild);
-
-                // 일부 기능 숨김(읽기전용): 게시판/답장/내메시지/성적
-                const hideIds = ['boardList','myMsgList','scoreChart','scoreList','replyMsg'];
-                hideIds.forEach(id => {
-                    const el = document.getElementById(id);
-                    if(el) {
-                        // 상위 card 단위로 숨기는게 보기 좋음
-                        const card = el.closest('.card');
-                        if(card) card.style.display = 'none';
-                    }
-                });
-
-                // 토큰 -> 학생ID 매핑 불러오기
-                const tdoc = await getDoc(doc(db,'noticeTokens', __token));
-                if(!tdoc.exists()){
-                    document.getElementById('sName').innerText = '링크 오류';
-                    document.getElementById('sInfo').innerText = '유효하지 않은 토큰입니다.';
-                    document.getElementById('sNotice').innerText = '선생님께서 다시 보내주신 링크로 확인해주세요.';
-                    return true;
-                }
-                const { studentId } = tdoc.data() || {};
-                if(!studentId){
-                    document.getElementById('sName').innerText = '링크 오류';
-                    document.getElementById('sInfo').innerText = '학생 정보가 없습니다.';
-                    return true;
-                }
-
-                // 학생 문서 로드
-                const sdoc = await getDoc(doc(db,'students', studentId));
-                if(!sdoc.exists()){
-                    document.getElementById('sName').innerText = '학생 없음';
-                    document.getElementById('sInfo').innerText = '학생 정보가 삭제되었습니다.';
-                    return true;
-                }
-                currentStudent = { id: sdoc.id, ...sdoc.data() };
-                showData();
-
-                // 토큰으로 들어온 경우에는 '최신 알림장'이 제일 중요하니, history도 최신순으로 노출
-                return true;
-            } catch(e){
-                console.error(e);
-                alert('링크 확인 중 오류가 발생했습니다.');
-                return true;
-            }
-        }
-
-
-        // [추가] 토큰 링크로 들어온 경우 우선 처리
-        initFromTokenIfNeeded();
+        let unsubStudent = null;
+        let parentChart = null;
 
         // 1. 로그인 및 학생 조회
         window.checkParent = async () => {
             const phoneInput = document.getElementById('inputPhone');
             const phone = phoneInput.value.replace(/-/g, '').trim();
-            
-            if(phone.length < 8) return alert("전화번호를 올바르게 입력해주세요.");
-
-            const btn = document.querySelector('.login-btn');
-            const originalText = btn.innerText;
-            btn.innerText = "조회 중...";
+@@ -115,7 +122,6 @@
             btn.disabled = true;
 
             try {
+                // 부모님 번호로 학생 검색
                 const q = query(collection(db, "students"), where("phone", "==", phone));
                 const snap = await getDocs(q);
 
-                if(snap.empty) {
-                    alert("등록된 번호가 없습니다.\n선생님께 확인해주세요.");
-                    btn.innerText = originalText;
-                    btn.disabled = false;
+@@ -126,15 +132,9 @@
                     return;
                 }
 
+                // 로그인 성공: 학생 doc를 실시간 구독해서
+                // 선생님이 상담/알림을 추가해도 부모 화면이 자동으로 갱신되게 함
+                const id = snap.docs[0].id;
+                if (unsubStudent) try { unsubStudent(); } catch(e) {}
+                unsubStudent = onSnapshot(doc(db, "students", id), (docSnap) => {
+                    if(!docSnap.exists()) return;
+                    currentStudent = { id: docSnap.id, ...docSnap.data() };
+                    showData();
+                });
                 currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data() };
                 showData();
                 loadMyMessages(); // 내 메시지 불러오기 시작
-                loadBoard();
-                renderScores();
-
-                // 학생 정보/점수/상담 기록이 변경되면 실시간 반영
-                if(typeof __studentUnsub === 'function') { try { __studentUnsub(); } catch(e){} }
-                __studentUnsub = onSnapshot(doc(db, 'students', currentStudent.id), (d) => {
-                    if(!d.exists()) return;
-                    currentStudent = { id: d.id, ...d.data() };
-                    showData();
-                    renderScores();
-                    loadBoard();
-                });
 
             } catch(e) {
                 console.error(e);
-                alert("조회 중 오류가 발생했습니다.");
-                btn.innerText = originalText;
-                btn.disabled = false;
+@@ -144,59 +144,7 @@
             }
         };
+
+        function renderParentScore(scoreLog = []) {
+            const canvas = document.getElementById('parentScoreChart');
+            const listEl = document.getElementById('parentScoreList');
+            if(!canvas || !listEl) return;
+
+            // 리스트
+            if(!Array.isArray(scoreLog) || scoreLog.length === 0) {
+                listEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:10px;'>등록된 성적이 없습니다.</div>";
+            } else {
+                const rows = scoreLog.slice().reverse().map(s => {
+                    const date = s.date || '';
+                    const title = s.title || '시험';
+                    const score = (s.score ?? '');
+                    return `<div style="padding:8px 0; border-bottom:1px dashed #e2e8f0;">
+                        <div style="font-size:12px; color:#94a3b8;">${date}</div>
+                        <div style="display:flex; justify-content:space-between; gap:10px;">
+                            <div style="font-weight:800; color:#1e293b;">${title}</div>
+                            <div style="font-weight:900; color:#7c3aed;">${score}점</div>
+                        </div>
+                    </div>`;
+                }).join('');
+                listEl.innerHTML = rows;
+            }
+
+            // 차트
+            if(!window.Chart) return;
+            const ctx = canvas.getContext('2d');
+            if(parentChart) { try { parentChart.destroy(); } catch(e){} }
+
+            const labels = (scoreLog || []).map(s => s.title || '');
+            const data = (scoreLog || []).map(s => Number(s.score || 0));
+
+            parentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '성적',
+                        data,
+                        tension: 0.25,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, suggestedMax: 100 }
+                    }
+                }
+            });
+        }
 
         // 2. 데이터 표시 (최신 알림 + 전체 내역)
         function showData() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('content-screen').style.display = 'block';
-            
-            const s = currentStudent;
-            document.getElementById('sName').innerText = s.name + " 학생";
+@@ -206,43 +154,44 @@
             document.getElementById('sInfo').innerText = `${s.school||''} | ${s.belt||''}`;
             document.getElementById('sNotice').innerText = s.lastNotice || "최신 알림이 없습니다.";
+
+            // 성적(읽기 전용)
+            renderParentScore(s.scoreLog || []);
 
             // 출석 수
             const now = new Date();
@@ -269,15 +203,18 @@
             const count = logs.filter(d => d.getMonth() === now.getMonth()).length;
             document.getElementById('sAtt').innerText = count;
 
+            // 기록 (상담 + 알림장)
             // [수정] 전체 기록 표시 (최신순 정렬)
             const list = document.getElementById('historyList');
             list.innerHTML = "";
+            const history = s.counselLog || [];
             
             // 배열 복사 후 역순 정렬 (원본 훼손 방지)
             const history = [...(s.counselLog || [])].reverse();
-            
+
             if(history.length === 0) list.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>기록이 없습니다.</div>";
             else {
+                history.reverse().forEach(h => {
                 history.forEach(h => {
                     const isNotice = h.text.includes("[알림장]");
                     const tag = isNotice ? '<span class="tag tag-notice">알림장</span>' : '<span class="tag tag-counsel">지도내역</span>';
@@ -286,6 +223,7 @@
                     
                     list.innerHTML += `
                         <div class="log-item">
+                            <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">${h.date}</div>
                             <div style="font-size:13px; color:#64748b; margin-bottom:4px; font-weight:bold;">📅 ${h.date}</div>
                             ${tag}
                             <div style="margin-top:6px; line-height:1.5; white-space:pre-wrap;">${cleanText}</div>
@@ -298,26 +236,25 @@
         window.sendReply = async () => {
             const msg = document.getElementById('replyMsg').value.trim();
             if(!msg) return alert("내용을 입력해주세요.");
-            
+
             try {
                 await addDoc(collection(db, "parentMessages"), {
+                    parentPhone: (currentStudent.phone || '').toString(),
                     studentId: currentStudent.id,
                     studentName: currentStudent.name,
                     message: msg,
-                    createdAt: serverTimestamp(),
-                    read: false
-                });
-                alert("선생님께 메시지를 보냈습니다! ✅");
+@@ -253,6 +202,68 @@
                 document.getElementById('replyMsg').value = "";
             } catch(e) { alert("전송 실패: " + e.message); }
         };
 
-       // [수정] 내가 보낸 메시지 불러오기 (정렬 에러 해결)
+        // 4. [추가] 내가 보낸 메시지 불러오기 & 수정/삭제 기능
         function loadMyMessages() {
             if(!currentStudent) return;
             const listArea = document.getElementById('myMsgList');
 
-            // [핵심] orderBy 제거
+            // 내 학생 ID로 된 메시지만 실시간 감시
+            // (주의: 인덱스 오류 방지를 위해 orderBy는 js에서 처리하거나, 에러나면 생성 링크 클릭 필요)
             const q = query(
                 collection(db, "parentMessages"), 
                 where("studentId", "==", currentStudent.id)
@@ -327,7 +264,7 @@
                 const msgs = [];
                 snapshot.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
                 
-                // [핵심] 자바스크립트로 최신순 정렬
+                // 최신순 정렬 (클라이언트 측 정렬)
                 msgs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
                 if(msgs.length === 0) {
@@ -340,15 +277,12 @@
                     const date = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleString() : "방금 전";
                     const isRead = m.read ? '<span style="color:#3b82f6;">(읽음)</span>' : '<span style="color:#ef4444;">(안읽음)</span>';
                     
-                    // 메시지 수정/삭제 시 텍스트 깨짐 방지 처리
-                    const safeMsg = (m.message || '').replace(/'/g, "\\'"); 
-                    
                     listArea.innerHTML += `
                         <div class="my-msg-item">
                             <div class="msg-meta">
                                 <span>${date} ${isRead}</span>
                                 <div class="msg-actions">
-                                    <button class="btn-edit" onclick="window.editMsg('${m.id}', '${safeMsg}')">수정</button>
+                                    <button class="btn-edit" onclick="window.editMsg('${m.id}', '${m.message.replace(/'/g, "\\'")}')">수정</button>
                                     <button class="btn-del" onclick="window.delMsg('${m.id}')">삭제</button>
                                 </div>
                             </div>
@@ -358,6 +292,7 @@
                 });
             });
         }
+
         // 수정 기능
         window.editMsg = async (id, oldText) => {
             const newText = prompt("메시지를 수정하세요:", oldText);
@@ -374,252 +309,5 @@
                 await deleteDoc(doc(db, "parentMessages", id));
             } catch(e) { alert("삭제 실패: " + e.message); }
         };
-
-        // =========================================================
-        // [추가] 성적(그래프) + 상담 게시판(선생님 기록 + 학부모 의견) 렌더링
-        // =========================================================
-        let __scoreChart = null;
-        let __boardUnsub = null;
-        let __studentUnsub = null;
-
-        function escapeHtml(str) {
-            return String(str || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        function tsToLabel(sec) {
-            try {
-                const d = new Date(sec * 1000);
-                return d.toLocaleString();
-            } catch(e) {
-                return '';
-            }
-        }
-
-        function koreanDateToTs(dateStr) {
-            // 예: 2026. 1. 19. / 2026-01-19 / 2026/1/19
-            const s = String(dateStr || '').trim();
-            if(!s) return 0;
-            const m = s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
-            if(m) {
-                const y = int(m[1]);
-                const mo = int(m[2]);
-                const d = int(m[3]);
-                const dt = new Date(y, mo-1, d);
-                return Math.floor(dt.getTime()/1000);
-            }
-            const t = Date.parse(s);
-            if(!isNaN(t)) return Math.floor(t/1000);
-            return 0;
-        }
-
-        function int(x){
-            const n = parseInt(x, 10);
-            return isNaN(n) ? 0 : n;
-        }
-
-        window.renderScores = function renderScores() {
-            if(!currentStudent) return;
-            const scoreLog = Array.isArray(currentStudent.scoreLog) ? currentStudent.scoreLog : [];
-            const listEl = document.getElementById('scoreList');
-            const canvas = document.getElementById('scoreChart');
-            if(!listEl || !canvas) return;
-
-            // 리스트
-            if(scoreLog.length === 0) {
-                listEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:10px;'>등록된 성적이 없습니다.</div>";
-            } else {
-                const sorted = [...scoreLog].sort((a,b)=>{
-                    const ta = koreanDateToTs(a.date) || 0;
-                    const tb = koreanDateToTs(b.date) || 0;
-                    return tb - ta;
-                });
-                listEl.innerHTML = sorted.map(s => {
-                    return `
-                        <div style="padding:10px; margin-bottom:8px; border-radius:12px; background:#fff; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                            <div>
-                                <div style="font-weight:900; color:#0f172a;">${escapeHtml(s.title || '시험')}</div>
-                                <div style="font-size:12px; color:#64748b; margin-top:2px;">${escapeHtml(s.date || '')}</div>
-                            </div>
-                            <div style="font-weight:900; font-size:16px; color:#7c3aed;">${escapeHtml(s.score)}점</div>
-                        </div>
-                    `;
-                }).join('');
-            }
-
-            // 그래프 데이터 (오래된 -> 최신)
-            const sortedAsc = [...scoreLog].sort((a,b)=>{
-                const ta = koreanDateToTs(a.date) || 0;
-                const tb = koreanDateToTs(b.date) || 0;
-                return ta - tb;
-            });
-            const labels = sortedAsc.map(s => (s.date || '').toString().slice(5) || s.title || '');
-            const values = sortedAsc.map(s => int(s.score));
-
-            // 3D 느낌: 막대 뒤에 살짝 "그림자" 막대를 한 번 더 그려주는 플러그인
-            const bar3dPlugin = {
-                id: 'bar3d',
-                afterDatasetsDraw(chart, args, pluginOptions) {
-                    const { ctx } = chart;
-                    const meta = chart.getDatasetMeta(0);
-                    if(!meta || !meta.data) return;
-                    ctx.save();
-                    ctx.globalAlpha = 0.25;
-                    meta.data.forEach((bar) => {
-                        if(!bar || !bar.getProps) return;
-                        const props = bar.getProps(['x','y','base','width'], true);
-                        const x = props.x;
-                        const y = props.y;
-                        const base = props.base;
-                        const w = props.width;
-                        const dx = 6;
-                        const dy = 6;
-                        // 뒤쪽 면(기울기)
-                        ctx.fillRect(x - w/2 + dx, y + dy, w, base - y);
-                    });
-                    ctx.restore();
-                }
-            };
-
-            // 막대 색 그라데이션(깔끔한 시인성)
-            const ctx = canvas.getContext('2d');
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, 'rgba(124, 58, 237, 0.85)');
-            gradient.addColorStop(1, 'rgba(124, 58, 237, 0.20)');
-
-            if(__scoreChart) {
-                __scoreChart.destroy();
-                __scoreChart = null;
-            }
-
-            __scoreChart = new Chart(canvas, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '성적',
-                        data: values,
-                        backgroundColor: gradient,
-                        borderColor: 'rgba(124, 58, 237, 0.9)',
-                        borderWidth: 1,
-                        borderRadius: 10
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: {
-                            label: (ctx) => `${ctx.parsed.y}점`
-                        }}
-                    },
-                    scales: {
-                        y: { beginAtZero: true, suggestedMax: 100, grid: { display: true } },
-                        x: { grid: { display: false } }
-                    }
-                },
-                plugins: [bar3dPlugin]
-            });
-        }
-
-        window.loadBoard = function loadBoard() {
-            if(!currentStudent) return;
-            const boardEl = document.getElementById('boardList');
-            if(!boardEl) return;
-
-            // 기존 구독 해제(재로그인 대비)
-            if(typeof __boardUnsub === 'function') {
-                try { __boardUnsub(); } catch(e) {}
-            }
-
-            const q = query(
-                collection(db, 'parentMessages'),
-                where('studentId', '==', currentStudent.id)
-            );
-
-            __boardUnsub = onSnapshot(q, (snapshot) => {
-                const parentItems = [];
-                snapshot.forEach(d => parentItems.push({ id: d.id, ...d.data() }));
-
-                const teacherLogs = Array.isArray(currentStudent.counselLog) ? currentStudent.counselLog : [];
-
-                const items = [];
-
-                // 선생님 기록
-                teacherLogs.forEach((h, idx) => {
-                    const ts = koreanDateToTs(h.date) || (idx + 1);
-                    const isNotice = String(h.text || '').includes('[알림장]');
-                    const clean = String(h.text || '').replace('[알림장]', '').trim();
-                    items.push({
-                        type: 'teacher',
-                        ts,
-                        dateLabel: h.date || '',
-                        title: isNotice ? '알림장' : '지도내역',
-                        text: clean
-                    });
-                });
-
-                // 학부모 의견
-                parentItems.forEach((m) => {
-                    const ts = (m.createdAt && m.createdAt.seconds) ? m.createdAt.seconds : 0;
-                    items.push({
-                        type: 'parent',
-                        ts,
-                        id: m.id,
-                        dateLabel: ts ? tsToLabel(ts) : '방금 전',
-                        text: m.message || '',
-                        read: m.read === true
-                    });
-                });
-
-                // 시간순(오래된 -> 최신) / 동률이면 선생님 먼저
-                items.sort((a,b)=>{
-                    if(a.ts === b.ts) {
-                        if(a.type === b.type) return 0;
-                        return a.type === 'teacher' ? -1 : 1;
-                    }
-                    return a.ts - b.ts;
-                });
-
-                if(items.length === 0) {
-                    boardEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:18px;'>상담 내역이 없습니다.</div>";
-                    return;
-                }
-
-                boardEl.innerHTML = items.map((it) => {
-                    const who = it.type === 'teacher' ? '선생님' : '학부모';
-                    const badgeBg = it.type === 'teacher' ? '#eff6ff' : '#ecfeff';
-                    const badgeColor = it.type === 'teacher' ? '#1d4ed8' : '#0e7490';
-                    const oldJson = JSON.stringify(it.text || '').replace(/</g, '\u003c');
-
-                    const action = (it.type === 'parent')
-                        ? `<div style="display:flex; gap:6px;">
-                               <button class="btn-edit" onclick="window.editMsg('${it.id}', ${oldJson})">수정</button>
-                               <button class="btn-del" onclick="window.delMsg('${it.id}')">삭제</button>
-                           </div>`
-                        : '';
-
-                    return `
-                        <div style="padding:12px; margin-bottom:10px; border-radius:14px; background:#fff; border:1px solid #e2e8f0;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;">
-                                <div>
-                                    <span style="display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:900; background:${badgeBg}; color:${badgeColor};">${who}${it.type==='teacher' ? ' · ' + escapeHtml(it.title||'') : (it.read ? ' · 읽음' : ' · 안읽음')}</span>
-                                    <div style="font-size:12px; color:#94a3b8; margin-top:4px;">${escapeHtml(it.dateLabel||'')}</div>
-                                </div>
-                                ${action}
-                            </div>
-                            <div style="white-space:pre-wrap; font-size:14px; line-height:1.55; color:#0f172a;">${escapeHtml(it.text||'')}</div>
-                        </div>
-                    `;
-                }).join('');
-            });
-        }
-
     </script>
 </body>
-</html>
-
