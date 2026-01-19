@@ -7,45 +7,56 @@
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
     <style>
         body { margin: 0; padding: 20px; font-family: 'Pretendard', sans-serif; background: #f1f5f9; color: #333; }
-        body { margin: 0; padding: 20px; font-family: 'Pretendard', sans-serif; background: #f1f5f9; color: #333; padding-bottom: 80px; }
         .container { max-width: 600px; margin: 0 auto; }
-
+        
         /* 로그인 화면 */
-@@ -20,16 +20,24 @@
+        #login-screen { text-align: center; margin-top: 60px; }
+        .login-card { background: white; padding: 40px 20px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .login-input { width: 100%; padding: 16px; font-size: 18px; border: 2px solid #e2e8f0; border-radius: 12px; margin: 20px 0; box-sizing: border-box; text-align: center; outline: none; transition: 0.2s; }
+        .login-input:focus { border-color: #3b82f6; }
+        .login-btn { width: 100%; padding: 16px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; }
+        .login-btn:active { transform: scale(0.98); }
+
         /* 메인 화면 */
         .card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { margin: 0 0 5px; font-size: 22px; color: #1e293b; }
-        h3 { margin-top: 0; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
-        
         .tag { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
         .tag-notice { background: #fff7ed; color: #c2410c; }
         .tag-counsel { background: #eff6ff; color: #1d4ed8; }
         .log-item { border-bottom: 1px dashed #e2e8f0; padding: 12px 0; }
-        .log-item { border-bottom: 1px dashed #e2e8f0; padding: 15px 0; }
-        .log-item:last-child { border-bottom: none; }
-
+        
         /* 학부모 입력창: 작아서 안 보인다는 피드백 반영 */
         textarea { width: 100%; height: 160px; padding: 14px; border: 1px solid #cbd5e1; border-radius: 14px; box-sizing: border-box; resize: vertical; font-size: 16px; line-height: 1.5; }
-        textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; box-sizing: border-box; resize: none; font-size: 15px; }
         .send-btn { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
-
-        /* 내 메시지 스타일 */
-        .my-msg-item { background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
-        .msg-meta { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
-        .msg-actions button { border: none; background: none; font-size: 12px; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
-        .btn-edit { background: #e0f2fe; color: #0284c7; margin-right: 4px; }
-        .btn-del { background: #fee2e2; color: #dc2626; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-@@ -56,36 +64,36 @@
+    <div class="container">
+        <div id="login-screen">
+            <div class="login-card">
+                <img src="nam-192.png" style="width:80px; border-radius:20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin-bottom:20px;">
+                <h2 style="margin-bottom:10px;">학부모 인증</h2>
+                <p style="color:#64748b; font-size:15px; line-height:1.5;">
+                    선생님께 등록된 <b>학부모님 전화번호</b>를<br>입력해주세요. (숫자만 입력)
+                </p>
+                <input type="tel" id="inputPhone" class="login-input" placeholder="01012345678">
+                <button class="login-btn" onclick="checkParent()">내 자녀 조회하기</button>
+            </div>
+        </div>
+
+        <div id="content-screen" style="display:none;">
+            <div class="card" style="text-align:center;">
+                <h2 id="sName">-</h2>
+                <p id="sInfo" style="color:#64748b;">-</p>
+                <div style="background:#f0f9ff; color:#0369a1; padding:12px; border-radius:12px; font-weight:bold; margin-top:15px;">
+                    📅 이번 달 등원: <span id="sAtt" style="font-size:1.2em;">0</span>회
+                </div>
             </div>
 
             <div class="card">
                 <h3 style="margin-top:0;">📢 최신 알림장</h3>
-                <h3>📢 최신 알림장</h3>
                 <div id="sNotice" style="background:#fffbeb; padding:15px; border-radius:12px; border:1px solid #fcd34d; line-height:1.6; white-space:pre-wrap; color:#451a03;">(내용 없음)</div>
             </div>
 
@@ -60,49 +71,47 @@
                     <canvas id="parentScoreChart" height="180"></canvas>
                     <div id="parentScoreList" style="margin-top:12px; font-size:14px; line-height:1.5; color:#475569;"></div>
                 </div>
-                <h3>🗂️ 전체 학습/상담 기록</h3>
-                <div id="historyList" style="max-height:400px; overflow-y:auto;"></div>
             </div>
 
             <div class="card">
                 <h3 style="margin-top:0;">💬 선생님께 답장하기</h3>
-                <h3>💬 선생님께 답장하기</h3>
                 <textarea id="replyMsg" placeholder="선생님께 드릴 말씀이나 궁금한 점을 적어주세요."></textarea>
                 <button class="send-btn" onclick="sendReply()">메시지 보내기</button>
-                
-                <div style="margin-top: 25px; padding-top: 15px; border-top: 2px dashed #e2e8f0;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 15px; color: #475569;">📤 내가 보낸 메시지</h4>
-                    <div id="myMsgList">
-                        <div style="text-align:center; color:#cbd5e1; padding:10px;">불러오는 중...</div>
-                    </div>
-                </div>
             </div>
-
+            
             <button onclick="location.reload()" style="width:100%; padding:12px; background:#94a3b8; color:white; border:none; border-radius:12px; margin-top:20px; font-weight:bold;">로그아웃</button>
-            <button onclick="location.reload()" style="width:100%; padding:12px; background:#94a3b8; color:white; border:none; border-radius:12px; margin-top:10px; font-weight:bold;">로그아웃</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // [수정] 필요한 기능(onSnapshot, updateDoc, deleteDoc 등) 모두 추가
-        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
-@@ -100,9 +108,8 @@
+            authDomain: "namyang-f3a98.firebaseapp.com",
+            projectId: "namyang-f3a98",
+            storageBucket: "namyang-f3a98.firebasestorage.app",
+            messagingSenderId: "641432133626",
+            appId: "1:641432133626:web:4d31e36d5dbb0db4df4e43",
+            measurementId: "G-23L6KZERMF"
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let currentStudent = null;
         let unsubStudent = null;
         let parentChart = null;
 
-        // 1. 로그인 및 학생 조회
         window.checkParent = async () => {
             const phoneInput = document.getElementById('inputPhone');
             const phone = phoneInput.value.replace(/-/g, '').trim();
-@@ -115,7 +122,6 @@
+            
+            if(phone.length < 8) return alert("전화번호를 올바르게 입력해주세요.");
+
+            const btn = document.querySelector('.login-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "조회 중...";
             btn.disabled = true;
 
             try {
@@ -110,7 +119,10 @@
                 const q = query(collection(db, "students"), where("phone", "==", phone));
                 const snap = await getDocs(q);
 
-@@ -126,15 +132,9 @@
+                if(snap.empty) {
+                    alert("등록된 번호가 없습니다.\n선생님께 확인해주세요.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
                     return;
                 }
 
@@ -123,13 +135,12 @@
                     currentStudent = { id: docSnap.id, ...docSnap.data() };
                     showData();
                 });
-                currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data() };
-                showData();
-                loadMyMessages(); // 내 메시지 불러오기 시작
 
             } catch(e) {
                 console.error(e);
-@@ -144,59 +144,7 @@
+                alert("조회 중 오류가 발생했습니다.");
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         };
 
@@ -186,11 +197,12 @@
             });
         }
 
-        // 2. 데이터 표시 (최신 알림 + 전체 내역)
         function showData() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('content-screen').style.display = 'block';
-@@ -206,43 +154,44 @@
+            
+            const s = currentStudent;
+            document.getElementById('sName').innerText = s.name + " 학생";
             document.getElementById('sInfo').innerText = `${s.school||''} | ${s.belt||''}`;
             document.getElementById('sNotice').innerText = s.lastNotice || "최신 알림이 없습니다.";
 
@@ -204,27 +216,19 @@
             document.getElementById('sAtt').innerText = count;
 
             // 기록 (상담 + 알림장)
-            // [수정] 전체 기록 표시 (최신순 정렬)
             const list = document.getElementById('historyList');
             list.innerHTML = "";
             const history = s.counselLog || [];
             
-            // 배열 복사 후 역순 정렬 (원본 훼손 방지)
-            const history = [...(s.counselLog || [])].reverse();
-
             if(history.length === 0) list.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>기록이 없습니다.</div>";
             else {
                 history.reverse().forEach(h => {
-                history.forEach(h => {
                     const isNotice = h.text.includes("[알림장]");
                     const tag = isNotice ? '<span class="tag tag-notice">알림장</span>' : '<span class="tag tag-counsel">지도내역</span>';
-                    // 태그 제거하고 본문만 깔끔하게
                     const cleanText = h.text.replace("[알림장]", "").trim();
-                    
                     list.innerHTML += `
                         <div class="log-item">
                             <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">${h.date}</div>
-                            <div style="font-size:13px; color:#64748b; margin-bottom:4px; font-weight:bold;">📅 ${h.date}</div>
                             ${tag}
                             <div style="margin-top:6px; line-height:1.5; white-space:pre-wrap;">${cleanText}</div>
                         </div>`;
@@ -232,82 +236,23 @@
             }
         }
 
-        // 3. 메시지 전송
         window.sendReply = async () => {
             const msg = document.getElementById('replyMsg').value.trim();
             if(!msg) return alert("내용을 입력해주세요.");
-
+            
             try {
                 await addDoc(collection(db, "parentMessages"), {
                     parentPhone: (currentStudent.phone || '').toString(),
                     studentId: currentStudent.id,
                     studentName: currentStudent.name,
                     message: msg,
-@@ -253,6 +202,68 @@
+                    createdAt: serverTimestamp(),
+                    read: false
+                });
+                alert("선생님께 메시지를 보냈습니다! ✅");
                 document.getElementById('replyMsg').value = "";
             } catch(e) { alert("전송 실패: " + e.message); }
         };
-
-        // 4. [추가] 내가 보낸 메시지 불러오기 & 수정/삭제 기능
-        function loadMyMessages() {
-            if(!currentStudent) return;
-            const listArea = document.getElementById('myMsgList');
-
-            // 내 학생 ID로 된 메시지만 실시간 감시
-            // (주의: 인덱스 오류 방지를 위해 orderBy는 js에서 처리하거나, 에러나면 생성 링크 클릭 필요)
-            const q = query(
-                collection(db, "parentMessages"), 
-                where("studentId", "==", currentStudent.id)
-            );
-
-            onSnapshot(q, (snapshot) => {
-                const msgs = [];
-                snapshot.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
-                
-                // 최신순 정렬 (클라이언트 측 정렬)
-                msgs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
-                if(msgs.length === 0) {
-                    listArea.innerHTML = "<div style='text-align:center; color:#cbd5e1; padding:10px;'>보낸 메시지가 없습니다.</div>";
-                    return;
-                }
-
-                listArea.innerHTML = "";
-                msgs.forEach(m => {
-                    const date = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleString() : "방금 전";
-                    const isRead = m.read ? '<span style="color:#3b82f6;">(읽음)</span>' : '<span style="color:#ef4444;">(안읽음)</span>';
-                    
-                    listArea.innerHTML += `
-                        <div class="my-msg-item">
-                            <div class="msg-meta">
-                                <span>${date} ${isRead}</span>
-                                <div class="msg-actions">
-                                    <button class="btn-edit" onclick="window.editMsg('${m.id}', '${m.message.replace(/'/g, "\\'")}')">수정</button>
-                                    <button class="btn-del" onclick="window.delMsg('${m.id}')">삭제</button>
-                                </div>
-                            </div>
-                            <div style="white-space:pre-wrap; font-size:14px;">${m.message}</div>
-                        </div>
-                    `;
-                });
-            });
-        }
-
-        // 수정 기능
-        window.editMsg = async (id, oldText) => {
-            const newText = prompt("메시지를 수정하세요:", oldText);
-            if(newText === null || newText.trim() === "") return;
-            try {
-                await updateDoc(doc(db, "parentMessages", id), { message: newText });
-            } catch(e) { alert("수정 실패: " + e.message); }
-        };
-
-        // 삭제 기능
-        window.delMsg = async (id) => {
-            if(!confirm("정말 삭제하시겠습니까?")) return;
-            try {
-                await deleteDoc(doc(db, "parentMessages", id));
-            } catch(e) { alert("삭제 실패: " + e.message); }
-        };
     </script>
 </body>
+</html>
