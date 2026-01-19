@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'namyang-pwa-v2026_final_fix'; // v20260119 -> v2026 등으로 확 바꾸세요!
+const CACHE_NAME = 'namyang-pwa-v20260119-2'; // v20260119 -> v2026 등으로 확 바꾸세요!
 
 self.addEventListener('install', (event) => {
   self.skipWaiting(); // 대기 없이 즉시 설치
