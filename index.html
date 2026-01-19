@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>미래엔수학 능동해냄 교실 관리</title>
-    
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3B82F6">
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
@@ -195,15 +195,6 @@ header{
   color: var(--brand-blue-700);
 }
 .tab-btn:active{ transform: scale(.98); }
-
-/* [최종본] 탭 버튼 시안성 강화 */
-.tab-btn{
-  background: rgba(15,23,42,.04);
-  border: 1px solid rgba(15,23,42,.10);
-}
-.tab-btn.active{
-  border-color: rgba(59,130,246,.28);
-}
 
 /* On wider screens, make tabs inline (not fixed) */
 @media (min-width: 900px){
@@ -1076,14 +1067,9 @@ body.kiosk-mode .kiosk-header{
    1. 메뉴 버튼 상단 배치 & 모바일 최적화
    ========================================= */
 .tabs {
-    /* [최종본] 하단 고정 스타일과 충돌 방지 */
-    bottom: auto !important;
-    left: 0 !important;
-    right: 0 !important;
-
-    position: sticky !important; /* 스크롤 내려도 상단에 고정 */
-    top: 0 !important;
-    z-index: 200 !important;
+    position: sticky; /* 스크롤 내려도 상단에 고정 */
+    top: 0;
+    z-index: 90;
     margin: 0 0 15px 0;
     padding: 8px;
     background: rgba(255,255,255,0.95);
@@ -1319,13 +1305,13 @@ body.kiosk-mode .kiosk-exit-btn {
                  alt="능동해냄" 
                  style="background:#fff; object-fit:contain;"
                  onerror="this.src='https://cdn-icons-png.flaticon.com/512/3468/3468306.png'">
-            
+
             <div class="brand-title">
                 <strong>미래엔수학 능동해냄</strong>
                 <span>학부모용 · 알림/출석/상담</span>
             </div>
         </div>
-        
+
         <div style="display:flex; align-items:center; gap:8px;">
             <label class="admin-switch" style="margin:0; cursor:pointer;">
                 <input type="checkbox" id="adminToggle" onclick="toggleAdminMode()" style="width:auto; margin-right:6px;"> 선생님
@@ -1421,11 +1407,11 @@ body.kiosk-mode .kiosk-exit-btn {
                 </select>
             </div>
         </div>
-        
+
         <div id="studentListArea">로딩중...</div>
     </div>
 
-    
+
 <div id="calendar" class="page">
     <div class="calendar-controls">
         <button class="cal-btn" onclick="changeCalDate(-1)"><i class="fas fa-chevron-left"></i></button>
@@ -1443,7 +1429,7 @@ body.kiosk-mode .kiosk-exit-btn {
         <div class="day-name">수</div><div class="day-name">목</div><div class="day-name">금</div><div class="day-name" style="color:var(--primary)">토</div>
     </div>
     <div class="calendar-grid" id="calGrid"></div>
-    
+
 <div id="dateDetailArea" style="margin-top:20px;">
         <div class="view-mode-group">
             <button class="view-mode-btn active" onclick="changeListView('day', this)">일간</button>
@@ -1456,7 +1442,7 @@ body.kiosk-mode .kiosk-exit-btn {
             <span>날짜를 선택하세요</span>
             <button class="action-btn admin-only" id="addSchedBtn" onclick="openScheduleModal()" style="width:auto; margin:0; padding:5px 10px; font-size:12px; display:none;">+ 일정 등록</button>
         </h3>
-        
+
         <div id="dailyEventList" style="max-height:300px; overflow-y:auto;"></div>
     </div>
 </div>
@@ -1480,7 +1466,7 @@ body.kiosk-mode .kiosk-exit-btn {
 <div class="modal-overlay" id="scheduleModal">
     <div class="modal" style="max-width:340px;">
         <h3 id="schedModalTitle" style="margin-top:0;">📅 일정 관리</h3>
-        
+
         <div style="margin-bottom:15px;">
             <label style="margin-bottom:5px;">등록된 일정</label>
             <div id="popupSchedList" style="background:#f1f5f9; padding:10px; border-radius:8px; min-height:50px; max-height:120px; overflow-y:auto; font-size:13px;">
@@ -1491,10 +1477,10 @@ body.kiosk-mode .kiosk-exit-btn {
 
         <label>날짜 선택</label>
         <input type="date" id="schedDate" style="margin-bottom:10px;">
-        
+
         <label>일정 내용</label>
         <input type="hidden" id="schedId"> <input type="text" id="schedTitle" placeholder="새 내용을 입력하거나 위 목록을 클릭" style="margin-bottom:15px;">
-        
+
         <div class="modal-btn-group" style="display:flex; gap:8px;">
             <button class="action-btn" onclick="saveSchedule()" style="margin:0; flex:2;">저장/추가</button>
             <button class="action-btn" onclick="deleteSchedule()" id="btnDelSched" style="margin:0; flex:1; background:var(--danger); display:none;">삭제</button>
@@ -1502,11 +1488,11 @@ body.kiosk-mode .kiosk-exit-btn {
         </div>
     </div>
 </div>
-        
+
         <div class="modal-overlay" id="detailModal">
     <div class="modal">
         <button class="close-btn" onclick="closeModal()">×</button>
-        
+
         <div class="modal-header-profile">
             <div style="width:80px; height:80px; margin:0 auto; position:relative;" onclick="triggerPhotoEdit()">
                 <img id="modalImg" src="" style="width:100%; height:100%; border-radius:50%; object-fit:cover; border:3px solid var(--secondary); box-shadow:0 4px 10px rgba(0,0,0,0.1);">
@@ -1514,7 +1500,7 @@ body.kiosk-mode .kiosk-exit-btn {
             </div>
             <h2 id="modalName" style="margin:8px 0 4px 0; font-size:20px;"></h2>
             <div id="modalInfo" style="color:var(--text-sub); font-size:13px; margin-bottom:10px;"></div>
-            
+
             <div class="contact-row">
                 <div class="contact-group">
                     <span class="contact-label">학생</span>
@@ -1533,76 +1519,73 @@ body.kiosk-mode .kiosk-exit-btn {
             <input type="file" id="editPhotoInput" accept="image/*" style="display:none;" onchange="previewEditPhoto()">
         </div>
 
-     <div class="modal-tab-nav">
+        <div class="modal-tab-nav">
             <button class="modal-tab-btn active" onclick="switchModalTab('tabDaily', this)">📋 학습/출석</button>
             <button class="modal-tab-btn" onclick="switchModalTab('tabScore', this)">📈 성적/상담</button>
             <button class="modal-tab-btn" onclick="switchModalTab('tabInfo', this)">⚙️ 정보/정산</button>
         </div>
 
-        <div id="tabDaily" class="modal-tab-pane active">
-            <div class="stat-box" style="margin: 0 0 15px 0;">
-                <div class="stat-item"><div class="stat-num" id="statMonth">0%</div><div style="font-size:12px;">이번달 출석률</div></div>
-                <div class="stat-item"><div class="stat-num" id="statTotal">0회</div><div style="font-size:12px;">총 등원일</div></div>
-            </div>
+<div id="tabDaily" class="modal-tab-pane active">
+    <div class="stat-box" style="margin: 0 0 15px 0;">
+        <div class="stat-item"><div class="stat-num" id="statMonth">0%</div><div style="font-size:12px;">이번달 출석률</div></div>
+        <div class="stat-item"><div class="stat-num" id="statTotal">0회</div><div style="font-size:12px;">총 등원일</div></div>
+    </div>
 
-            <div style="background:#fffde7; border:1px solid #fff9c4; border-radius:10px; padding:15px;">
-                <h4 style="margin:0 0 10px 0; color:#fbc02d;"><i class="fas fa-bullhorn"></i> 오늘의 학습 안내</h4>
-                <textarea id="dailyProgress" rows="3" placeholder="오늘 공부한 내용을 입력하세요" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; resize:none; margin-bottom:8px; font-family:inherit;"></textarea>
-                
-                <div id="noticePreview" style="background:white; padding:10px; border:1px dashed #ddd; font-size:12px; white-space:pre-wrap; color:#555; margin-bottom:8px; min-height:40px;">(내용 미리보기)</div>
+    <div style="background:#fffde7; border:1px solid #fff9c4; border-radius:10px; padding:15px;">
+        <h4 style="margin:0 0 10px 0; color:#fbc02d;"><i class="fas fa-bullhorn"></i> 오늘의 학습 안내</h4>
+        <textarea id="dailyProgress" rows="3" placeholder="오늘 공부한 내용을 입력하세요" style="background:white; margin-bottom:8px;"></textarea>
 
-                <div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:5px;">
-                    <button class="action-btn" onclick="generateNotice()" style="background:#fbc02d; margin:0; font-size:13px; padding:10px 0; color:#333;">📝 양식</button>
-                    <button class="action-btn" onclick="copyNotice()" style="background:#ffa000; margin:0; font-size:13px; padding:10px 0; color:white;">📋 복사</button>
-                    <button class="action-btn" onclick="sendNoticeSms()" style="background:#4caf50; margin:0; font-size:13px; padding:10px 0;">📩 문자</button>
-                    <button class="action-btn" onclick="sendNoticeShare()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:10px 0;">📣 카톡공유</button>
-                </div>
-            </div>
+        <div id="noticePreview" style="background:white; padding:10px; border:1px dashed #ddd; font-size:12px; white-space:pre-wrap; color:#555; margin-bottom:8px; min-height:40px;">(내용 미리보기)</div>
+
+        <div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:5px;">
+            <button class="action-btn" onclick="generateNotice()" style="background:#fbc02d; margin:0; font-size:13px; padding:10px 0;">📝 양식</button>
+            <button class="action-btn" onclick="copyNotice()" style="background:#ffa000; margin:0; font-size:13px; padding:10px 0;">📋 복사</button>
+            <button class="action-btn" onclick="sendNoticeSms()" style="background:#4caf50; margin:0; font-size:13px; padding:10px 0;">📩 문자</button>
+            <button class="action-btn" onclick="sendNoticeKakao()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:10px 0;">🟡 카톡</button>
         </div>
-
+    </div>
+</div>
         <div id="tabScore" class="modal-tab-pane">
-            
-            <div class="admin-only" style="background:#e3f2fd; padding:12px; border-radius:10px; margin-bottom:15px; border:1px solid #bbdefb;">
-                <div style="font-weight:bold; color:#1565c0; margin-bottom:6px;">💬 새 상담/지도 내역 등록</div>
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="newCounsel" placeholder="내용을 입력하세요" style="flex:1; border:1px solid #90caf9;">
-                    <button class="action-btn" onclick="addCounselLog()" style="width:60px; margin:0; padding:0; background:#2196f3; color:white; font-size:14px;">등록</button>
-                </div>
-            </div>
-
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h4 style="margin:0; color:var(--text-main);">기록 목록</h4>
-                <span style="font-size:12px; color:#999;">최근 순</span>
+                <h4 style="margin:0; color:var(--text-main);">💬 상담 및 학습 로그</h4>
+                <span style="font-size:12px; color:#999;">최근 순으로 표시됩니다</span>
             </div>
 
-            <div id="modalCounselLog" style="background:#f5f7f9; border-radius:8px; padding:15px; height:200px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;"></div>
-            
+            <div id="modalCounselLog" style="background:#f5f7f9; border-radius:8px; padding:15px; height:250px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;"></div>
+
+            <div class="admin-only" style="display:flex; gap:5px; margin-bottom:20px;">
+                <input type="text" id="newCounsel" placeholder="상담 내용 기록" style="flex:1;">
+                <button onclick="addCounselLog()" style="background:var(--primary); color:white; border:none; padding:0 20px; border-radius:8px; font-weight:bold;">등록</button>
+            </div>
+
             <details style="background:white; border:1px solid #e0e0e0; border-radius:10px; padding:10px;">
                 <summary style="font-weight:bold; color:#7b1fa2; cursor:pointer; padding:5px; list-style:none; display:flex; align-items:center; justify-content:space-between;">
-                    <span>📈 성적 관리 (클릭)</span>
+                    <span>📈 성적 그래프 및 기록 관리</span>
                     <i class="fas fa-chevron-down" style="font-size:12px; color:#aaa;"></i>
                 </summary>
-                
+
                 <div style="margin-top:15px; padding-top:15px; border-top:1px dashed #eee;">
                     <div class="chart-container" style="padding:0; margin-bottom:15px; border:none;">
                         <canvas id="scoreChart" height="180"></canvas>
                     </div>
 
                     <div class="admin-only" style="background:#f3e5f5; padding:12px; border-radius:8px; margin-bottom:15px;">
-                        <div style="font-size:12px; font-weight:bold; color:#7b1fa2; margin-bottom:5px;">성적 입력</div>
+                        <div style="font-size:12px; font-weight:bold; color:#7b1fa2; margin-bottom:5px;">새 성적 등록</div>
                         <div class="score-input-group">
                             <input type="text" id="scoreTitle" placeholder="시험명" style="flex:1.5;">
                             <input type="number" id="scoreValue" placeholder="점수" style="flex:1;">
                             <button onclick="addScore()" style="background:#7b1fa2; color:white; border:none; padding:0 15px; border-radius:6px;">추가</button>
                         </div>
                     </div>
+
+                    <h5 style="margin:0 0 8px 0; color:#555;">📝 성적 기록 상세</h5>
                     <div id="scoreList" style="font-size:13px; max-height:150px; overflow-y:auto; color:#666;"></div>
                 </div>
             </details>
         </div>
 
         <div id="tabInfo" class="modal-tab-pane">
-            <div class="settlement-box" style="margin-top:0; margin-bottom:20px;">
+            <div class="settlement-box" style="margin-top:0;">
                 <h4 class="settlement-title" style="margin-top:0;"><i class="fas fa-file-invoice-dollar"></i> 교육비 정산 안내</h4>
                 <div id="settlementPreview" style="background:white; padding:10px; border:1px solid #bbdefb; font-size:12px; white-space:pre-wrap; margin-bottom:8px; color:#333;"></div>
                 <div class="modal-action-row">
@@ -1612,8 +1595,8 @@ body.kiosk-mode .kiosk-exit-btn {
             </div>
 
             <div class="admin-only">
-                <h4 style="margin:0 0 10px 0; border-top:1px solid #eee; padding-top:15px;">학생 정보 수정</h4>
-                <div id="modalEditForm" class="form-grid" style="grid-template-columns: 1fr; gap:8px;">
+                <h4 style="margin:20px 0 10px 0; border-top:1px solid #eee; padding-top:15px;">학생 정보 수정</h4>
+                <div id="modalEditForm" class="form-grid" style="grid-template-columns: 1fr;">
                     <input type="hidden" id="editId">
                     <div><label>이름</label><input type="text" id="editName"></div>
                     <div style="display:flex; gap:10px;">
@@ -1632,20 +1615,18 @@ body.kiosk-mode .kiosk-exit-btn {
                     <div><label>학생 연락처</label><input type="tel" id="editStudentPhone"></div>
                     <div><label>주소</label><input type="text" id="editAddress"></div>
                     <div><label>특이사항</label><textarea id="editNotes" rows="2"></textarea></div>
-                    
-                    <div class="modal-action-row" style="margin-top:15px; position:sticky; bottom:0; background:white; padding:10px 0; border-top:1px solid #eee;">
-                        <button class="action-btn" onclick="saveEdit()" style="background:var(--primary); margin:0;">💾 정보 수정 저장</button>
-                        <button class="action-btn" onclick="deleteStudent()" style="background:var(--danger); margin:0;">🗑 삭제</button>
-                    </div>
+                </div>
+                <div class="modal-action-row" style="margin-top:15px;">
+                    <button class="action-btn" onclick="saveEdit()" style="background:var(--primary); margin-top:0;">저장</button>
+                    <button class="action-btn" onclick="deleteStudent()" style="background:var(--danger); margin-top:0;">삭제</button>
                 </div>
             </div>
-            
-            <p style="text-align:center; color:#999; font-size:12px; margin-top:20px; padding-bottom:20px;">
-                * 정보 수정 및 정산 기능은 선생님 모드에서만 가능합니다.
+
+            <p style="text-align:center; color:#999; font-size:12px; margin-top:20px;">
+                * 정보 수정 및 정산 기능은<br>선생님 모드에서만 가능합니다.
             </p>
         </div>
     </div>
-</div>
 </div><div id="printArea">
     <div style="text-align:center; font-size:24px; font-weight:bold; text-decoration:underline;">미래엔수학 능동해냄 교실 원생 명단</div>
     <div style="text-align:right; font-size:12px; margin-top:10px;" id="printDate"></div>
@@ -1722,7 +1703,7 @@ const SMS_API_URL = "/api/send-sms";
     let currentStudentId = null;
     let selectedStudentIds = new Set();
     let selectedDateStr = new Date().toISOString().slice(0, 10);
-    
+
     // 필터 및 뷰 상태
     let currentGradeFilter = 'all'; 
     let currentKioskCategory = 'all';
@@ -1775,16 +1756,16 @@ const SMS_API_URL = "/api/send-sms";
 
 
     // =========================================================
-    
+
     // 학생 데이터 로드
     onSnapshot(collection(db, "students"), (snapshot) => {
         allStudents = [];
         snapshot.forEach((doc) => { allStudents.push({ id: doc.id, ...doc.data() }); });
-        
+
         updateSchoolOptions(); // 학교 필터 갱신
         filterList();          // 리스트 새로고침
         if(window.renderCalendar) renderCalendar(); // 달력 생일 갱신
-        
+
         // 상세창이 열려있다면 내용 갱신 (실시간성)
         if(document.getElementById('detailModal').style.display === 'flex' && currentStudentId) {
             const s = allStudents.find(st => st.id === currentStudentId);
@@ -1799,75 +1780,80 @@ const SMS_API_URL = "/api/send-sms";
         if(window.renderCalendar) renderCalendar();
     });
 
-// =========================================================
-    // [수정] 학부모 의견함 로드 (정렬 에러 해결 & 안전한 로딩)
-    // =========================================================
+    // =========================
+    // 학부모 메시지(의견함) 로드
+    // - parent.html 에서 parentMessages 컬렉션으로 저장된 내용을 선생님이 확인
+    // =========================
     const inboxListEl = document.getElementById('inboxList');
     const inboxBadgeEl = document.getElementById('inboxBadge');
 
     if (inboxListEl) {
-        // [핵심 수정] orderBy 제거 -> DB 에러 원인 차단
-        const q = query(collection(db, "parentMessages"));
+        onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
+            const items = [];
+            let unreadCount = 0;
 
-        onSnapshot(q, (snapshot) => {
-            let unread = 0;
-            const msgs = [];
-            
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.read === false) unread++;
-                msgs.push({ id: doc.id, ...data });
+            snapshot.forEach(d => {
+                const data = d.data() || {};
+                if (data.read === false) unreadCount++;
+                items.push({ id: d.id, ...data });
             });
 
-            // [핵심 수정] 자바스크립트로 최신순 정렬 (에러 없이 작동)
-            msgs.sort((a, b) => {
-                const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
-                const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
-                return tB - tA; // 최신이 위로
-            });
-
-            // 뱃지 업데이트
+            // 뱃지
             if (inboxBadgeEl) {
-                inboxBadgeEl.style.display = unread > 0 ? 'inline-block' : 'none';
-                inboxBadgeEl.innerText = unread;
+                if (unreadCount > 0) {
+                    inboxBadgeEl.style.display = 'inline-block';
+                    inboxBadgeEl.innerText = unreadCount;
+                } else {
+                    inboxBadgeEl.style.display = 'none';
+                }
             }
 
-            // 목록 그리기
-            if (msgs.length === 0) {
-                inboxListEl.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">도착한 메시지가 없습니다.</div>';
-            } else {
-                inboxListEl.innerHTML = '';
-                msgs.forEach(msg => {
-                    const dateObj = msg.createdAt ? (msg.createdAt.toDate ? msg.createdAt.toDate() : new Date((msg.createdAt.seconds||0)*1000)) : new Date();
-                    const dateStr = dateObj.toLocaleString();
-                    const isUnread = (msg.read === false);
-                    
-                    const el = document.createElement('div');
-                    el.className = 'inbox-item';
-                    el.style.cssText = `padding:15px; border-bottom:1px solid #eee; ${isUnread ? 'background:#fff7ed;' : 'background:white;'}`;
-                    el.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <div>
-                                <strong style="color:#333;">${msg.studentName || '학부모'}</strong>
-                                <span style="font-size:12px; color:#888; margin-left:5px;">${dateStr}</span>
-                            </div>
-                            <div style="display:flex; gap:5px;">
-                                <button onclick="openDetail({id:'${msg.studentId}'})" style="font-size:12px; padding:3px 8px; border:1px solid #ddd; background:white; border-radius:4px;">학생이동</button>
-                                ${isUnread ? `<button onclick="markRead('${msg.id}')" style="font-size:12px; padding:3px 8px; border:none; background:#10b981; color:white; border-radius:4px;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc;">읽음</span>'}
-                            </div>
-                        </div>
-                        <div style="font-size:14px; color:#555; white-space:pre-wrap;">${(msg.message || '').replace(/</g, "&lt;")}</div>
-                    `;
-                    inboxListEl.appendChild(el);
-                });
+            // 리스트 렌더
+            inboxListEl.innerHTML = '';
+            if (items.length === 0) {
+                inboxListEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:18px;'>아직 받은 메시지가 없습니다.</div>";
+                return;
             }
+
+            // 너무 길어지면 최근 100개만 표시(성능)
+            items.slice(0, 100).forEach(m => {
+                const createdAt = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate() : null;
+                const dateStr = createdAt ? createdAt.toLocaleString() : '';
+                const isUnread = (m.read === false);
+
+                const box = document.createElement('div');
+                box.style.padding = '12px 0';
+                box.style.borderBottom = '1px dashed #e2e8f0';
+
+                box.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                        <div>
+                            <div style="font-weight:900; color:#0f172a;">
+                                ${isUnread ? '🟥 ' : ''}${(m.studentName || '학생')} · ${(m.studentId || '').slice(0,6)}
+                            </div>
+                            <div style="font-size:12px; color:#94a3b8; margin-top:2px;">${dateStr}</div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="action-btn" style="width:auto; padding:10px 12px; margin:0; font-size:12px; background:#0ea5e9; color:white;" onclick="openMessageStudent('${m.studentId || ''}')">학생 열기</button>
+                            <button class="action-btn" style="width:auto; padding:10px 12px; margin:0; font-size:12px; background:#10b981; color:white;" onclick="markMessageRead('${m.id}')">읽음</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px; font-size:14px; line-height:1.5; white-space:pre-wrap; color:#334155;">${(m.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                `;
+
+                inboxListEl.appendChild(box);
+            });
         });
     }
 
-    // 읽음 처리 함수
-    window.markRead = async (id) => {
-        try { await updateDoc(doc(db, "parentMessages", id), { read: true }); } 
-        catch(e) { console.error(e); }
+    window.markMessageRead = async (msgId) => {
+        if(!msgId) return;
+        try {
+            await updateDoc(doc(db, "parentMessages", msgId), { read: true, readAt: serverTimestamp() });
+        } catch(e) {
+            console.warn(e);
+            alert('읽음 처리 실패: ' + (e.message || e));
+        }
     };
 
     window.openMessageStudent = (studentId) => {
@@ -1927,11 +1913,11 @@ const SMS_API_URL = "/api/send-sms";
 
                 await addDoc(collection(db, "students"), newStudent);
                 alert("학생이 등록되었습니다.");
-                
+
                 // 입력창 초기화
                 document.querySelectorAll('#register input, #register textarea').forEach(el => el.value = '');
                 document.getElementById('regGrade').value = '미취학';
-                
+
                 // 리스트 탭으로 이동
                 window.showPage('list');
 
@@ -1964,7 +1950,7 @@ const SMS_API_URL = "/api/send-sms";
         if(searchInput && !document.body.classList.contains('kiosk-mode')) {
             keyword = searchInput.value.toLowerCase();
         }
-        
+
         const schoolFilter = document.getElementById('schoolFilter') ? document.getElementById('schoolFilter').value : 'all';
         const todayStr = new Date().toDateString();
         const isKiosk = document.body.classList.contains('kiosk-mode');
@@ -1988,15 +1974,15 @@ const SMS_API_URL = "/api/send-sms";
                 return sBelt.includes(currentKioskCategory);
             }
         });
-        
+
         // 3. 가나다순 정렬
         filtered.sort((a, b) => a.name.localeCompare(b.name));
-        
+
         // 4. 화면 초기화
         const listArea = document.getElementById('studentListArea');
         if(!listArea) return;
         listArea.innerHTML = "";
-        
+
         if(filtered.length === 0) {
             listArea.innerHTML = "<div style='text-align:center; padding:20px; color:#999; width:100%;'>검색된 원생이 없습니다.</div>";
             return;
@@ -2005,7 +1991,7 @@ const SMS_API_URL = "/api/send-sms";
         // 5. 카드 생성 (여기가 중요)
         filtered.forEach(s => {
             const imgSrc = s.photo || "https://via.placeholder.com/150?text=NO+IMAGE";
-            
+
             // 등/하원 여부 체크
             const hasArrived = (s.attendanceLog || []).some(log => {
                 const d = log.toDate ? log.toDate() : new Date(log.seconds * 1000);
@@ -2018,7 +2004,7 @@ const SMS_API_URL = "/api/send-sms";
 
             const div = document.createElement('div');
             div.id = `card-${s.id}`;
-            
+
             if (isKiosk) {
                 // --- [A] 키오스크 모드 디자인 ---
                 const stateClass = hasLeft ? 'left' : (hasArrived ? 'arrived' : 'missing');
@@ -2047,7 +2033,7 @@ const SMS_API_URL = "/api/send-sms";
                 // --- [B] 선생님 모드 디자인 ---
                 const stateClass = hasLeft ? 'left' : (hasArrived ? 'arrived' : 'missing');
                 div.className = `student-card ${stateClass}`;
-                
+
                 div.innerHTML = `
                     <div class="profile-wrapper" style="width:55px; height:55px; margin:0;">
                         <img src="${imgSrc}" class="profile-img" style="border-radius:18px;">
@@ -2080,12 +2066,12 @@ const SMS_API_URL = "/api/send-sms";
         const modalBox = document.querySelector('#detailModal .modal');
         if(modalBox) modalBox.classList.add('modal-full');
         try { document.querySelector('#detailModal .modal').classList.add('modal-full'); } catch(e) {}
-        
+
         // 기본 정보
         document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
         document.getElementById('modalName').innerText = s.name;
         document.getElementById('modalInfo').innerText = `${s.school||''} | ${s.belt||''}`;
-        
+
         // 연락처 링크 연결
         const stuPhone = (s.studentPhone || "").replace(/[^0-9]/g, '');
         const parPhone = (s.phone || "").replace(/[^0-9]/g, '');
@@ -2109,7 +2095,7 @@ const SMS_API_URL = "/api/send-sms";
         // 통계 및 차트 렌더링
         if(window.calcStats) window.calcStats(s);
         if(window.renderScoreChart) window.renderScoreChart(s.scoreLog || []); 
-        
+
         // 상담 로그 로드
         renderCounselLog(s);
 
@@ -2124,14 +2110,14 @@ const SMS_API_URL = "/api/send-sms";
     function renderCounselLog(s) {
         const logArea = document.getElementById('modalCounselLog');
         if(!logArea) return;
-        
+
         logArea.innerHTML = "";
         const logs = s.counselLog || [];
         if(logs.length === 0) {
             logArea.innerHTML = "<div style='color:#ccc; text-align:center; padding:10px;'>상담 내역이 없습니다.</div>";
             return;
         }
-        
+
         logs.forEach((log, index) => {
             const div = document.createElement('div');
             div.style.marginBottom = "10px";
@@ -2139,7 +2125,7 @@ const SMS_API_URL = "/api/send-sms";
             div.style.background = "#fff";
             div.style.borderRadius = "5px";
             div.style.border = "1px solid #eee";
-            
+
             const btnHtml = `<div class="admin-only" style="float:right;">
                 <i class="fas fa-pen" onclick="editCounselLog(${index})" style="cursor:pointer; color:#1976d2; margin-right:8px;"></i>
                 <i class="fas fa-trash" onclick="deleteCounselLog(${index})" style="cursor:pointer; color:#d32f2f;"></i>
@@ -2154,7 +2140,7 @@ const SMS_API_URL = "/api/send-sms";
         const canvas = document.getElementById('scoreChart');
         if(!canvas) return; 
         const ctx = canvas.getContext('2d');
-        
+
         if (myChart) myChart.destroy(); // 기존 차트 파괴 후 재생성
 
         const labels = scoreLog.map(item => item.title);
@@ -2206,7 +2192,7 @@ const SMS_API_URL = "/api/send-sms";
     // =========================================================
     // 8. 데이터 관리 함수들 (CRUD)
     // =========================================================
-    
+
     // [성적] 추가/수정/삭제
     window.addScore = async () => {
         const title = document.getElementById('scoreTitle').value;
@@ -2301,11 +2287,11 @@ const SMS_API_URL = "/api/send-sms";
         const y = calDate.getFullYear(), m = calDate.getMonth();
         const calTitle = document.getElementById('calTitle');
         if(calTitle) calTitle.innerText = `${y}년 ${m+1}월`;
-        
+
         const grid = document.getElementById('calGrid');
         if(!grid) return;
         grid.innerHTML = "";
-        
+
         // 일정 병합 (생일 + 스케줄)
         let events = [];
         if(document.getElementById('showSchedule')?.checked) events = [...events, ...allSchedules.map(s => ({...s, type:'schedule'}))];
@@ -2326,7 +2312,7 @@ const SMS_API_URL = "/api/send-sms";
             const dayEvents = events.filter(e => e.date === dateStr);
             const isToday = dateStr === new Date().toISOString().slice(0,10) ? 'today' : '';
             const isSelected = dateStr === selectedDateStr ? 'border: 2px solid var(--primary);' : '';
-            
+
             let dots = "";
             dayEvents.forEach(e => { dots += `<span class="event-dot dot-${e.type}"></span>`; });
 
@@ -2343,7 +2329,7 @@ const SMS_API_URL = "/api/send-sms";
     window.clickDate = (date) => {
         selectedDateStr = date;
         renderCalendar(); // 선택 효과 갱신
-        
+
         // 선생님 모드(관리자)라면 즉시 팝업 열기
         if (document.body.classList.contains('show-admin')) {
             window.openScheduleModal('', '', date);
@@ -2364,7 +2350,7 @@ const SMS_API_URL = "/api/send-sms";
         const date = selectedDateStr;
         const listArea = document.getElementById('dailyEventList');
         if(!listArea) return;
-        
+
         // 보기 모드에 따른 날짜 범위 계산
         let startDate = new Date(date);
         let endDate = new Date(date);
@@ -2388,7 +2374,7 @@ const SMS_API_URL = "/api/send-sms";
 
         if(document.getElementById('selectedDateText')) document.getElementById('selectedDateText').querySelector('span').innerText = titleText;
         if(document.getElementById('schedDate')) document.getElementById('schedDate').value = date;
-        
+
         const isAdmin = document.body.classList.contains('show-admin');
         const addBtn = document.getElementById('addSchedBtn');
         if(addBtn) addBtn.style.display = isAdmin ? 'block' : 'none';
@@ -2398,7 +2384,7 @@ const SMS_API_URL = "/api/send-sms";
         allSchedules.forEach(s => {
             if (s.date >= startDate.toISOString().slice(0,10) && s.date <= endDate.toISOString().slice(0,10)) events.push({ ...s, type: 'schedule' });
         });
-        
+
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
             const mStr = String(d.getMonth() + 1).padStart(2, '0');
             const dStr = String(d.getDate()).padStart(2, '0');
@@ -2428,22 +2414,22 @@ const SMS_API_URL = "/api/send-sms";
     window.openScheduleModal = (id, title, date) => {
         const modal = document.getElementById('scheduleModal');
         modal.style.display = 'flex';
-        
+
         // 1. 입력 폼 초기화
         document.getElementById('schedId').value = id || '';
         document.getElementById('schedTitle').value = title || '';
         document.getElementById('schedDate').value = date || selectedDateStr;
-        
+
         // 삭제 버튼은 수정 모드(id가 있을 때)일 때만 표시
         document.getElementById('btnDelSched').style.display = id ? 'inline-block' : 'none';
 
         // 2. 해당 날짜의 기존 일정 리스트 렌더링
         const targetDate = date || selectedDateStr;
         const listArea = document.getElementById('popupSchedList');
-        
+
         // 해당 날짜의 스케줄만 필터링
         const dayEvents = allSchedules.filter(s => s.date === targetDate);
-        
+
         if (dayEvents.length === 0) {
             listArea.innerHTML = "<div style='color:#999; text-align:center;'>일정이 없습니다.</div>";
         } else {
@@ -2512,7 +2498,7 @@ const SMS_API_URL = "/api/send-sms";
         const s = allStudents.find(st => st.id === id);
         if(!s) return;
         const todayStr = new Date().toDateString();
-        
+
         const hasArrived = (s.attendanceLog || []).some(log => {
             const d = log.toDate ? log.toDate() : new Date(log.seconds * 1000);
             return d.toDateString() === todayStr;
@@ -2538,7 +2524,7 @@ const SMS_API_URL = "/api/send-sms";
             if(card.dataset.busy === "1") return;
             card.dataset.busy = "1";
             setTimeout(()=>{ card.dataset.busy = "0"; }, 2000);
-            
+
             card.classList.remove('card-anim-active');
             void card.offsetWidth;
             card.classList.add('card-anim-active');
@@ -2547,30 +2533,30 @@ const SMS_API_URL = "/api/send-sms";
         playSuccessSound();
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
+
         if (type === 'in') {
             try { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); } catch(e){}
-            
+
             // [수정] 등원 멘트: 더 정중하게
             speakText(`${s.name} 등원 완료하였습니다.`);
-            
+
             await updateDoc(doc(db, "students", id), { attendanceLog: arrayUnion(now) });
             if(s.phone) sendSmsByServer(s.phone.replace(/-/g,''), `[미래엔수학] ${s.name} 학생이 ${timeStr}에 등원했습니다.`);
         } else {
             // [수정] 하원 멘트: 따뜻하고 친절하게
             speakText(`${s.name}, 오늘 하루도 수고하셨어요.`);
-            
+
             await updateDoc(doc(db, "students", id), { attendanceOutLog: arrayUnion(now) });
             if(s.phone) sendSmsByServer(s.phone.replace(/-/g,''), `[미래엔수학] ${s.name} 학생이 ${timeStr}에 하원했습니다.`);
         }
-        
+
         filterList();
     };
 
     // =========================================================
     // 11. 관리자 유틸리티 (일괄처리, 백업, 엑셀)
     // =========================================================
-    
+
     // 페이지 전환
     window.showPage = (id) => {
         const teacher = (typeof isTeacherMode === 'function') ? isTeacherMode() : false;
@@ -2643,7 +2629,7 @@ const SMS_API_URL = "/api/send-sms";
         const visibleIds = Array.from(document.querySelectorAll('.list-chk')).map(el => el.value);
         if(chk) visibleIds.forEach(id => selectedStudentIds.add(id));
         else selectedStudentIds.clear();
-        
+
         document.querySelectorAll('.list-chk').forEach(box => { box.checked = selectedStudentIds.has(box.value); });
         updateBulkBtn();
     };
@@ -2720,7 +2706,7 @@ const SMS_API_URL = "/api/send-sms";
     // =========================================================
     // 12. 기타 UI 효과 및 유틸리티
     // =========================================================
-    
+
     // 이미지 리사이즈
    // 이미지 리사이즈 함수 (수정본)
     function resizeImage(file) {
@@ -2734,7 +2720,7 @@ const SMS_API_URL = "/api/send-sms";
                     const scale = 250/img.width; 
                     canvas.width = 250; canvas.height = img.height * scale;
                     canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-                    
+
                     // 화질을 0.7 -> 0.5로 낮춤 (용량 대폭 감소)
                     resolve(canvas.toDataURL('image/jpeg', 0.4));
                 };
@@ -2788,11 +2774,11 @@ const SMS_API_URL = "/api/send-sms";
         location.href = `sms:${(s.phone||'').replace(/[^0-9]/g,'')}?body=${encodeURIComponent(msg)}`;
     };
 
-   
+
   // =========================================================
   // [추가] 카카오 공유용 토큰 & URL 생성 (token -> Firestore 매핑)
   // =========================================================
-  window.__NOTICE_PAGE_NAME__ = 'parent.html';
+  window.__NOTICE_PAGE_NAME__ = 'notice.html';
 
   // ✅ async로 바꿔야 await 사용 가능
   window.createNoticeToken = async function(studentId, target){
@@ -2830,7 +2816,7 @@ const SMS_API_URL = "/api/send-sms";
     // GitHub Pages처럼 /shee0777/ 하위 경로면 pathname이 필요할 수 있음
     const base = (location.origin && location.origin !== 'null') ? location.origin : '';
     const dir  = location.pathname.replace(/\/[^\/]*$/, '/'); // 현재 폴더 경로
-    const page = window.__NOTICE_PAGE_NAME__ || 'parent.html';
+    const page = window.__NOTICE_PAGE_NAME__ || 'notice.html';
 
     const url = (base ? (base + dir + page) : (dir + page)) + '?token=' + encodeURIComponent(token);
     return { url, token };
@@ -2842,99 +2828,59 @@ const SMS_API_URL = "/api/send-sms";
   // ============================================================
   // [수정] 카톡 버튼을 눌러도 '웹 공유(성공했던 방식)'가 작동하도록 변경
   // ============================================================
-  window.sendNoticeKakao = async (target = "parent") => {
+  window.sendNoticeKakao = async () => {
     const s = allStudents.find(st => st.id === currentStudentId);
     if (!s) return alert('학생 정보 없음');
 
-    const text = (document.getElementById('dailyProgress')?.value || '').trim();
+    const text = document.getElementById('dailyProgress').value;
     if (!text) return alert('내용을 입력해주세요.');
 
-    // 1) 알림장 DB 저장 (기존 기능 유지)
+    // 1. 현재 접속한 주소를 기반으로 링크 생성 (옛날 주소 shee0777 아님!)
+    const base = (location.origin || '').replace(/\/$/, '');
+
+    // ★ 핵심: parent.html로 연결하고, 뒤에 시간을 붙여서(?v=...) 매번 새로운 링크로 인식시킴
+    const parentUrl = base + '/parent.html?v=' + Date.now();
+
+    // 2. DB에 알림장 내용 저장
     try {
       await updateDoc(doc(db, 'students', currentStudentId), {
         lastNotice: text,
         counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
       });
-    } catch (e) {
-      console.log('저장 오류:', e);
-    }
+    } catch (e) { console.log('저장 오류:', e); }
 
-    // 2) 공유 링크 (notice.html?token=...)
-    const built = await window.buildNoticeUrl(currentStudentId, target);
-    const shareUrl = built.url;
+    const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모님 확인하기\n${parentUrl}`;
 
-    const title = `[미래엔수학] ${s.name} 학생 알림장`;
-    const message = `[미래엔수학] ${s.name} 학생 알림장
-
-${text}
-
-👇 학부모님 확인하기
-${shareUrl}`;
-
-    // 3) 카카오 SDK 공유 (PC에서도 '카카오톡 보내기' 팝업 가능)
-    // - 최초 1회만 JS 키를 물어보고 저장(localStorage)
-    try {
-      if (window.Kakao) {
-        const KEY_STORAGE = 'KAKAO_JS_KEY';
-        let kakaoKey = localStorage.getItem(KEY_STORAGE) || '';
-
-        if (!kakaoKey) {
-          kakaoKey = prompt('카카오 공유를 처음 사용합니다.\n카카오 JavaScript 키를 입력해주세요.\n(1회만 저장됩니다)', '') || '';
-          kakaoKey = kakaoKey.trim();
-          if (kakaoKey) localStorage.setItem(KEY_STORAGE, kakaoKey);
-        }
-
-        if (kakaoKey) {
-          if (!Kakao.isInitialized()) Kakao.init(kakaoKey);
-
-          // SDK 2.x: Kakao.Share.sendDefault
-          await Kakao.Share.sendDefault({
-            objectType: 'text',
-            text: message,
-            link: {
-              mobileWebUrl: shareUrl,
-              webUrl: shareUrl
-            },
-            buttons: [
-              {
-                title: '알림장 확인',
-                link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
-              }
-            ]
-          });
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Kakao 공유 실패, 웹공유로 대체:', e);
-    }
-
-    // 4) 모바일: 시스템 공유창(카톡 선택 가능)
+    // 3. 모바일: '공유하기' 창 띄우기 (카카오톡 선택 가능)
     if (navigator.share) {
       try {
-        await navigator.share({ title, text: message, url: shareUrl });
-        return;
+        await navigator.share({
+          title: `[미래엔수학] ${s.name} 학생 알림장`,
+          text: msg,
+          url: parentUrl
+        });
+        return; // 공유 성공하면 여기서 끝
       } catch (e) {
-        // 취소/오류 시 복사로 대체
+        // 취소하거나 에러나면 아래 복사 기능으로 넘어감
       }
     }
 
-    // 5) PC/공유 실패 시: 클립보드 복사
+    // 4. PC/공유 실패 시: 클립보드에 복사 후 안내
     try {
-      await navigator.clipboard.writeText(message);
+      await navigator.clipboard.writeText(msg);
       alert('알림장 링크가 복사되었습니다!\n카카오톡을 열고 "붙여넣기" 해주세요.');
     } catch (e) {
-      prompt('아래 내용을 복사해서 카톡으로 보내세요.', message);
+      prompt('아래 내용을 복사해서 카톡으로 보내세요.', msg);
     }
   };
 
-  // [추가] 개별 버튼(전화기 아이콘 옆 카톡 버튼)도 똑같이 작동하게 통일(전화기 아이콘 옆 카톡 버튼)도 똑같이 작동하게 통일
+  // [추가] 개별 버튼(전화기 아이콘 옆 카톡 버튼)도 똑같이 작동하게 통일
   window.sendKakaoToTarget = async function (target) {
-     // 동일 로직 재사용 (학생/학부모 대상 구분)
-     window.sendNoticeKakao(target || "parent");
+     // 위 함수를 그대로 재사용 (무조건 parent.html로 연결)
+     window.sendNoticeKakao(); 
   };
 
- 
+
 
 
 
@@ -2943,7 +2889,7 @@ ${shareUrl}`;
         const s = allStudents.find(st => st.id === currentStudentId);
         const now = new Date();
         const currentMonth = now.getMonth() + 1; // 이번 달
-        
+
         // 다음 달 계산 (12월이면 내년 1월로 표시)
         const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
 
@@ -2991,7 +2937,7 @@ ${shareUrl}`;
 // =========================================================
     // [수정] 모바일 강력 호환 오디오/TTS 시스템 (최종 완성본)
     // =========================================================
-    
+
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = new AudioContext();
     let voices = []; // 목소리 목록 저장용
@@ -3027,13 +2973,13 @@ ${shareUrl}`;
     // 3. [수정] 음성 안내 (목소리 강제 지정 + 속도 0.8)
     function speakText(txt) {
         if(!window.speechSynthesis) return;
-        
+
         // 기존 음성 취소 (겹침 방지)
         window.speechSynthesis.cancel(); 
 
         const u = new SpeechSynthesisUtterance(txt);
         u.lang = 'ko-KR'; 
-        
+
         // ▼ 속도 조절: 0.8 (차분하고 친절한 속도)
         u.rate = 0.8;  
         u.pitch = 1.0; 
@@ -3089,7 +3035,7 @@ ${shareUrl}`;
         document.getElementById(id).classList.add('active');
         btn.classList.add('active');
     };
-    
+
     // 모달 닫기 유틸
     window.closeModal = () => {
         document.getElementById('detailModal').style.display = 'none';
@@ -3129,7 +3075,7 @@ ${shareUrl}`;
     // =========================================================
     let touchStartX = 0;
     let touchStartY = 0;
-    
+
     // 탭 순서 정의 (화면에 보이는 순서대로: 신규등록 -> 원생관리 -> 학습일정)
     const pageOrder = ['register', 'list', 'calendar'];
 
@@ -3153,18 +3099,18 @@ ${shareUrl}`;
 
         const touchEndX = e.changedTouches[0].screenX;
         const touchEndY = e.changedTouches[0].screenY;
-        
+
         const diffX = touchEndX - touchStartX;
         const diffY = touchEndY - touchStartY;
 
         // 1. 가로로 움직인 거리가 50px 이상이어야 함 (너무 짧으면 무시)
         // 2. 세로로 움직인 거리보다 가로가 더 커야 함 (스크롤 하려던 게 아니어야 함)
         if(Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-            
+
             // 현재 보고 있는 페이지 찾기
             const currentPage = document.querySelector('.page.active');
             if(!currentPage) return;
-            
+
             const currentIndex = pageOrder.indexOf(currentPage.id);
             if(currentIndex === -1) return;
 
@@ -3182,119 +3128,106 @@ ${shareUrl}`;
         }
     }, {passive: true});
     // =========================================================
-    // [정리] 학부모 의견함(메시지) 로드 로직은 위의 inboxList 기반 코드로 통합했습니다.
-    // (중복 구독/ID 불일치로 인해 저장된 메시지가 안 보이는 문제가 있어 정리)
+    // [추가] 학부모 의견함(메시지) 불러오기 & 읽음 처리
     // =========================================================
-    // =========================================================
-    // [필수] 학부모 의견함 & 상담 등록 기능 복구
-    // =========================================================
-
-    // 1. 학부모 의견함 로드 (정렬 에러 해결됨)
+    
+    // 이 코드가 실행되어야 학부모 메시지가 보입니다!
     (function initInbox() {
         const inboxArea = document.getElementById('inboxListArea');
         const inboxBadge = document.getElementById('inboxBadge');
-        if (!inboxArea) return;
 
-        // orderBy 제거 (에러 방지)
+        // 메시지 데이터베이스 연결 (orderBy 제거로 에러 방지)
         const q = query(collection(db, "parentMessages"));
 
         onSnapshot(q, (snapshot) => {
             let unreadCount = 0;
             const items = [];
 
+            // 1. 데이터 가져오기
             snapshot.forEach(doc => {
                 const data = doc.data();
                 items.push({ id: doc.id, ...data });
                 if (data.read === false) unreadCount++;
             });
 
-            // 자바스크립트로 최신순 정렬
+            // 2. 최신순 정렬 (자바스크립트로 안전하게 처리)
             items.sort((a, b) => {
                 const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
                 const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
-                return tB - tA; 
+                return tB - tA; // 최신이 위로
             });
 
+            // 3. 뱃지(빨간 숫자) 표시
             if (inboxBadge) {
-                inboxBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
-                inboxBadge.innerText = unreadCount;
+                if (unreadCount > 0) {
+                    inboxBadge.style.display = 'inline-block';
+                    inboxBadge.innerText = unreadCount;
+                } else {
+                    inboxBadge.style.display = 'none';
+                }
             }
 
-            if (items.length === 0) {
-                inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
-            } else {
-                inboxArea.innerHTML = "";
-                items.forEach(m => {
-                    const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
-                    const dateStr = dateObj.toLocaleString();
-                    const isUnread = (m.read === false);
-                    const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
+            // 4. 화면에 그리기
+            if (inboxArea) {
+                if (items.length === 0) {
+                    inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
+                } else {
+                    inboxArea.innerHTML = ""; // 초기화
+                    
+                    items.forEach(m => {
+                        // 날짜 변환
+                        const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
+                        const dateStr = dateObj.toLocaleString();
+                        const isUnread = (m.read === false);
+                        
+                        // 안 읽은 글은 배경색 다르게
+                        const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
 
-                    const div = document.createElement('div');
-                    div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
-                    div.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                            <div>
-                                <div style="font-weight:bold; font-size:15px; color:#333;">
-                                    ${isUnread ? '<span style="color:red;">●</span>' : ''} 
-                                    ${m.studentName || '이름없음'} 
+                        const div = document.createElement('div');
+                        div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
+                        
+                        div.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                                <div>
+                                    <div style="font-weight:bold; font-size:15px; color:#333;">
+                                        ${isUnread ? '<span style="color:red;">●</span>' : ''} 
+                                        ${m.studentName || '이름없음'} 
+                                        <span style="font-size:12px; color:#666; font-weight:normal;">(${m.studentId ? m.studentId.slice(0,4)+'**' : 'ID없음'})</span>
+                                    </div>
+                                    <div style="font-size:12px; color:#999; margin-top:2px;">${dateStr}</div>
                                 </div>
-                                <div style="font-size:12px; color:#999;">${dateStr}</div>
+                                <div style="display:flex; gap:6px;">
+                                    <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
+                                    ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc; padding:6px;">읽음</span>'}
+                                </div>
                             </div>
-                            <div style="display:flex; gap:6px;">
-                                <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
-                                ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc;">읽음</span>'}
-                            </div>
-                        </div>
-                        <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
-                    `;
-                    inboxArea.appendChild(div);
-                });
+                            <div style="font-size:14px; color:#444; line-height:1.5; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
+                        `;
+                        inboxArea.appendChild(div);
+                    });
+                }
             }
         });
     })();
 
-    // 2. 상담/지도 내역 등록 함수 (버튼 연결)
-    window.addCounselLog = async () => {
-        const text = document.getElementById('newCounsel').value;
-        if(!text) return alert("상담 내용을 입력해주세요.");
-        if(!currentStudentId) return alert("학생이 선택되지 않았습니다.");
-
+    // [기능] 읽음 처리 함수
+    window.markMessageRead = async (id) => {
         try {
-            await updateDoc(doc(db, "students", currentStudentId), {
-                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text })
-            });
-            alert("상담 내역이 등록되었습니다.");
-            document.getElementById('newCounsel').value = ""; // 입력창 비우기
-            // 바로 갱신된 내용 보여주기 위해 상세창 다시 로드
-            const s = allStudents.find(st => st.id === currentStudentId);
-            if(s) {
-                 // 로컬 데이터도 임시 갱신 (서버 스냅샷 오기 전 즉시 반영)
-                 if(!s.counselLog) s.counselLog = [];
-                 s.counselLog.push({ date: new Date().toLocaleDateString(), text: text });
-                 renderCounselLog(s); 
-            }
-        } catch(e) { alert("저장 실패: " + e.message); }
+            await updateDoc(doc(db, "parentMessages", id), { read: true });
+        } catch(e) { console.error(e); }
     };
 
-    // 3. 학생 정보 수정 저장 함수
-    window.saveEdit = async () => {
-        const id = document.getElementById('editId').value;
-        if (!id) return;
-        try {
-            await updateDoc(doc(db, "students", id), {
-                name: document.getElementById('editName').value,
-                birth: document.getElementById('editBirth').value,
-                gender: document.getElementById('editGender').value,
-                school: document.getElementById('editSchool').value,
-                belt: document.getElementById('editGrade').value,
-                phone: document.getElementById('editParentPhone').value,
-                studentPhone: document.getElementById('editStudentPhone').value,
-                address: document.getElementById('editAddress').value,
-                notes: document.getElementById('editNotes').value
-            });
-            alert("학생 정보가 수정되었습니다.");
-        } catch(e) { alert("저장 실패: " + e.message); }
+    // [기능] 학생 바로가기 함수
+    window.openMessageStudent = (sid) => {
+        if(!document.body.classList.contains('show-admin')) {
+             document.body.classList.add('show-admin');
+             const chk = document.getElementById('adminToggle');
+             if(chk) chk.checked = true;
+        }
+        showPage('list');
+        const s = allStudents.find(st => st.id === sid);
+        if(s) window.openDetail(s);
+        else alert("해당 학생 정보를 찾을 수 없습니다.");
     };
 </script>
 
@@ -3311,7 +3244,7 @@ ${shareUrl}`;
             <h3 style="margin:0;">⚙️ 관리자 설정</h3>
             <button onclick="document.getElementById('settingsModal').style.display='none'" style="border:none; background:none; font-size:20px;">&times;</button>
         </div>
-        
+
         <div style="display:grid; gap:10px;">
             <button class="action-btn" onclick="startKioskMode()" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; box-shadow:none;">
                 <i class="fas fa-tablet-alt"></i> 출석부 모드 시작
