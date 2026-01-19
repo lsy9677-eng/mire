@@ -3195,26 +3195,33 @@ ${parentUrl}`;
     // [필수] 학부모 의견함 & 상담 등록 기능 복구
     // =========================================================
 
+    // =========================================================
+    // ▼▼▼ 여기서부터 끝까지 복사해서 붙여넣으세요 ▼▼▼
+    // [최종 수정] 학부모 의견함 + 카톡공유 + 저장기능 통합팩
+    // =========================================================
+
     // 1. 학부모 의견함 로드 (정렬 에러 해결됨)
     (function initInbox() {
         const inboxArea = document.getElementById('inboxListArea');
         const inboxBadge = document.getElementById('inboxBadge');
+        
+        // 만약 화면에 의견함이 없으면 실행 중지 (에러 방지)
         if (!inboxArea) return;
 
-        // orderBy 제거 (에러 방지)
+        // ★ 핵심: orderBy 제거! (에러 원인 차단)
+        // 기존에 orderBy("createdAt", "desc")가 있었다면 그게 범인입니다.
         const q = query(collection(db, "parentMessages"));
 
         onSnapshot(q, (snapshot) => {
             let unreadCount = 0;
             const items = [];
-
             snapshot.forEach(doc => {
                 const data = doc.data();
                 items.push({ id: doc.id, ...data });
                 if (data.read === false) unreadCount++;
             });
 
-            // 자바스크립트로 최신순 정렬
+            // ★ 자바스크립트로 최신순 정렬 (날짜순)
             items.sort((a, b) => {
                 const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
                 const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
@@ -3227,7 +3234,7 @@ ${parentUrl}`;
             }
 
             if (items.length === 0) {
-                inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
+                inboxArea.innerHTML = "<div style='text-align:center; color:#999; padding:30px;'>도착한 메시지가 없습니다.</div>";
             } else {
                 inboxArea.innerHTML = "";
                 items.forEach(m => {
@@ -3260,30 +3267,84 @@ ${parentUrl}`;
         });
     })();
 
-    // 2. 상담/지도 내역 등록 함수 (버튼 연결)
-    window.addCounselLog = async () => {
-        const text = document.getElementById('newCounsel').value;
-        if(!text) return alert("상담 내용을 입력해주세요.");
-        if(!currentStudentId) return alert("학생이 선택되지 않았습니다.");
+    // 2. 카톡 공유 / 알림장 전송 (완전 복구)
+    window.sendNoticeShare = async () => {
+        if(!window.currentStudentId) return alert('학생을 선택해주세요.');
+        
+        // 학생 정보 찾기 (변수명 안전하게 처리)
+        const s = (window.allStudents || []).find(st => st.id === window.currentStudentId);
+        if(!s) return alert('학생 정보 오류');
 
+        const text = document.getElementById('dailyProgress').value;
+        if(!text) return alert('내용을 입력해주세요.');
+
+        // ★ 주소 생성 (parent.html + 시간)
+        const base = (location.origin || '').replace(/\/$/, '');
+        const parentUrl = base + '/parent.html?v=' + Date.now();
+
+        // DB 저장
         try {
-            await updateDoc(doc(db, "students", currentStudentId), {
-                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text })
+            await updateDoc(doc(db, 'students', window.currentStudentId), {
+                lastNotice: text,
+                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
             });
-            alert("상담 내역이 등록되었습니다.");
-            document.getElementById('newCounsel').value = ""; // 입력창 비우기
-            // 바로 갱신된 내용 보여주기 위해 상세창 다시 로드
-            const s = allStudents.find(st => st.id === currentStudentId);
-            if(s) {
-                 // 로컬 데이터도 임시 갱신 (서버 스냅샷 오기 전 즉시 반영)
-                 if(!s.counselLog) s.counselLog = [];
-                 s.counselLog.push({ date: new Date().toLocaleDateString(), text: text });
-                 renderCounselLog(s); 
-            }
-        } catch(e) { alert("저장 실패: " + e.message); }
+        } catch(e) { console.log('저장 건너뜀:', e); }
+
+        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모님 확인하기\n${parentUrl}`;
+
+        // 모바일 공유
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `[미래엔수학] ${s.name} 학생 알림장`,
+                    text: msg,
+                    url: parentUrl
+                });
+                return;
+            } catch(e) {}
+        }
+
+        // PC 복사
+        try {
+            await navigator.clipboard.writeText(msg);
+            alert('링크가 복사되었습니다! 카톡창에 붙여넣으세요.');
+        } catch(e) {
+            prompt('복사해서 보내세요:', msg);
+        }
+    };
+    
+    // 3. 기타 필수 기능 (상담저장, 정보수정, 읽음처리)
+    window.markMessageRead = async (id) => {
+        try { await updateDoc(doc(db, "parentMessages", id), { read: true }); } 
+        catch(e) { console.error(e); }
+    };
+    
+    window.openMessageStudent = (sid) => {
+        if(!document.body.classList.contains('show-admin')) {
+             document.body.classList.add('show-admin');
+             const chk = document.getElementById('adminToggle');
+             if(chk) chk.checked = true;
+        }
+        window.showPage('list');
+        const s = (window.allStudents || []).find(st => st.id === sid);
+        if(s) window.openDetail(s);
     };
 
-    // 3. 학생 정보 수정 저장 함수
+    window.addCounselLog = async () => {
+        const text = document.getElementById('newCounsel').value;
+        if(!text) return alert("내용을 입력해주세요.");
+        try {
+            await updateDoc(doc(db, "students", window.currentStudentId), {
+                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text })
+            });
+            alert("저장되었습니다.");
+            document.getElementById('newCounsel').value = "";
+            // 화면 갱신 시늉
+            const s = window.allStudents.find(st => st.id === window.currentStudentId);
+            if(s) window.openDetail(s);
+        } catch(e) { alert("오류: " + e.message); }
+    };
+    
     window.saveEdit = async () => {
         const id = document.getElementById('editId').value;
         if (!id) return;
@@ -3299,9 +3360,10 @@ ${parentUrl}`;
                 address: document.getElementById('editAddress').value,
                 notes: document.getElementById('editNotes').value
             });
-            alert("학생 정보가 수정되었습니다.");
-        } catch(e) { alert("저장 실패: " + e.message); }
+            alert("수정되었습니다.");
+        } catch(e) { alert("오류: " + e.message); }
     };
+    // ▲▲▲ 여기까지입니다 ▲▲▲
 </script>
 
 
