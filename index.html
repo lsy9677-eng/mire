@@ -1748,44 +1748,27 @@ body.kiosk-mode .kiosk-exit-btn {
 </div>
 
 <script type="module">
-    // =========================================================
-    // 1. Firebase 설정 및 SDK 로드 (중복 제거 및 최적화됨)
-    // =========================================================
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    // enableIndexedDbPersistence가 포함된 import문 하나만 남깁니다.
- import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion, serverTimestamp, query, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot, updateDoc, deleteDoc, arrayUnion, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
-      authDomain: "namyang-f3a98.firebaseapp.com",
-      projectId: "namyang-f3a98",
-      storageBucket: "namyang-f3a98.firebasestorage.app",
-      messagingSenderId: "641432133626",
-      appId: "1:641432133626:web:4d31e36d5dbb0db4df4e43",
-      measurementId: "G-23L6KZERMF"
+        apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
+        authDomain: "namyang-f3a98.firebaseapp.com",
+        projectId: "namyang-f3a98",
+        storageBucket: "namyang-f3a98.firebasestorage.app",
+        messagingSenderId: "641432133626",
+        appId: "1:641432133626:web:4d31e36d5dbb0db4df4e43",
+        measurementId: "G-23L6KZERMF"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // [속도 개선] 오프라인 데이터 유지 설정
-    enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code == 'failed-precondition') {
-            console.log('탭이 여러 개 열려있어서 오프라인 모드 실패');
-        } else if (err.code == 'unimplemented') {
-            console.log('브라우저가 지원하지 않음');
-        }
-    });
-
-    // =========================================================
-    // 2. SMS 서버 설정 ... (이 아래는 그대로 두세요)
-    // =========================================================
-    // 2. SMS 서버 설정 (카페24 알리고)
-    // =========================================================
-    const SMS_SERVER_BASE = "http://canyone2302.cafe24app.com"; 
-    const SMS_CLIENT_KEY = "CHANGE_ME_TO_A_LONG_RANDOM_STRING";
-const SMS_API_URL = "/api/send-sms";
-
+    // ==========================================
+    // 1. SMS 서버 설정 (자동 문자용)
+    // ==========================================
+    const SMS_CLIENT_KEY = "CHANGE_ME_TO_A_LONG_RANDOM_STRING"; // 실제 키가 있다면 변경하세요
+    const SMS_API_URL = "/api/send-sms";
 
     async function sendSmsByServer(receiver, msg) {
       try {
@@ -1795,32 +1778,27 @@ const SMS_API_URL = "/api/send-sms";
             body: JSON.stringify({ receiver, msg })
           });
           const data = await res.json().catch(async () => ({ raw: await res.text() }));
-          const ok = data.success === true || data.result_code === "1" || data.result_code === 1;
-          return { ok, data };
+          return { ok: data.success === true || data.result_code === "1", data };
       } catch (e) {
           console.error("SMS 발송 실패:", e);
           return { ok: false, error: e };
       }
     }
 
-    // =========================================================
-    // 3. 전역 변수 및 상태 관리
-    // =========================================================
-    let allStudents = [];
-    let allSchedules = [];
-    let currentStudentId = null;
+    // ==========================================
+    // 2. 전역 변수 및 상태 관리
+    // ==========================================
+    window.allStudents = [];
+    window.allSchedules = [];
+    window.currentStudentId = null;
     let selectedStudentIds = new Set();
     let selectedDateStr = new Date().toISOString().slice(0, 10);
-
-    // 필터 및 뷰 상태
     let currentGradeFilter = 'all'; 
     let currentKioskCategory = 'all';
     let calDate = new Date();
-    let myChart = null; // 차트 객체 저장용
+    let myChart = null; 
 
-    // =========================================================
-    // [추가] 선생님/출석부 모드 상태 저장 (localStorage)
-    // =========================================================
+    // 모드 설정 (localStorage)
     const LS_TEACHER = 'teacherMode';
     const LS_KIOSK = 'kioskMode';
 
@@ -1839,318 +1817,117 @@ const SMS_API_URL = "/api/send-sms";
         const teacher = isTeacherMode();
         const kiosk = document.body.classList.contains('kiosk-mode');
 
-        // 선생님 모드 CSS(키오스크에서는 숨김)
+        // 선생님 모드 CSS 적용
         document.body.classList.toggle('show-admin', teacher && !kiosk);
-
-        // 토글 체크 유지
         const chk = document.getElementById('adminToggle');
         if(chk) chk.checked = teacher;
 
-        // 키오스크 시작 버튼 노출
-        const btnKiosk = document.getElementById('btnKioskStart');
-        if(btnKiosk) btnKiosk.style.display = (teacher && !kiosk) ? 'inline-block' : 'none';
-
-        // 탭 버튼: 선생님 로그인이 아니면 '학습일정'만 보이게
+        // 탭 버튼 제어 (선생님 아니면 원생관리 등 숨김)
         document.querySelectorAll('.tab-btn').forEach(btn => {
             const oc = btn.getAttribute('onclick') || '';
             const restricted = oc.includes("showPage('register')") || oc.includes("showPage('list')") || oc.includes("showPage('inbox')");
             if(!teacher && !kiosk && restricted) btn.style.display = 'none';
             else btn.style.display = '';
         });
+        
+        // 키오스크 시작 버튼 보이기/숨기기
+        const kBtn = document.getElementById('btnKioskStart'); // 만약 버튼 ID가 있다면
+        if(kBtn) kBtn.style.display = (teacher && !kiosk) ? 'inline-block' : 'none';
     }
 
-    // =========================================================
-    // 4. 데이터 실시간 동기화 (onSnapshot)
-
-
-    // =========================================================
-
+    // ==========================================
+    // 3. 데이터 실시간 동기화
+    // ==========================================
+    
     // 학생 데이터 로드
     onSnapshot(collection(db, "students"), (snapshot) => {
-        allStudents = [];
-        snapshot.forEach((doc) => { allStudents.push({ id: doc.id, ...doc.data() }); });
-
-        updateSchoolOptions(); // 학교 필터 갱신
-        filterList();          // 리스트 새로고침
-        if(window.renderCalendar) renderCalendar(); // 달력 생일 갱신
-
-        // 상세창이 열려있다면 내용 갱신 (실시간성)
-        if(document.getElementById('detailModal').style.display === 'flex' && currentStudentId) {
-            const s = allStudents.find(st => st.id === currentStudentId);
+        window.allStudents = [];
+        snapshot.forEach((doc) => { window.allStudents.push({ id: doc.id, ...doc.data() }); });
+        
+        updateSchoolOptions();
+        filterList();
+        if(window.renderCalendar) window.renderCalendar();
+        
+        // 상세창이 열려있다면 내용 갱신
+        if(document.getElementById('detailModal').style.display === 'flex' && window.currentStudentId) {
+            const s = window.allStudents.find(st => st.id === window.currentStudentId);
             if(s) window.openDetail(s);
         }
     });
 
     // 일정 데이터 로드
     onSnapshot(query(collection(db, "schedules"), orderBy("date")), (snapshot) => {
-        allSchedules = [];
-        snapshot.forEach((doc) => { allSchedules.push({ id: doc.id, ...doc.data() }); });
-        if(window.renderCalendar) renderCalendar();
+        window.allSchedules = [];
+        snapshot.forEach((doc) => { window.allSchedules.push({ id: doc.id, ...doc.data() }); });
+        if(window.renderCalendar) window.renderCalendar();
     });
 
-    // =========================
-    // 학부모 메시지(의견함) 로드
-    // - parent.html 에서 parentMessages 컬렉션으로 저장된 내용을 선생님이 확인
-    // =========================
-    const inboxListEl = document.getElementById('inboxList');
-    const inboxBadgeEl = document.getElementById('inboxBadge');
-
-    if (inboxListEl) {
-        onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
-            const items = [];
-            let unreadCount = 0;
-
-            snapshot.forEach(d => {
-                const data = d.data() || {};
-                if (data.read === false) unreadCount++;
-                items.push({ id: d.id, ...data });
-            });
-
-            // 뱃지
-            if (inboxBadgeEl) {
-                if (unreadCount > 0) {
-                    inboxBadgeEl.style.display = 'inline-block';
-                    inboxBadgeEl.innerText = unreadCount;
-                } else {
-                    inboxBadgeEl.style.display = 'none';
-                }
-            }
-
-            // 리스트 렌더
-            inboxListEl.innerHTML = '';
-            if (items.length === 0) {
-                inboxListEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:18px;'>아직 받은 메시지가 없습니다.</div>";
-                return;
-            }
-
-            // 너무 길어지면 최근 100개만 표시(성능)
-            items.slice(0, 100).forEach(m => {
-                const createdAt = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate() : null;
-                const dateStr = createdAt ? createdAt.toLocaleString() : '';
-                const isUnread = (m.read === false);
-
-                const box = document.createElement('div');
-                box.style.padding = '12px 0';
-                box.style.borderBottom = '1px dashed #e2e8f0';
-
-                box.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                        <div>
-                            <div style="font-weight:900; color:#0f172a;">
-                                ${isUnread ? '🟥 ' : ''}${(m.studentName || '학생')} · ${(m.studentId || '').slice(0,6)}
-                            </div>
-                            <div style="font-size:12px; color:#94a3b8; margin-top:2px;">${dateStr}</div>
-                        </div>
-                        <div style="display:flex; gap:8px;">
-                            <button class="action-btn" style="width:auto; padding:10px 12px; margin:0; font-size:12px; background:#0ea5e9; color:white;" onclick="openMessageStudent('${m.studentId || ''}')">학생 열기</button>
-                            <button class="action-btn" style="width:auto; padding:10px 12px; margin:0; font-size:12px; background:#10b981; color:white;" onclick="markMessageRead('${m.id}')">읽음</button>
-                        </div>
-                    </div>
-                    <div style="margin-top:8px; font-size:14px; line-height:1.5; white-space:pre-wrap; color:#334155;">${(m.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-                `;
-
-                inboxListEl.appendChild(box);
-            });
-        });
-    }
-
-    window.markMessageRead = async (msgId) => {
-        if(!msgId) return;
-        try {
-            await updateDoc(doc(db, "parentMessages", msgId), { read: true, readAt: serverTimestamp() });
-        } catch(e) {
-            console.warn(e);
-            alert('읽음 처리 실패: ' + (e.message || e));
-        }
-    };
-
-    window.openMessageStudent = (studentId) => {
-        if(!studentId) return alert('학생 ID가 없습니다.');
-        // 원생 관리 화면으로 이동 후 상세 열기
-        showPage('list');
-        setTimeout(()=> window.openDetailById(studentId), 0);
-    };
-
-    function updateSchoolOptions() {
-        const schools = new Set();
-        allStudents.forEach(s => { if(s.school) schools.add(s.school); });
-        const select = document.getElementById('schoolFilter');
-        if(select) {
-            select.innerHTML = '<option value="all">전체 학교</option>';
-            Array.from(schools).sort().forEach(sc => select.innerHTML += `<option value="${sc}">${sc}</option>`);
-        }
-    }
-
-    // =========================================================
-    // 5. [기능 복구] 신규 학생 등록 로직
-    // =========================================================
-    const addBtn = document.getElementById('addBtn');
-    if(addBtn) {
-        addBtn.addEventListener('click', async () => {
-            const name = document.getElementById('regName').value;
-            if(!name) return alert("이름을 입력해주세요.");
-
-            const btn = document.getElementById('addBtn');
-            const originText = btn.innerText;
-            btn.innerText = "등록 중...";
-            btn.disabled = true;
-
-            try {
-                // 사진 처리
-                let photoUrl = "";
-                const file = document.getElementById('regPhoto').files[0];
-                if(file) photoUrl = await resizeImage(file);
-
-                const newStudent = {
-                    name: name,
-                    birth: document.getElementById('regBirth').value,
-                    gender: document.getElementById('regGender').value,
-                    school: document.getElementById('regSchool').value,
-                    belt: document.getElementById('regGrade').value,
-                    phone: document.getElementById('regParentPhone').value,
-                    studentPhone: document.getElementById('regStudentPhone').value,
-                    address: document.getElementById('regAddress').value,
-                    notes: document.getElementById('regNotes').value,
-                    photo: photoUrl,
-                    regDate: serverTimestamp(),
-                    attendanceLog: [],
-                    attendanceOutLog: [],
-                    scoreLog: [],
-                    counselLog: []
-                };
-
-                await addDoc(collection(db, "students"), newStudent);
-                alert("학생이 등록되었습니다.");
-
-                // 입력창 초기화
-                document.querySelectorAll('#register input, #register textarea').forEach(el => el.value = '');
-                document.getElementById('regGrade').value = '미취학';
-
-                // 리스트 탭으로 이동
-                window.showPage('list');
-
-            } catch(e) {
-                console.error(e);
-                alert("등록 실패: " + e.message);
-            } finally {
-                btn.innerText = originText;
-                btn.disabled = false;
-            }
-        });
-    }
-
-    // =========================================================
-    // 6. 리스트 및 필터링 (오류 수정됨)
-    // =========================================================
-    window.setGradeFilter = (val, btn) => {
-        currentGradeFilter = val;
-        document.querySelectorAll('#ageFilterGroup .filter-chip').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        filterList();
-    };
-
-    // [수정] 안전하게 다시 작성된 리스트 출력 함수
+    // ==========================================
+    // 4. 리스트 및 카드 생성 (기능 복구됨)
+    // ==========================================
     window.filterList = () => {
-        // 1. 검색어 및 필터 값 가져오기
-        let keyword = "";
         const searchInput = document.getElementById('searchKeyword');
-        // 키오스크 모드가 아닐 때만 검색어 적용
-        if(searchInput && !document.body.classList.contains('kiosk-mode')) {
-            keyword = searchInput.value.toLowerCase();
-        }
-
+        let keyword = (searchInput && !document.body.classList.contains('kiosk-mode')) ? searchInput.value.toLowerCase() : "";
         const schoolFilter = document.getElementById('schoolFilter') ? document.getElementById('schoolFilter').value : 'all';
         const todayStr = new Date().toDateString();
         const isKiosk = document.body.classList.contains('kiosk-mode');
 
-        // 2. 학생 데이터 필터링
-        let filtered = allStudents.filter(s => {
-            // 이름이나 학년 데이터가 없으면 빈 문자열로 처리해 에러 방지
+        let filtered = window.allStudents.filter(s => {
             const sName = s.name ? s.name.toLowerCase() : "";
-            const sSchool = s.school || "";
             const sBelt = s.belt || "";
-
-            if (!isKiosk) {
-                // [선생님 모드] 검색어 AND 학교 AND 학년
-                const matchName = sName.includes(keyword);
-                const matchSchool = schoolFilter === 'all' || sSchool === schoolFilter;
-                const matchGrade = currentGradeFilter === 'all' || sBelt === currentGradeFilter;
-                return matchName && matchSchool && matchGrade;
-            } else {
-                // [키오스크 모드] 상단 탭 분류 (초등/중등 등)
+            
+            if (isKiosk) {
                 if (currentKioskCategory === 'all') return true;
                 return sBelt.includes(currentKioskCategory);
+            } else {
+                const matchName = sName.includes(keyword);
+                const matchSchool = schoolFilter === 'all' || s.school === schoolFilter;
+                const matchGrade = currentGradeFilter === 'all' || sBelt === currentGradeFilter;
+                return matchName && matchSchool && matchGrade;
             }
         });
 
-        // 3. 가나다순 정렬
         filtered.sort((a, b) => a.name.localeCompare(b.name));
 
-        // 4. 화면 초기화
         const listArea = document.getElementById('studentListArea');
-        if(!listArea) return;
         listArea.innerHTML = "";
-
+        
         if(filtered.length === 0) {
             listArea.innerHTML = "<div style='text-align:center; padding:20px; color:#999; width:100%;'>검색된 원생이 없습니다.</div>";
             return;
         }
 
-        // 5. 카드 생성 (여기가 중요)
         filtered.forEach(s => {
             const imgSrc = s.photo || "https://via.placeholder.com/150?text=NO+IMAGE";
-
-            // 등/하원 여부 체크
-            const hasArrived = (s.attendanceLog || []).some(log => {
-                const d = log.toDate ? log.toDate() : new Date(log.seconds * 1000);
-                return d.toDateString() === todayStr;
-            });
-            const hasLeft = (s.attendanceOutLog || []).some(log => {
-                const d = log.toDate ? log.toDate() : new Date(log.seconds * 1000);
-                return d.toDateString() === todayStr;
-            });
+            const hasArrived = (s.attendanceLog || []).some(log => new Date(log.seconds ? log.seconds*1000 : log).toDateString() === todayStr);
+            const hasLeft = (s.attendanceOutLog || []).some(log => new Date(log.seconds ? log.seconds*1000 : log).toDateString() === todayStr);
 
             const div = document.createElement('div');
             div.id = `card-${s.id}`;
+            const stateClass = hasLeft ? 'left' : (hasArrived ? 'arrived' : 'missing');
 
             if (isKiosk) {
-                // --- [A] 키오스크 모드 디자인 ---
-                const stateClass = hasLeft ? 'left' : (hasArrived ? 'arrived' : 'missing');
+                // [키오스크] 카드
                 const pillText = hasLeft ? '하원 완료' : (hasArrived ? '등원 완료' : '미등원');
-                const hint = hasLeft
-                  ? '완료 상태'
-                  : (hasArrived ? '<strong>한 번 더 탭</strong>하면 하원 처리' : '<strong>한 번 탭</strong>하면 등원 처리');
-
+                const hint = hasLeft ? '완료 상태' : (hasArrived ? '<strong>한 번 더 탭</strong>하면 하원 처리' : '<strong>한 번 탭</strong>하면 등원 처리');
                 div.className = `student-card ${stateClass}`;
-                div.setAttribute('role','button');
                 div.innerHTML = `
                     <div class="kiosk-pill ${stateClass}">${pillText}</div>
-                    <div class="profile-wrapper"><img src="${imgSrc}" class="profile-img" alt=""></div>
+                    <div class="profile-wrapper"><img src="${imgSrc}" class="profile-img"></div>
                     <div class="info-area">
                         <div>${s.name}</div>
-                        <small>${s.school || '학교미입력'} | <span style="color:#0F172A; font-weight:900;">${s.belt || '학년없음'}</span></small>
+                        <small>${s.school || '학교미입력'} | <span style="font-weight:900;">${s.belt || '학년없음'}</span></small>
                     </div>
                     <div class="kiosk-hint">${hint}</div>
                 `;
-                div.onclick = (e) => {
-                    e.preventDefault();
-                    window.kioskTapAttendance(s.id);
-                };
-
+                div.onclick = () => window.kioskTapAttendance(s.id);
             } else {
-                // --- [B] 선생님 모드 디자인 ---
-                const stateClass = hasLeft ? 'left' : (hasArrived ? 'arrived' : 'missing');
+                // [선생님] 카드
                 div.className = `student-card ${stateClass}`;
-
                 div.innerHTML = `
-                    <div class="profile-wrapper" style="width:55px; height:55px; margin:0;">
-                        <img src="${imgSrc}" class="profile-img" style="border-radius:18px;">
-                    </div>
+                    <div class="profile-wrapper" style="width:55px; height:55px; margin:0;"><img src="${imgSrc}" class="profile-img" style="border-radius:18px;"></div>
                     <div class="info-area" style="text-align:left; padding-left:15px;">
-                        <div>
-                            <strong style="color:#333; font-size:16px;">${s.name}</strong> 
-                            <span class="dept-badge">${s.belt || ''}</span>
-                        </div>
+                        <div><strong style="color:#333; font-size:16px;">${s.name}</strong> <span class="dept-badge">${s.belt || ''}</span></div>
                         <div style="font-size:13px; color:#777; margin-top:4px;">${s.school || ''}</div>
                     </div>
                 `;
@@ -2160,638 +1937,512 @@ const SMS_API_URL = "/api/send-sms";
         });
     };
 
-    // =========================================================
-    // 7. 상세정보 및 그래프 (Chart.js)
-    // =========================================================
+    // ==========================================
+    // 5. 상세 팝업 및 데이터 관리
+    // ==========================================
+    window.openDetail = (s) => {
+        window.currentStudentId = s.id;
+        const modal = document.getElementById('detailModal');
+        modal.style.display = 'flex';
+        try { modal.querySelector('.modal').classList.add('modal-full'); } catch(e) {}
+
+        // 기본정보
+        document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
+        document.getElementById('modalName').innerText = s.name;
+        document.getElementById('modalInfo').innerText = `${s.school||''} | ${s.belt||''}`;
+
+        // 연락처 연결
+        const stuPhone = (s.studentPhone || "").replace(/[^0-9]/g, '');
+        const parPhone = (s.phone || "").replace(/[^0-9]/g, '');
+        document.getElementById('linkCallStu').href = stuPhone ? `tel:${stuPhone}` : "#";
+        document.getElementById('linkSmsStu').href = stuPhone ? `sms:${stuPhone}` : "#";
+        document.getElementById('linkCallPar').href = parPhone ? `tel:${parPhone}` : "#";
+        document.getElementById('linkSmsPar').href = parPhone ? `sms:${parPhone}` : "#";
+
+        // 수정 폼 채우기
+        document.getElementById('editId').value = s.id;
+        document.getElementById('editName').value = s.name || "";
+        document.getElementById('editSchool').value = s.school || "";
+        document.getElementById('editGrade').value = s.belt || "미취학";
+        document.getElementById('editBirth').value = s.birth || "";
+        document.getElementById('editGender').value = s.gender || "남";
+        document.getElementById('editParentPhone').value = s.phone || "";
+        document.getElementById('editStudentPhone').value = s.studentPhone || "";
+        document.getElementById('editNotes').value = s.notes || "";
+
+        // 기록 및 차트 로드
+        if(window.renderScoreChart) window.renderScoreChart(s.scoreLog || []); 
+        window.renderCounselLog(s);
+        window.calcStats(s);
+
+        // 입력창 초기화
+        document.getElementById('dailyProgress').value = "";
+        document.getElementById('noticePreview').innerText = "";
+        document.getElementById('noticePreview').style.display = 'none';
+        document.getElementById('settlementPreview').innerText = "";
+    };
+    
     window.openDetailById = (id) => {
-        const s = allStudents.find(st => st.id === id);
+        const s = window.allStudents.find(st => st.id === id);
         if(s) window.openDetail(s);
     };
 
-    // window.openDetail 함수 전체 교체
-window.openDetail = (s) => {
-    currentStudentId = s.id;
-    const modal = document.getElementById('detailModal');
-    modal.style.display = 'flex';
-    
-    // 모바일에서 모달 꽉 차게 (선택사항)
-    try { modal.querySelector('.modal').classList.add('modal-full'); } catch(e) {}
+    window.closeModal = () => {
+        document.getElementById('detailModal').style.display = 'none';
+        window.currentStudentId = null;
+    };
 
-    // 1. 상단 고정영역 (프로필)
-    document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
-    document.getElementById('modalName').innerText = s.name;
-    document.getElementById('modalInfo').innerText = `${s.school||''} | ${s.belt||''}`;
-
-    // 2. 연락처 버튼 연결
-    const stuPhone = (s.studentPhone || "").replace(/[^0-9]/g, '');
-    const parPhone = (s.phone || "").replace(/[^0-9]/g, '');
-    
-    // 학생
-    document.getElementById('linkCallStu').href = stuPhone ? `tel:${stuPhone}` : "#";
-    document.getElementById('linkSmsStu').href = stuPhone ? `sms:${stuPhone}` : "#";
-    // 부모
-    document.getElementById('linkCallPar').href = parPhone ? `tel:${parPhone}` : "#";
-    document.getElementById('linkSmsPar').href = parPhone ? `sms:${parPhone}` : "#";
-
-    // 3. [중요] 학생 정보 수정 탭 데이터 채우기 (HTML ID와 일치시킴)
-    document.getElementById('editId').value = s.id;
-    document.getElementById('editName').value = s.name || "";
-    document.getElementById('editSchool').value = s.school || "";
-    document.getElementById('editGrade').value = s.belt || "미취학"; // select
-    document.getElementById('editBirth').value = s.birth || "";
-    document.getElementById('editGender').value = s.gender || "남"; // select
-    
-    document.getElementById('editParentPhone').value = s.phone || "";
-    document.getElementById('editStudentPhone').value = s.studentPhone || "";
-    document.getElementById('editNotes').value = s.notes || ""; // textarea
-
-    // 4. 통계 및 기타 초기화
-    if(window.calcStats) window.calcStats(s);
-    if(window.renderScoreChart) window.renderScoreChart(s.scoreLog || []); 
-    renderCounselLog(s); // 상담 기록 로드
-
-    // 입력창들 초기화
-    if(document.getElementById('dailyProgress')) document.getElementById('dailyProgress').value = ""; 
-    if(document.getElementById('newCounsel')) document.getElementById('newCounsel').value = "";
-    if(document.getElementById('noticePreview')) document.getElementById('noticePreview').innerText = "";
-    if(document.getElementById('settlementPreview')) document.getElementById('settlementPreview').innerText = "";
-    
-    // [팁] 상세창 열릴 때 기본 탭은 '학습/출석'으로 리셋하려면 아래 주석 해제
-    // switchModalTab('tabDaily', document.querySelector('.modal-tab-btn'));
-};
-
-    // 상담 로그 그리기 함수 분리
-    function renderCounselLog(s) {
-        const logArea = document.getElementById('modalCounselLog');
-        if(!logArea) return;
-
-        logArea.innerHTML = "";
-        const logs = s.counselLog || [];
-        if(logs.length === 0) {
-            logArea.innerHTML = "<div style='color:#ccc; text-align:center; padding:10px;'>상담 내역이 없습니다.</div>";
-            return;
-        }
-
-        logs.forEach((log, index) => {
-            const div = document.createElement('div');
-            div.style.marginBottom = "10px";
-            div.style.padding = "8px";
-            div.style.background = "#fff";
-            div.style.borderRadius = "5px";
-            div.style.border = "1px solid #eee";
-
-            const btnHtml = `<div class="admin-only" style="float:right;">
-                <i class="fas fa-pen" onclick="editCounselLog(${index})" style="cursor:pointer; color:#1976d2; margin-right:8px;"></i>
-                <i class="fas fa-trash" onclick="deleteCounselLog(${index})" style="cursor:pointer; color:#d32f2f;"></i>
-            </div>`;
-            div.innerHTML = `${btnHtml}<span style="color:#009688; font-weight:bold;">[${log.date}]</span> <span>${log.text}</span><div style="clear:both;"></div>`;
-            logArea.appendChild(div);
-        });
-    }
-
-    // 성적 차트 그리기 (기능 복구됨)
-    window.renderScoreChart = (scoreLog = []) => {
-        const canvas = document.getElementById('scoreChart');
-        if(!canvas) return; 
-        const ctx = canvas.getContext('2d');
-
-        if (myChart) myChart.destroy(); // 기존 차트 파괴 후 재생성
-
-        const labels = scoreLog.map(item => item.title);
-        const data = scoreLog.map(item => item.score);
-
-        // 그라데이션 복구
-        const gradientStroke = ctx.createLinearGradient(0, 0, canvas.width, 0);
-        gradientStroke.addColorStop(0, '#7b1fa2'); gradientStroke.addColorStop(1, '#e91e63');
-        const gradientFill = ctx.createLinearGradient(0, 0, 0, 400);
-        gradientFill.addColorStop(0, 'rgba(123, 31, 162, 0.3)'); gradientFill.addColorStop(1, 'rgba(123, 31, 162, 0.0)');
-
+    // 차트
+    window.renderScoreChart = (scoreLog) => {
+        const ctx = document.getElementById('scoreChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: scoreLog.map(s => s.title),
                 datasets: [{
-                    label: '성적', data: data, borderColor: gradientStroke, backgroundColor: gradientFill,
-                    borderWidth: 3, pointBackgroundColor: '#fff', pointBorderColor: '#7b1fa2', pointRadius: 5, fill: true, tension: 0.4
+                    label: '성적', data: scoreLog.map(s => s.score),
+                    borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3
                 }]
             },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { y: { min: 0, max: 100 }, x: { grid: { display: false } } }
-            }
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
         });
 
-        // 성적 리스트도 함께 렌더링
-        const listArea = document.getElementById('scoreList');
-        if(listArea) {
-            if(scoreLog.length === 0) listArea.innerHTML = "<div style='text-align:center; padding:10px; color:#aaa;'>등록된 성적이 없습니다.</div>";
-            else {
-                listArea.innerHTML = scoreLog.map((s, index) => `
-                    <div style="padding: 10px; margin-bottom: 6px; border-radius: 8px; background: #fff; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                        <div><span style="font-weight:bold; color:#333;">${s.title}</span> <span style="font-size:12px; color:#888;">(${s.date})</span></div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <strong style="color:#7b1fa2;">${s.score}점</strong>
-                            <div class="admin-only" style="display:flex; gap:5px;">
-                                <i class="fas fa-pen" onclick="editScore(${index})" style="cursor:pointer; color:#1976d2;"></i>
-                                <i class="fas fa-trash" onclick="deleteScore(${index})" style="cursor:pointer; color:#d32f2f;"></i>
-                            </div>
-                        </div>
-                    </div>`
-                ).reverse().join(''); 
-            }
-        }
+        const list = document.getElementById('scoreList');
+        if(list) list.innerHTML = scoreLog.map((s, i) => `
+            <div style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                <span>${s.title} (${s.date})</span>
+                <div>
+                    <strong style="color:#3b82f6;">${s.score}점</strong>
+                    <i class="fas fa-trash admin-only" onclick="deleteScore(${i})" style="color:red; cursor:pointer; margin-left:8px;"></i>
+                </div>
+            </div>`).reverse().join('');
     };
 
-    // =========================================================
-    // 8. 데이터 관리 함수들 (CRUD)
-    // =========================================================
+    // 상담 기록
+    window.renderCounselLog = (s) => {
+        const list = document.getElementById('modalCounselLog');
+        if(!list) return;
+        const logs = s.counselLog || [];
+        list.innerHTML = logs.length ? logs.map((l, i) => `
+            <div style="padding:8px; background:white; margin-bottom:5px; border-radius:5px; border:1px solid #eee;">
+                <span style="color:#009688;">[${l.date}]</span> ${l.text}
+                <i class="fas fa-trash admin-only" onclick="deleteCounselLog(${i})" style="float:right; color:red; cursor:pointer;"></i>
+            </div>`).reverse().join('') : "<div style='text-align:center; padding:10px; color:#999;'>기록 없음</div>";
+    };
 
-    // [성적] 추가/수정/삭제
+    // [CRUD 기능] - 추가/수정/삭제
     window.addScore = async () => {
         const title = document.getElementById('scoreTitle').value;
         const score = document.getElementById('scoreValue').value;
-        if(!title || !score) return alert("시험명과 점수를 입력하세요.");
-        try {
-            await updateDoc(doc(db, "students", currentStudentId), {
-                scoreLog: arrayUnion({ date: new Date().toISOString().slice(0, 10), title: title, score: parseInt(score) })
-            });
-            document.getElementById('scoreTitle').value = "";
-            document.getElementById('scoreValue').value = "";
-            alert("등록되었습니다.");
-        } catch(e) { alert("실패: " + e.message); }
+        if(!title || !score) return;
+        await updateDoc(doc(db, "students", window.currentStudentId), {
+            scoreLog: arrayUnion({ date: new Date().toLocaleDateString(), title, score })
+        });
+        document.getElementById('scoreTitle').value = ""; document.getElementById('scoreValue').value = "";
     };
-    window.editScore = async (index) => {
-        const s = allStudents.find(st => st.id === currentStudentId);
-        if (!s || !s.scoreLog) return;
-        const old = s.scoreLog[index];
-        const t = prompt("시험명:", old.title); if(t===null) return;
-        const v = prompt("점수:", old.score); if(v===null) return;
-        const newLog = [...s.scoreLog];
-        newLog[index] = { ...old, title: t, score: parseInt(v) };
-        await updateDoc(doc(db, "students", currentStudentId), { scoreLog: newLog });
-    };
-    window.deleteScore = async (index) => {
-        if(!confirm("삭제하시겠습니까?")) return;
-        const s = allStudents.find(st => st.id === currentStudentId);
-        const newLog = s.scoreLog.filter((_, i) => i !== index);
-        await updateDoc(doc(db, "students", currentStudentId), { scoreLog: newLog });
+    window.deleteScore = async (idx) => {
+        if(!confirm("삭제합니까?")) return;
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const newLog = s.scoreLog.filter((_, i) => i !== idx);
+        await updateDoc(doc(db, "students", window.currentStudentId), { scoreLog: newLog });
     };
 
-    // [상담] 추가/수정/삭제
     window.addCounselLog = async () => {
         const text = document.getElementById('newCounsel').value;
-        if(!text) return alert("내용을 입력해주세요.");
-        try {
-            await updateDoc(doc(db, "students", currentStudentId), {
-                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text })
-            });
-            alert("저장되었습니다.");
-            document.getElementById('newCounsel').value = "";
-        } catch(e) { alert("저장 실패: " + e.message); }
+        if(!text) return;
+        await updateDoc(doc(db, "students", window.currentStudentId), {
+            counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text })
+        });
+        document.getElementById('newCounsel').value = "";
+        window.renderCounselLog(window.allStudents.find(st => st.id === window.currentStudentId)); // 즉시 갱신
     };
-    window.editCounselLog = async (index) => {
-        const s = allStudents.find(st => st.id === currentStudentId);
-        const oldLog = s.counselLog[index];
-        const newText = prompt("상담 내용을 수정하세요:", oldLog.text);
-        if (newText === null) return;
-        const newLogs = [...s.counselLog];
-        newLogs[index] = { date: oldLog.date, text: newText };
-        await updateDoc(doc(db, "students", currentStudentId), { counselLog: newLogs });
-    };
-    window.deleteCounselLog = async (index) => {
-        if(!confirm("삭제하시겠습니까?")) return;
-        const s = allStudents.find(st => st.id === currentStudentId);
-        const newLogs = s.counselLog.filter((_, i) => i !== index);
-        await updateDoc(doc(db, "students", currentStudentId), { counselLog: newLogs });
+    window.deleteCounselLog = async (idx) => {
+        if(!confirm("삭제합니까?")) return;
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const newLog = s.counselLog.filter((_, i) => i !== idx);
+        await updateDoc(doc(db, "students", window.currentStudentId), { counselLog: newLog });
     };
 
-    // [학생 정보] 수정/삭제
     window.saveEdit = async () => {
-        const id = document.getElementById('editId').value;
-        if (!id) return;
         try {
-            await updateDoc(doc(db, "students", id), {
+            await updateDoc(doc(db, "students", document.getElementById('editId').value), {
                 name: document.getElementById('editName').value,
-                birth: document.getElementById('editBirth').value,
-                gender: document.getElementById('editGender').value,
                 school: document.getElementById('editSchool').value,
                 belt: document.getElementById('editGrade').value,
                 phone: document.getElementById('editParentPhone').value,
                 studentPhone: document.getElementById('editStudentPhone').value,
-                address: document.getElementById('editAddress').value,
                 notes: document.getElementById('editNotes').value
             });
             alert("저장되었습니다.");
-        } catch(e) { alert("저장 실패: " + e.message); }
+        } catch(e) { alert("오류: "+e.message); }
     };
     window.deleteStudent = async () => {
-        if(confirm("정말 삭제하시겠습니까? (복구 불가)")) {
-            await deleteDoc(doc(db, "students", currentStudentId));
+        if(confirm("정말 삭제합니까? 복구 불가!")) {
+            await deleteDoc(doc(db, "students", window.currentStudentId));
             window.closeModal();
         }
     };
 
-    // =========================================================
-    // 9. 캘린더 및 일정 관리
-    // =========================================================
-    let currentViewMode = 'day';
+    // 신규 등록 로직
+    const addBtn = document.getElementById('addBtn');
+    if(addBtn) {
+        addBtn.onclick = async () => {
+            const name = document.getElementById('regName').value;
+            if(!name) return alert("이름 필수");
+            
+            // 사진 처리
+            let photoUrl = "";
+            const file = document.getElementById('regPhoto').files[0];
+            if(file) photoUrl = await resizeImage(file);
 
+            await addDoc(collection(db, "students"), {
+                name, 
+                birth: document.getElementById('regBirth').value,
+                gender: document.getElementById('regGender').value,
+                school: document.getElementById('regSchool').value,
+                belt: document.getElementById('regGrade').value,
+                phone: document.getElementById('regParentPhone').value,
+                studentPhone: document.getElementById('regStudentPhone').value,
+                address: document.getElementById('regAddress').value,
+                notes: document.getElementById('regNotes').value,
+                photo: photoUrl,
+                regDate: serverTimestamp(),
+                attendanceLog:[], attendanceOutLog:[], scoreLog:[], counselLog:[]
+            });
+            alert("등록 완료");
+            window.showPage('list');
+            // 입력창 초기화
+            document.querySelectorAll('#register input').forEach(i => i.value='');
+        };
+    }
+
+    function resizeImage(file) {
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const cvs = document.createElement('canvas');
+                    const scale = 250/img.width; 
+                    cvs.width = 250; cvs.height = img.height * scale;
+                    cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height);
+                    resolve(cvs.toDataURL('image/jpeg', 0.5));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ==========================================
+    // 6. 알림장, 정산, 카톡 공유 (기능 복구)
+    // ==========================================
+    window.generateNotice = () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const text = document.getElementById('dailyProgress').value;
+        if(!text) { alert("내용을 입력하세요"); return ""; }
+        
+        const msg = `[미래엔수학] 알림장 📢\n\n안녕하세요, 학부모님!\n오늘 ${s.name} 학생 학습 내용입니다.\n\n📚 학습내용\n${text}\n\n감사합니다.`;
+        const box = document.getElementById('noticePreview');
+        if(box) { box.innerText = msg; box.style.display = 'block'; }
+        return msg;
+    };
+    
+    // [Manual SMS] 버튼: 휴대폰 앱 열기
+    window.sendNoticeSms = () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        if(!s.phone) return alert("부모님 연락처 없음");
+        const msg = window.generateNotice();
+        if(msg) location.href = `sms:${s.phone.replace(/-/g,'')}?body=${encodeURIComponent(msg)}`;
+    };
+
+    // [Kakao] 버튼: 링크 생성 및 공유
+    window.sendNoticeKakao = async () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const text = document.getElementById('dailyProgress').value;
+        if(!text) return alert("내용을 입력하세요");
+        const parentUrl = location.origin + '/parent.html?v=' + Date.now();
+        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 확인하기\n${parentUrl}`;
+
+        // DB 저장 (알림장 내용 기록)
+        await updateDoc(doc(db, 'students', window.currentStudentId), {
+            lastNotice: text,
+            counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
+        });
+
+        if (navigator.share) {
+            try { await navigator.share({ title: '알림장', text: msg, url: parentUrl }); } catch(e){}
+        } else {
+            navigator.clipboard.writeText(msg).then(()=>alert("복사되었습니다. 카톡에 붙여넣으세요."));
+        }
+    };
+    window.sendKakaoToTarget = (target) => window.sendNoticeKakao();
+
+    // [정산] 자동 문구 생성
+    window.generateSettlement = () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const m = new Date().getMonth() + 2; 
+        const nextM = m > 12 ? 1 : m;
+        const msg = `[미래엔수학] 교육비 안내\n\n안녕하세요. ${s.name} 학생의 ${nextM}월 교육비 안내입니다.\n기간: 매월 1일~10일\n계좌: 농협 000-0000-0000\n\n감사합니다.`;
+        document.getElementById('settlementPreview').innerText = msg;
+    };
+    window.copyText = (id) => navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>alert("복사됨"));
+
+    // 통계 계산
+    window.calcStats = (s) => {
+        const logs = s.attendanceLog || [];
+        const now = new Date();
+        const monthLogs = logs.filter(ts => {
+            const d = new Date(ts.seconds ? ts.seconds*1000 : ts);
+            return d.getMonth() === now.getMonth();
+        });
+        document.getElementById('statTotal').innerText = logs.length + "회";
+        document.getElementById('statMonth').innerText = monthLogs.length + "회";
+    };
+
+    // ==========================================
+    // 7. 학부모 의견함 (통합)
+    // ==========================================
+    const inboxListEl = document.getElementById('inboxList');
+    if(inboxListEl) {
+        onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
+            let unread = 0;
+            let html = "";
+            if(snapshot.empty) html = "<div style='padding:20px; text-align:center; color:#999;'>메시지가 없습니다.</div>";
+            
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                if(!d.read) unread++;
+                const bg = d.read ? "white" : "#fff7ed";
+                html += `
+                    <div style="background:${bg}; padding:15px; margin-bottom:10px; border:1px solid #eee; border-radius:10px;">
+                        <div style="font-weight:bold; margin-bottom:5px; display:flex; justify-content:space-between;">
+                            <span>${d.studentName} (${d.parentPhone})</span>
+                            <div style="font-size:12px; font-weight:normal;">
+                                <button onclick="openMessageStudent('${d.studentId}')" style="background:#3b82f6; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">학생 열기</button>
+                                ${!d.read ? `<button onclick="markMessageRead('${doc.id}')" style="background:#10b981; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">읽음</button>` : ''}
+                            </div>
+                        </div>
+                        <div style="font-size:14px; color:#333; white-space:pre-wrap;">${d.message}</div>
+                    </div>`;
+            });
+            inboxListEl.innerHTML = html;
+            const badge = document.getElementById('inboxBadge');
+            if(badge) {
+                badge.style.display = unread > 0 ? 'inline-block' : 'none';
+                badge.innerText = unread;
+            }
+        });
+    }
+
+    window.markMessageRead = async (id) => await updateDoc(doc(db, "parentMessages", id), { read: true });
+    window.openMessageStudent = (sid) => {
+        // 선생님 모드 켜고 이동
+        if(!isTeacherMode()) window.toggleAdminMode(true); 
+        window.showPage('list');
+        setTimeout(() => window.openDetailById(sid), 500);
+    };
+
+    // ==========================================
+    // 8. 캘린더 & 일정
+    // ==========================================
     window.renderCalendar = () => {
         const y = calDate.getFullYear(), m = calDate.getMonth();
-        const calTitle = document.getElementById('calTitle');
-        if(calTitle) calTitle.innerText = `${y}년 ${m+1}월`;
-
+        document.getElementById('calTitle').innerText = `${y}년 ${m+1}월`;
         const grid = document.getElementById('calGrid');
-        if(!grid) return;
         grid.innerHTML = "";
 
-        // 일정 병합 (생일 + 스케줄)
         let events = [];
-        if(document.getElementById('showSchedule')?.checked) events = [...events, ...allSchedules.map(s => ({...s, type:'schedule'}))];
+        if(document.getElementById('showSchedule')?.checked) events = [...window.allSchedules.map(s => ({...s, type:'schedule'}))];
         if(document.getElementById('showBirthday')?.checked) {
-            allStudents.forEach(s => {
+            window.allStudents.forEach(s => {
                 if(s.birth && s.birth.includes(`-${String(m+1).padStart(2,'0')}-`)) 
                     events.push({date: `${y}-${s.birth.slice(5)}`, title: `${s.name} 생일`, type:'birthday'});
             });
         }
 
-        // 달력 그리기
         const first = new Date(y, m, 1).getDay();
         const last = new Date(y, m+1, 0).getDate();
-
         for(let i=0; i<first; i++) grid.innerHTML += `<div></div>`;
         for(let d=1; d<=last; d++) {
             const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            const dayEvents = events.filter(e => e.date === dateStr);
+            const dots = events.filter(e => e.date === dateStr).map(e => `<span class="event-dot dot-${e.type}"></span>`).join('');
             const isToday = dateStr === new Date().toISOString().slice(0,10) ? 'today' : '';
-            const isSelected = dateStr === selectedDateStr ? 'border: 2px solid var(--primary);' : '';
-
-            let dots = "";
-            dayEvents.forEach(e => { dots += `<span class="event-dot dot-${e.type}"></span>`; });
-
-            grid.innerHTML += `
-                <div class="day-cell ${isToday}" style="${isSelected}" onclick="clickDate('${dateStr}')">
-                    <span class="day-num">${d}</span>
-                    <div style="display:flex; gap:2px; justify-content:center; flex-wrap:wrap;">${dots}</div>
-                </div>`;
+            grid.innerHTML += `<div class="day-cell ${isToday}" onclick="clickDate('${dateStr}')"><span class="day-num">${d}</span><div style="display:flex; gap:2px; justify-content:center;">${dots}</div></div>`;
         }
         updateScheduleList();
     };
 
-   // [수정] 날짜 클릭 시 바로 팝업을 띄워 일정 관리 (선생님 모드일 때만)
     window.clickDate = (date) => {
         selectedDateStr = date;
-        renderCalendar(); // 선택 효과 갱신
-
-        // 선생님 모드(관리자)라면 즉시 팝업 열기
-        if (document.body.classList.contains('show-admin')) {
-            window.openScheduleModal('', '', date);
-        } else {
-            // 학부모 모드라면 하단 리스트뷰만 갱신
-            window.changeListView('day', document.querySelector('.view-mode-btn'));
-        }
+        window.renderCalendar();
+        if(isTeacherMode()) window.openScheduleModal('', '', date);
+        else updateScheduleList();
     };
 
-    window.changeListView = (mode, btn) => {
-        currentViewMode = mode;
-        document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-        updateScheduleList();
-    };
-
-    function updateScheduleList() {
-        const date = selectedDateStr;
-        const listArea = document.getElementById('dailyEventList');
-        if(!listArea) return;
-
-        // 보기 모드에 따른 날짜 범위 계산
-        let startDate = new Date(date);
-        let endDate = new Date(date);
-        let titleText = date + " 일정";
-
-        if (currentViewMode === 'week') {
-            const day = startDate.getDay(); 
-            startDate.setDate(startDate.getDate() - day);
-            endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + 6);
-            titleText = "주간 일정";
-        } else if (currentViewMode === 'month') {
-            startDate.setDate(1);
-            endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
-            titleText = "월간 일정";
-        } else if (currentViewMode === 'year') {
-            startDate = new Date(startDate.getFullYear(), 0, 1);
-            endDate = new Date(startDate.getFullYear(), 11, 31);
-            titleText = "연간 일정";
-        }
-
-        if(document.getElementById('selectedDateText')) document.getElementById('selectedDateText').querySelector('span').innerText = titleText;
-        if(document.getElementById('schedDate')) document.getElementById('schedDate').value = date;
-
-        const isAdmin = document.body.classList.contains('show-admin');
-        const addBtn = document.getElementById('addSchedBtn');
-        if(addBtn) addBtn.style.display = isAdmin ? 'block' : 'none';
-
-        // 필터링
-        let events = [];
-        allSchedules.forEach(s => {
-            if (s.date >= startDate.toISOString().slice(0,10) && s.date <= endDate.toISOString().slice(0,10)) events.push({ ...s, type: 'schedule' });
-        });
-
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const mStr = String(d.getMonth() + 1).padStart(2, '0');
-            const dStr = String(d.getDate()).padStart(2, '0');
-            const checkDate = `-${mStr}-${dStr}`;
-            allStudents.forEach(s => {
-                if (s.birth && s.birth.includes(checkDate)) events.push({ date: d.toISOString().slice(0,10), title: `${s.name} 생일`, type: 'birthday' });
-            });
-        }
-        events.sort((a, b) => a.date.localeCompare(b.date));
-
-        if (events.length === 0) listArea.innerHTML = "<div style='color:#999; padding:15px; text-align:center;'>일정이 없습니다.</div>";
-        else {
-            listArea.innerHTML = events.map(e => {
-                const icon = e.type === 'birthday' ? '🎂' : '📅';
-                const isSched = e.type === 'schedule';
-                const clickAction = (isSched && isAdmin) ? `onclick="openScheduleModal('${e.id}', '${e.title}', '${e.date}')"` : "";
-                const dateTag = currentViewMode !== 'day' ? `<span style="font-size:11px; color:#666; margin-right:5px; background:#eee; padding:2px 5px; borderRadius:4px;">${e.date.slice(5)}</span>` : ""; 
-                return `<div style="padding:8px; border-bottom:1px solid #eee; ${clickAction ? 'cursor:pointer' : ''}" ${clickAction}>
-                    ${dateTag} ${icon} <strong>${e.title}</strong>
-                </div>`;
-            }).join('');
-        }
-    }
-
-    window.changeCalDate = (n) => { calDate.setMonth(calDate.getMonth() + n); renderCalendar(); };
-    // [수정] 팝업 열 때 해당 날짜의 기존 일정도 같이 보여주기
     window.openScheduleModal = (id, title, date) => {
         const modal = document.getElementById('scheduleModal');
         modal.style.display = 'flex';
-
-        // 1. 입력 폼 초기화
         document.getElementById('schedId').value = id || '';
         document.getElementById('schedTitle').value = title || '';
         document.getElementById('schedDate').value = date || selectedDateStr;
-
-        // 삭제 버튼은 수정 모드(id가 있을 때)일 때만 표시
-        document.getElementById('btnDelSched').style.display = id ? 'inline-block' : 'none';
-
-        // 2. 해당 날짜의 기존 일정 리스트 렌더링
-        const targetDate = date || selectedDateStr;
-        const listArea = document.getElementById('popupSchedList');
-
-        // 해당 날짜의 스케줄만 필터링
-        const dayEvents = allSchedules.filter(s => s.date === targetDate);
-
-        if (dayEvents.length === 0) {
-            listArea.innerHTML = "<div style='color:#999; text-align:center;'>일정이 없습니다.</div>";
-        } else {
-            listArea.innerHTML = dayEvents.map(e => `
-                <div onclick="window.openScheduleModal('${e.id}', '${e.title}', '${e.date}')" 
-                     style="padding:6px; border-bottom:1px solid #e2e8f0; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-                    <span>📅 ${e.title}</span>
-                    <span style="font-size:11px; color:#3b82f6;">수정 ></span>
-                </div>
-            `).join('');
-        }
+        
+        const list = document.getElementById('popupSchedList');
+        const evts = window.allSchedules.filter(s => s.date === (date||selectedDateStr));
+        list.innerHTML = evts.length ? evts.map(e => `<div style="padding:5px; border-bottom:1px solid #eee;">📅 ${e.title}</div>`).join('') : "일정 없음";
     };
+
     window.saveSchedule = async () => {
         const id = document.getElementById('schedId').value;
         const title = document.getElementById('schedTitle').value;
         const date = document.getElementById('schedDate').value;
-        if(!title || !date) return alert("입력해주세요");
-        try {
-            if(id) await updateDoc(doc(db, "schedules", id), { title, date });
-            else await addDoc(collection(db, "schedules"), { title, date });
-            document.getElementById('scheduleModal').style.display = 'none';
-        } catch(e) { alert(e.message); }
+        if(id) await updateDoc(doc(db, "schedules", id), { title, date });
+        else await addDoc(collection(db, "schedules"), { title, date });
+        document.getElementById('scheduleModal').style.display = 'none';
     };
     window.deleteSchedule = async () => {
-        if(confirm("삭제하시겠습니까?")) {
-            await deleteDoc(doc(db, "schedules", document.getElementById('schedId').value));
-            document.getElementById('scheduleModal').style.display = 'none';
-        }
+        if(confirm("삭제?")) await deleteDoc(doc(db, "schedules", document.getElementById('schedId').value));
+        document.getElementById('scheduleModal').style.display = 'none';
     };
 
-    // =========================================================
-    // 10. 키오스크 & 출석 기능 (중복 제거 후 통합됨)
-    // =========================================================
+    function updateScheduleList() {
+        const list = document.getElementById('dailyEventList');
+        if(!list) return;
+        const evts = window.allSchedules.filter(s => s.date === selectedDateStr);
+        list.innerHTML = evts.length ? evts.map(e => `<div>📅 ${e.title}</div>`).join('') : "<div style='color:#ccc;'>일정 없음</div>";
+    }
+    
+    window.changeCalDate = (n) => { calDate.setMonth(calDate.getMonth() + n); window.renderCalendar(); };
+    window.changeListView = () => {}; // 뷰모드 변경 placeholder
+
+    // ==========================================
+    // 9. 키오스크 모드 (자동 SMS 복구됨)
+    // ==========================================
     window.startKioskMode = () => {
-        if (confirm("출석부 모드를 실행합니다.")) {
-            setKioskSaved(true);
-            document.body.classList.add('kiosk-mode');
-            applyAccessUI();
-            showPage('list');
-            filterList();
-        }
+        if(confirm("출석부 모드 시작?")) { setKioskSaved(true); document.body.classList.add('kiosk-mode'); applyAccessUI(); window.showPage('list'); }
     };
     window.exitKioskMode = () => {
-        if (!document.body.classList.contains('kiosk-mode')) return;
-        if (prompt("비밀번호:") === "1234") {
-            setKioskSaved(false);
-            document.body.classList.remove('kiosk-mode');
-            alert("기본 모드로 돌아왔습니다.");
-            applyAccessUI();
-            // 선생님 로그인 유지 여부에 따라 시작 화면 결정
-            if(isTeacherMode()) showPage('list');
-            else showPage('calendar');
-            filterList();
-        } else {
-            alert("비밀번호 불일치");
-        }
+        if(prompt("비밀번호")==="1234") { setKioskSaved(false); document.body.classList.remove('kiosk-mode'); applyAccessUI(); window.showPage('list'); }
     };
     window.setKioskCategory = (cat, btn) => {
         currentKioskCategory = cat;
         document.querySelectorAll('.k-filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        filterList();
+        window.filterList();
     };
 
+    // [중요] 키오스크 등하원 탭 (문자 발송 포함)
     window.kioskTapAttendance = async (id) => {
-        const s = allStudents.find(st => st.id === id);
-        if(!s) return;
+        const s = window.allStudents.find(st => st.id === id);
         const todayStr = new Date().toDateString();
-
-        const hasArrived = (s.attendanceLog || []).some(log => {
-            const d = log.toDate ? log.toDate() : new Date(log.seconds * 1000);
-            return d.toDateString() === todayStr;
-        });
-        const hasLeft = (s.attendanceOutLog || []).some(log => {
-            const d = log.toDate ? log.toDate() : new Date(log.seconds * 1000);
-            return d.toDateString() === todayStr;
-        });
-
-        if(!hasArrived) window.quickAttendance(id, 'in');
-        else if(!hasLeft) window.quickAttendance(id, 'out');
-        else showToast("이미 하원 완료 상태입니다 ✅", "warn");
-    };
-
-// [수정] 빠른 출석 처리 함수 (멘트 변경됨)
-    window.quickAttendance = async (id, type) => {
-        const s = allStudents.find(st => st.id === id);
-        if(!s) return;
-
-        // 카드 애니메이션 및 중복 방지
-        const card = document.getElementById(`card-${id}`);
-        if(card) {
-            if(card.dataset.busy === "1") return;
-            card.dataset.busy = "1";
-            setTimeout(()=>{ card.dataset.busy = "0"; }, 2000);
-
-            card.classList.remove('card-anim-active');
-            void card.offsetWidth;
-            card.classList.add('card-anim-active');
-        }
-
-        playSuccessSound();
+        const hasArrived = (s.attendanceLog || []).some(log => new Date(log.seconds ? log.seconds*1000 : log).toDateString() === todayStr);
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // 애니메이션 효과
+        const card = document.getElementById(`card-${id}`);
+        if(card) {
+            card.style.transform = "scale(0.95)";
+            setTimeout(() => card.style.transform = "scale(1)", 150);
+        }
 
-        if (type === 'in') {
-            try { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); } catch(e){}
+        const msg = hasArrived ? `${s.name}, 하원 처리가 완료되었습니다.` : `${s.name}, 등원 처리가 완료되었습니다.`;
+        speakText(msg);
 
-            // [수정] 등원 멘트: 더 정중하게
-            speakText(`${s.name} 등원 완료하였습니다.`);
-
+        if(!hasArrived) {
+            // 등원 처리
             await updateDoc(doc(db, "students", id), { attendanceLog: arrayUnion(now) });
+            // [복구됨] 자동 등원 문자
             if(s.phone) sendSmsByServer(s.phone.replace(/-/g,''), `[미래엔수학] ${s.name} 학생이 ${timeStr}에 등원했습니다.`);
         } else {
-            // [수정] 하원 멘트: 따뜻하고 친절하게
-            speakText(`${s.name}, 오늘 하루도 수고하셨어요.`);
-
+            // 하원 처리
             await updateDoc(doc(db, "students", id), { attendanceOutLog: arrayUnion(now) });
+            // [복구됨] 자동 하원 문자
             if(s.phone) sendSmsByServer(s.phone.replace(/-/g,''), `[미래엔수학] ${s.name} 학생이 ${timeStr}에 하원했습니다.`);
         }
-
-        filterList();
     };
 
-    // =========================================================
-    // 11. 관리자 유틸리티 (일괄처리, 백업, 엑셀)
-    // =========================================================
+    // 음성 안내 (TTS)
+    function speakText(txt) {
+        if(!window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'ko-KR'; u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+    }
 
-    // 페이지 전환
-    window.showPage = (id) => {
-        const teacher = (typeof isTeacherMode === 'function') ? isTeacherMode() : false;
-        const kiosk = document.body.classList.contains('kiosk-mode');
-
-        // 선생님 로그인이 아니면 학습 일정 외에는 못 봄
-        if(!teacher && !kiosk && id !== 'calendar') id = 'calendar';
-
-        // 키오스크에서는 리스트(출석부)만 유지
-        if(kiosk && id !== 'list') return;
-
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
-        document.getElementById(id).classList.add('active');
-        // 탭 버튼 활성화 로직 (register/list/calendar/inbox)
-        const tabs = document.querySelectorAll('.tab-btn');
-        tabs.forEach(btn => {
-            const oc = btn.getAttribute('onclick') || '';
-            if(oc.includes("showPage('"+id+"')")) btn.classList.add('active');
-        });
-
-        if(id === 'calendar' && window.renderCalendar) window.renderCalendar();
-    };
-
-    // [수정] 선생님 모드 전환 (입력창 즉시 띄우기)
-    window.toggleAdminMode = async () => {
+    // 선생님 모드 전환
+    window.toggleAdminMode = (force) => {
         const chk = document.getElementById('adminToggle');
-        if(!chk) return;
-
-        if(chk.checked){
-            const pw = prompt("관리자 비밀번호를 입력하세요:");
-            if(pw === null){ chk.checked = false; return; }
-
-            let dbPw = "1234";
-            try {
-                const docSnap = await getDoc(doc(db, "settings", "admin"));
-                if (docSnap.exists()) dbPw = docSnap.data().password;
-            } catch(e) {}
-
-            if(pw === dbPw){
-                setTeacherMode(true);
-                applyAccessUI();
-                // 기본 시작 화면은 원생관리
-                if(!document.body.classList.contains('kiosk-mode')) showPage('list');
-            } else {
-                alert("비밀번호가 틀렸습니다.");
-                chk.checked = false;
-                setTeacherMode(false);
-                applyAccessUI();
-                showPage('calendar');
-            }
+        if(force === true || chk.checked) {
+            if(force !== true && prompt("비번:") !== "1234") { chk.checked = false; return; }
+            setTeacherMode(true);
+            applyAccessUI();
+            window.showPage('list');
         } else {
-            // 로그아웃(게스트 모드)
             setTeacherMode(false);
             applyAccessUI();
-            showPage('calendar');
+            window.showPage('calendar');
+        }
+    };
+    
+    // 페이지 전환
+    window.showPage = (id) => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        
+        const tabs = document.querySelectorAll('.tab-btn');
+        if(id==='register') tabs[0].classList.add('active');
+        if(id==='list') tabs[1].classList.add('active');
+        if(id==='calendar') tabs[2].classList.add('active');
+        if(id==='inbox') tabs[3].classList.add('active');
+        
+        if(id==='calendar') window.renderCalendar();
+        if(id==='list') window.filterList();
+    };
+
+    window.setGradeFilter = (val, btn) => {
+        currentGradeFilter = val;
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        window.filterList();
+    };
+    
+    window.updateSchoolOptions = () => {
+        const schools = new Set();
+        window.allStudents.forEach(s => { if(s.school) schools.add(s.school); });
+        const sel = document.getElementById('schoolFilter');
+        if(sel) {
+            sel.innerHTML = '<option value="all">전체 학교</option>';
+            schools.forEach(sc => sel.innerHTML += `<option value="${sc}">${sc}</option>`);
         }
     };
 
-    // 일괄 처리
-    window.toggleSelection = (id, e) => {
-        e.stopPropagation();
-        if(selectedStudentIds.has(id)) selectedStudentIds.delete(id);
-        else selectedStudentIds.add(id);
-        updateBulkBtn();
+    window.triggerPhotoEdit = () => { if(isTeacherMode()) document.getElementById('editPhotoInput').click(); };
+    window.previewEditPhoto = async () => {
+        const file = document.getElementById('editPhotoInput').files[0];
+        if(file) document.getElementById('modalImg').src = await resizeImage(file);
     };
-    window.toggleSelectAll = () => {
-        const chk = document.getElementById('selectAll').checked;
-        const visibleIds = Array.from(document.querySelectorAll('.list-chk')).map(el => el.value);
-        if(chk) visibleIds.forEach(id => selectedStudentIds.add(id));
-        else selectedStudentIds.clear();
-
-        document.querySelectorAll('.list-chk').forEach(box => { box.checked = selectedStudentIds.has(box.value); });
-        updateBulkBtn();
-    };
-    function updateBulkBtn() {
-        const count = selectedStudentIds.size;
-        document.getElementById('selectedCount').innerText = `${count}명 선택됨`;
-        document.getElementById('bulkActionBtn').style.display = count > 0 ? 'block' : 'none';
-    }
-    window.processBulkAttendance = async () => {
-        if(!confirm(`선택한 ${selectedStudentIds.size}명에게 등원 문자를 발송하고 출석처리 하시겠습니까?`)) return;
-        const phones = [];
-        const promises = [];
-        selectedStudentIds.forEach(id => {
-            const s = allStudents.find(st => st.id === id);
-            if(s) {
-                promises.push(updateDoc(doc(db, "students", id), { attendanceLog: arrayUnion(new Date()) }));
-                if(s.phone) phones.push(s.phone.replace(/[^0-9]/g, ''));
-            }
-        });
-        try {
-            await Promise.all(promises);
-            const msg = "[미래엔수학] 자녀가 교실에 도착하여 학습을 시작합니다.";
-            const uniqPhones = [...new Set(phones)];
-            let success = 0, fail = 0;
-            for (const p of uniqPhones) {
-                try {
-                    const { ok } = await sendSmsByServer(p, msg);
-                    if (ok) success++; else fail++;
-                } catch(e) { fail++; }
-            }
-            alert(`처리 완료 (성공: ${success}, 실패: ${fail})`);
-            selectedStudentIds.clear();
-            document.getElementById('selectAll').checked = false;
-            filterList();
-            updateBulkBtn();
-        } catch(e) { alert("오류: " + e.message); }
+    window.switchModalTab = (id, btn) => {
+        document.querySelectorAll('.modal-tab-pane').forEach(p => p.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
     };
 
-    // 파일 다운로드 및 백업
+    // 기타 유틸 (백업/복구)
     window.downloadExcel = () => {
-        const data = allStudents.map((s, i) => ({ "No": i+1, "이름": s.name, "학교": s.school, "학년": s.belt, "부모님": s.phone }));
+        const data = window.allStudents.map((s, i) => ({ "No": i+1, "이름": s.name, "학교": s.school, "학년": s.belt, "부모님": s.phone }));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "명단");
         XLSX.writeFile(wb, `원생명단_${new Date().toISOString().slice(0,10)}.xlsx`);
     };
     window.downloadBackup = () => {
-        const blob = new Blob([JSON.stringify(allStudents)], {type: "application/json"});
+        const blob = new Blob([JSON.stringify(window.allStudents)], {type: "application/json"});
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = "backup.json"; a.click();
     };
@@ -2799,11 +2450,8 @@ window.openDetail = (s) => {
         const reader = new FileReader();
         reader.onload = async (evt) => {
             const data = JSON.parse(evt.target.result);
-            if(confirm(`${data.length}명의 데이터를 복구하시겠습니까?`)) {
-                for(const s of data) {
-                    const { id, ...rest } = s; 
-                    await addDoc(collection(db, "students"), { ...rest, regDate: serverTimestamp() });
-                }
+            if(confirm(`${data.length}명 복구?`)) {
+                for(const s of data) { const { id, ...rest } = s; await addDoc(collection(db, "students"), { ...rest, regDate: serverTimestamp() }); }
                 alert("복구 완료");
             }
         };
@@ -2811,673 +2459,18 @@ window.openDetail = (s) => {
     };
     window.changeAdminPassword = async () => {
         const newPw = prompt("새 비밀번호:");
-        if(newPw) {
-            await setDoc(doc(db, "settings", "admin"), { password: newPw });
-            alert("변경됨");
-        }
+        if(newPw) { await setDoc(doc(db, "settings", "admin"), { password: newPw }); alert("변경됨"); }
     };
 
-    // =========================================================
-    // 12. 기타 UI 효과 및 유틸리티
-    // =========================================================
-
-    // 이미지 리사이즈
-   // 이미지 리사이즈 함수 (수정본)
-    function resizeImage(file) {
-        return new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    // 폭을 300px -> 250px로 조금 더 줄임 (속도 향상)
-                    const scale = 250/img.width; 
-                    canvas.width = 250; canvas.height = img.height * scale;
-                    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-
-                    // 화질을 0.7 -> 0.5로 낮춤 (용량 대폭 감소)
-                    resolve(canvas.toDataURL('image/jpeg', 0.4));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-    window.triggerPhotoEdit = () => { if(document.body.classList.contains('show-admin')) document.getElementById('editPhotoInput').click(); };
-    window.previewEditPhoto = async () => {
-        const file = document.getElementById('editPhotoInput').files[0];
-        if(file) document.getElementById('modalImg').src = await resizeImage(file);
-    };
-
-    // 알림장 및 정산 텍스트
-   // [수정] 알림장 문구 생성 및 미리보기 표시 함수
-window.generateNotice = () => {
-    const s = allStudents.find(st => st.id === currentStudentId);
-    if (!s) return "";
-
-    // 내용이 비어있으면 경고
-    const text = document.getElementById('dailyProgress').value;
-    if(!text) {
-        alert("학습 내용을 먼저 입력해주세요.");
-        return "";
-    }
-
-    const today = new Date();
-    const dateStr = `${today.getMonth() + 1}월 ${today.getDate()}일`;
-
-    // 문구 템플릿
-    const msg = `[미래엔수학] ${dateStr} 알림장 📢\n\n` +
-                `안녕하세요, 학부모님!\n` +
-                `오늘 ${s.name} 학생이 공부한 내용 안내드립니다.\n\n` +
-                `📚 **오늘의 학습**\n` +
-                `${text}\n\n` +
-                `오늘도 열심히 공부한 ${s.name}에게\n` +
-                `가정에서도 따뜻한 격려와 칭찬 부탁드립니다.\n` +
-                `감사합니다. 😊`;
-
-    // [중요] 미리보기 박스에 내용을 넣고, 화면에 보이게 설정
-    const previewBox = document.getElementById('noticePreview');
-    if (previewBox) {
-        previewBox.innerText = msg;
-        previewBox.style.display = 'block'; // 여기서 숨김 해제!
-    }
-
-    return msg;
-};
-    window.copyNotice = () => {
-        const text = document.getElementById('noticePreview').innerText;
-        navigator.clipboard.writeText(text).then(()=>alert("복사됨"));
-    };
-        // ===== [알림장 문자 발송] =====
-    window.sendNoticeSms = () => {
-        const s = allStudents.find(st => st.id === currentStudentId);
-        if(!s || !s.phone) return alert("연락처 없음");
-        const msg = window.generateNotice();
-        location.href = `sms:${(s.phone||'').replace(/[^0-9]/g,'')}?body=${encodeURIComponent(msg)}`;
-    };
-
-
-  // =========================================================
-  // [추가] 카카오 공유용 토큰 & URL 생성 (token -> Firestore 매핑)
-  // =========================================================
-  window.__NOTICE_PAGE_NAME__ = 'notice.html';
-
-  // ✅ async로 바꿔야 await 사용 가능
-  window.createNoticeToken = async function(studentId, target){
-    const token =
-      Date.now().toString(36) + '-' +
-      Math.random().toString(36).slice(2, 10);
-
-    // 같은 기기에서 file://로 테스트할 때도 notice.html이 token을 찾을 수 있도록 저장
-    try {
-      localStorage.setItem('noticeToken:' + token, JSON.stringify({
-        studentId: studentId,
-        target: target,
-        createdAt: new Date().toISOString()
-      }));
-    } catch(e) {}
-
-    // ✅ 실제 공유(다른 폰/기기)에서도 열리게 Firestore에 저장
-    try {
-      await setDoc(doc(db, "noticeTokens", token), {
-        studentId: studentId,
-        target: target,
-        createdAt: serverTimestamp()
-      });
-    } catch(e) {
-      console.warn("noticeTokens 저장 실패(권한/규칙 확인):", e);
-    }
-
-    return token;
-  };
-
-  // ✅ 이것도 async여야 token 생성 await 가능
-  window.buildNoticeUrl = async function(studentId, target){
-    const token = await window.createNoticeToken(studentId, target);
-
-    // GitHub Pages처럼 /shee0777/ 하위 경로면 pathname이 필요할 수 있음
-    const base = (location.origin && location.origin !== 'null') ? location.origin : '';
-    const dir  = location.pathname.replace(/\/[^\/]*$/, '/'); // 현재 폴더 경로
-    const page = window.__NOTICE_PAGE_NAME__ || 'notice.html';
-
-    const url = (base ? (base + dir + page) : (dir + page)) + '?token=' + encodeURIComponent(token);
-    return { url, token };
-  };
-
-  // =========================================================
-  // [수정] 카카오톡 공유 링크를 notice.html?token=... 으로 보내기
-  // =========================================================
-  // ============================================================
-  // [수정] 카톡 버튼을 눌러도 '웹 공유(성공했던 방식)'가 작동하도록 변경
-  // ============================================================
-  window.sendNoticeKakao = async () => {
-    const s = allStudents.find(st => st.id === currentStudentId);
-    if (!s) return alert('학생 정보 없음');
-
-    const text = document.getElementById('dailyProgress').value;
-    if (!text) return alert('내용을 입력해주세요.');
-
-    // 1. 현재 접속한 주소를 기반으로 링크 생성 (옛날 주소 shee0777 아님!)
-    const base = (location.origin || '').replace(/\/$/, '');
-
-    // ★ 핵심: parent.html로 연결하고, 뒤에 시간을 붙여서(?v=...) 매번 새로운 링크로 인식시킴
-    const parentUrl = base + '/parent.html?v=' + Date.now();
-
-    // 2. DB에 알림장 내용 저장
-    try {
-      await updateDoc(doc(db, 'students', currentStudentId), {
-        lastNotice: text,
-        counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
-      });
-    } catch (e) { console.log('저장 오류:', e); }
-
-    const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모님 확인하기\n${parentUrl}`;
-
-    // 3. 모바일: '공유하기' 창 띄우기 (카카오톡 선택 가능)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `[미래엔수학] ${s.name} 학생 알림장`,
-          text: msg,
-          url: parentUrl
-        });
-        return; // 공유 성공하면 여기서 끝
-      } catch (e) {
-        // 취소하거나 에러나면 아래 복사 기능으로 넘어감
-      }
-    }
-
-    // 4. PC/공유 실패 시: 클립보드에 복사 후 안내
-    try {
-      await navigator.clipboard.writeText(msg);
-      alert('알림장 링크가 복사되었습니다!\n카카오톡을 열고 "붙여넣기" 해주세요.');
-    } catch (e) {
-      prompt('아래 내용을 복사해서 카톡으로 보내세요.', msg);
-    }
-  };
-
-  // [추가] 개별 버튼(전화기 아이콘 옆 카톡 버튼)도 똑같이 작동하게 통일
-  window.sendKakaoToTarget = async function (target) {
-     // 위 함수를 그대로 재사용 (무조건 parent.html로 연결)
-     window.sendNoticeKakao(); 
-  };
-
-
-
-
-
-// [수정됨] 월말 정산/교육비 안내 양식 (자동 계산 + 계좌 양식 포함)
-    window.generateSettlement = () => {
-        const s = allStudents.find(st => st.id === currentStudentId);
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1; // 이번 달
-
-        // 다음 달 계산 (12월이면 내년 1월로 표시)
-        const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
-
-        // 이번 달 출석 횟수 정확히 계산
-        const logs = (s.attendanceLog || []).filter(ts => {
-            const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
-            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        });
-
-        // 정산 안내 템플릿
-        const msg = `[미래엔수학] ${nextMonth}월 교육비 안내 📄\n\n` +
-                    `안녕하세요, 학부모님.\n` +
-                    `어느덧 ${currentMonth}월 학습을 잘 마무리하였습니다.\n\n` +
-                    `✅ **${currentMonth}월 출석 현황**\n` +
-                    `- 총 등원일: ${logs.length}회\n\n` +
-                    `성실하게 학습한 ${s.name} 학생에게 많은 칭찬 부탁드리며,\n` +
-                    `다음 달 교육비 안내해 드립니다.\n\n` +
-                    `💰 **납부 안내**\n` +
-                    `- 기간: ${nextMonth}월 1일 ~ ${nextMonth}월 10일\n` +
-                    `- 계좌: 농협 000-0000-0000 (예금주:홍길동)\n` + 
-                    `- 금액: (금액을 입력해주세요)\n\n` +
-                    `늘 믿고 맡겨주셔서 감사합니다.`;
-
-        document.getElementById('settlementPreview').innerText = msg;
-    };
-    window.copyText = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText); alert("복사됨"); };
-
-    // 출석 통계 계산
-    window.calcStats = (s) => {
-        const logs = s.attendanceLog || [];
-        const total = logs.length;
-        const now = new Date();
-        const thisMonthLogs = logs.filter(ts => {
-            const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
-            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        });
-        if(document.getElementById('statTotal')) document.getElementById('statTotal').innerText = `${total}회`;
-        if(document.getElementById('statMonth')) {
-             document.getElementById('statMonth').innerText = `${thisMonthLogs.length}회`;
-             const label = document.getElementById('statMonth').nextElementSibling;
-             if(label) label.innerText = "이번달 등원";
-        }
-    };
-
-// =========================================================
-    // [수정] 모바일 강력 호환 오디오/TTS 시스템 (최종 완성본)
-    // =========================================================
-
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = new AudioContext();
-    let voices = []; // 목소리 목록 저장용
-
-    // 1. 목소리 목록 미리 불러오기 (비동기 로딩 대처 - 이게 중요합니다!)
-    function loadVoices() {
-        voices = window.speechSynthesis.getVoices();
-    }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    loadVoices(); // 초기 실행
-
-    // 2. 소리 엔진 깨우기 (화면 터치 시 무조건 실행)
-    function unlockAudio() {
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => console.log("Audio Resumed"));
-        }
-        // 무음 오디오 재생으로 권한 획득
-        const buffer = audioCtx.createBuffer(1, 1, 22050);
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-        source.start(0);
-
-        // 이벤트 제거 (한 번만 실행)
-        document.body.removeEventListener('click', unlockAudio);
-        document.body.removeEventListener('touchstart', unlockAudio);
-    }
-    // 터치 이벤트에 연결
-    document.body.addEventListener('click', unlockAudio);
-    document.body.addEventListener('touchstart', unlockAudio);
-
-
-    // 3. [수정] 음성 안내 (목소리 강제 지정 + 속도 0.8)
-    function speakText(txt) {
-        if(!window.speechSynthesis) return;
-
-        // 기존 음성 취소 (겹침 방지)
-        window.speechSynthesis.cancel(); 
-
-        const u = new SpeechSynthesisUtterance(txt);
-        u.lang = 'ko-KR'; 
-
-        // ▼ 속도 조절: 0.8 (차분하고 친절한 속도)
-        u.rate = 0.8;  
-        u.pitch = 1.0; 
-        u.volume = 1.0; 
-
-        // [핵심] 한국어 목소리를 찾아 강제로 지정 (모바일 호환성 해결)
-        if (voices.length === 0) voices = window.speechSynthesis.getVoices();
-        const koVoice = voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
-        if (koVoice) u.voice = koVoice;
-
-        // [버그 방지] 가비지 컬렉터가 음성을 끊는 것 방지 (중요)
-        window.currentUtterance = u; 
-        u.onend = () => { window.currentUtterance = null; };
-
-        window.speechSynthesis.speak(u);
-    }
-
-    // 4. 성공 효과음 (맑은 딩동 소리)
-    function playSuccessSound() {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        osc.type = 'sine'; 
-        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // 도
-        osc.frequency.exponentialRampToValueAtTime(1046.5, audioCtx.currentTime + 0.1); // 높은 도
-
-        // 볼륨: 부드럽게 사라짐
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.5);
-    }
-    // UI 피드백 (Toast)
-    function showToast(msg, type) {
-        const t = document.getElementById('toast');
-        if(t) {
-            t.innerHTML = `<span class="dot"></span> ${msg}`; 
-            t.className = `toast show ${type||''}`;
-            setTimeout(()=>t.classList.remove('show'), 2000);
-        }
-    }
-
-    // 모달 탭 전환
-    window.switchModalTab = (id, btn) => {
-        document.querySelectorAll('.modal-tab-pane').forEach(p=>p.classList.remove('active'));
-        document.querySelectorAll('.modal-tab-btn').forEach(b=>b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        btn.classList.add('active');
-    };
-
-    // 모달 닫기 유틸
-    window.closeModal = () => {
-        document.getElementById('detailModal').style.display = 'none';
-        try { document.querySelector('#detailModal .modal').classList.remove('modal-full'); } catch(e) {}
-        currentStudentId = null;
-    };
-    window.onclick = (e) => {
-        if(e.target == document.getElementById('detailModal')) window.closeModal();
-        if(e.target == document.getElementById('scheduleModal')) document.getElementById('scheduleModal').style.display = "none";
-    };
-
-    // [수정] 새로고침/접속 시: 기본은 '원생관리', 모드는 localStorage로 유지
+    // 초기 실행
     window.onload = () => {
-        // 1) 저장된 모드 복원
-        const teacherSaved = isTeacherMode();
         const kioskSaved = isKioskSaved();
-
         if(kioskSaved) document.body.classList.add('kiosk-mode');
-        else document.body.classList.remove('kiosk-mode');
-
         applyAccessUI();
-
-        // 2) 시작 화면
-        if(document.body.classList.contains('kiosk-mode')) {
-            showPage('list');
-        } else {
-            // 기본: 선생님이면 원생관리, 아니면 학습일정만
-            showPage(teacherSaved ? 'list' : 'calendar');
-        }
-
-        // 3) 리스트/달력 갱신
-        if(window.filterList) window.filterList();
-        if(window.renderCalendar) window.renderCalendar();
-    };
-// =========================================================
-    // [추가] 모바일 좌우 슬라이드(스와이프) 기능
-    // =========================================================
-    let touchStartX = 0;
-    let touchStartY = 0;
-
-    // 탭 순서 정의 (화면에 보이는 순서대로: 신규등록 -> 원생관리 -> 학습일정)
-    const pageOrder = ['register', 'list', 'calendar'];
-
-    document.addEventListener('touchstart', e => {
-        // 키오스크 모드이거나 모달창이 떠있을 땐 슬라이드 기능 끔
-        if(document.body.classList.contains('kiosk-mode')) return;
-        if(document.getElementById('detailModal').style.display === 'flex') return;
-        if(document.getElementById('scheduleModal').style.display === 'flex') return;
-        if(document.getElementById('settingsModal').style.display === 'flex') return;
-
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
-    }, {passive: true});
-
-    document.addEventListener('touchend', e => {
-        // 키오스크나 모달창일 땐 무시
-        if(document.body.classList.contains('kiosk-mode')) return;
-        if(document.getElementById('detailModal').style.display === 'flex') return;
-        if(document.getElementById('scheduleModal').style.display === 'flex') return;
-        if(document.getElementById('settingsModal').style.display === 'flex') return;
-
-        const touchEndX = e.changedTouches[0].screenX;
-        const touchEndY = e.changedTouches[0].screenY;
-
-        const diffX = touchEndX - touchStartX;
-        const diffY = touchEndY - touchStartY;
-
-        // 1. 가로로 움직인 거리가 50px 이상이어야 함 (너무 짧으면 무시)
-        // 2. 세로로 움직인 거리보다 가로가 더 커야 함 (스크롤 하려던 게 아니어야 함)
-        if(Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-
-            // 현재 보고 있는 페이지 찾기
-            const currentPage = document.querySelector('.page.active');
-            if(!currentPage) return;
-
-            const currentIndex = pageOrder.indexOf(currentPage.id);
-            if(currentIndex === -1) return;
-
-            if(diffX < 0) {
-                // 👈 왼쪽으로 밀었음 (다음 페이지로 이동)
-                if(currentIndex < pageOrder.length - 1) {
-                    window.showPage(pageOrder[currentIndex + 1]);
-                }
-            } else {
-                // 👉 오른쪽으로 밀었음 (이전 페이지로 이동)
-                if(currentIndex > 0) {
-                    window.showPage(pageOrder[currentIndex - 1]);
-                }
-            }
-        }
-    }, {passive: true});
-   // =========================================================
-    // [통합 복구] 학부모 의견함 + 알림장 저장 + 카톡 공유
-    // =========================================================
-
-    // 1. 학부모 의견함 불러오기 (자동 실행)
-    (function initInbox() {
-        const inboxArea = document.getElementById('inboxListArea');
-        const inboxBadge = document.getElementById('inboxBadge');
-        
-        // 화면에 영역이 없으면 중단 (에러 방지)
-        if (!inboxArea) return;
-
-        // ★ 핵심: 에러를 피하기 위해 정렬(orderBy) 없이 가져옵니다.
-        const q = query(collection(db, "parentMessages"));
-
-        onSnapshot(q, (snapshot) => {
-            let unreadCount = 0;
-            const items = [];
-
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                items.push({ id: doc.id, ...data });
-                if (data.read === false) unreadCount++;
-            });
-
-            // 자바스크립트로 최신순(날짜순) 정렬
-            items.sort((a, b) => {
-                const tA = a.createdAt ? (a.createdAt.seconds || 0) : 0;
-                const tB = b.createdAt ? (b.createdAt.seconds || 0) : 0;
-                return tB - tA; 
-            });
-
-            // 뱃지(빨간 숫자) 업데이트
-            if (inboxBadge) {
-                inboxBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
-                inboxBadge.innerText = unreadCount;
-            }
-
-            // 목록 화면에 그리기
-            if (items.length === 0) {
-                inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
-            } else {
-                inboxArea.innerHTML = "";
-                items.forEach(m => {
-                    const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
-                    const dateStr = dateObj.toLocaleString();
-                    const isUnread = (m.read === false);
-                    const bgStyle = isUnread ? "background:#fff7ed; border:1px solid #fdba74;" : "background:#fff; border-bottom:1px dashed #e2e8f0;";
-
-                    const div = document.createElement('div');
-                    div.style.cssText = `padding:15px; margin-bottom:8px; border-radius:12px; ${bgStyle}`;
-                    div.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                            <div>
-                                <div style="font-weight:bold; font-size:15px; color:#333;">
-                                    ${isUnread ? '<span style="color:red;">●</span>' : ''} 
-                                    ${m.studentName || '이름없음'} 
-                                </div>
-                                <div style="font-size:12px; color:#999;">${dateStr}</div>
-                            </div>
-                            <div style="display:flex; gap:6px;">
-                                <button onclick="openMessageStudent('${m.studentId}')" style="background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">학생보기</button>
-                                ${isUnread ? `<button onclick="markMessageRead('${m.id}')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer;">읽음처리</button>` : '<span style="font-size:12px; color:#ccc; padding:6px;">읽음</span>'}
-                            </div>
-                        </div>
-                        <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
-                    `;
-                    inboxArea.appendChild(div);
-                });
-            }
-        });
-    })();
-
-    // 2. [핵심] 알림장 보내기 + DB 저장 + 카톡 공유
-    window.sendNoticeShare = async () => {
-        // 학생 선택 여부 확인
-        if(!window.currentStudentId) return alert('학생을 선택해주세요.');
-        
-        const s = (window.allStudents || []).find(st => st.id === window.currentStudentId);
-        if(!s) return alert('학생 정보 오류');
-
-        const text = document.getElementById('dailyProgress').value;
-        if(!text) return alert('내용을 입력해주세요.');
-
-        // 공유 링크 생성
-        const base = (location.origin || '').replace(/\/$/, '');
-        const parentUrl = base + '/parent.html?v=' + Date.now();
-
-        // ★ [여기가 중요!] DB에 알림장 내용 저장 (이게 있어야 학부모 사이트에 기록됨)
-        try {
-            await updateDoc(doc(db, 'students', window.currentStudentId), {
-                lastNotice: text, // 최신 알림장 갱신
-                counselLog: arrayUnion({ // 기록장에 추가
-                    date: new Date().toLocaleDateString(), 
-                    text: '[알림장] ' + text 
-                })
-            });
-            console.log("알림장 저장 완료");
-        } catch(e) { 
-            console.error("저장 실패:", e);
-            alert("저장에 실패했지만 공유는 계속합니다."); 
-        }
-
-        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모님 확인하기\n${parentUrl}`;
-
-        // 모바일 공유하기
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `[미래엔수학] ${s.name} 학생 알림장`,
-                    text: msg,
-                    url: parentUrl
-                });
-                return;
-            } catch(e) {}
-        }
-
-        // PC 복사하기
-        try {
-            await navigator.clipboard.writeText(msg);
-            alert('링크가 복사되었습니다! 카톡에 붙여넣으세요.');
-        } catch(e) {
-            prompt('복사해서 보내세요:', msg);
-        }
-    };
-
-    // 3. 기타 기능 (읽음 처리, 상담 등록 등)
-    window.markMessageRead = async (id) => {
-        try { await updateDoc(doc(db, "parentMessages", id), { read: true }); } 
-        catch(e) { console.error(e); }
-    };
-    
-    window.openMessageStudent = (sid) => {
-        if(!document.body.classList.contains('show-admin')) {
-             document.body.classList.add('show-admin');
-             const chk = document.getElementById('adminToggle');
-             if(chk) chk.checked = true;
-        }
-        window.showPage('list');
-        const s = (window.allStudents || []).find(st => st.id === sid);
-        if(s) window.openDetail(s);
-    };
-
-    window.addCounselLog = async () => {
-        const text = document.getElementById('newCounsel').value;
-        if(!text) return alert("내용을 입력해주세요.");
-        try {
-            await updateDoc(doc(db, "students", window.currentStudentId), {
-                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text })
-            });
-            alert("저장되었습니다.");
-            document.getElementById('newCounsel').value = "";
-            const s = window.allStudents.find(st => st.id === window.currentStudentId);
-            if(s) window.openDetail(s);
-        } catch(e) { alert("오류: " + e.message); }
-    };
-    
-    window.saveEdit = async () => {
-        const id = document.getElementById('editId').value;
-        if (!id) return;
-        try {
-            await updateDoc(doc(db, "students", id), {
-                name: document.getElementById('editName').value,
-                birth: document.getElementById('editBirth').value,
-                gender: document.getElementById('editGender').value,
-                school: document.getElementById('editSchool').value,
-                belt: document.getElementById('editGrade').value,
-                phone: document.getElementById('editParentPhone').value,
-                studentPhone: document.getElementById('editStudentPhone').value,
-                address: document.getElementById('editAddress').value,
-                notes: document.getElementById('editNotes').value
-            });
-            alert("수정되었습니다.");
-        } catch(e) { alert("오류: " + e.message); }
-    };
-// =========================================================
-    // [긴급 복구] 누락된 기능 추가 (이 코드를 맨 아래에 붙이세요)
-    // =========================================================
-
-    // 1. 교육비 정산 문구 자동 생성 (이게 없어서 내용이 안 나왔습니다)
-    window.generateSettlement = () => {
-        if(!window.currentStudentId) return alert("학생 정보가 없습니다.");
-        const s = (window.allStudents || []).find(st => st.id === window.currentStudentId);
-        if(!s) return alert("학생 데이터를 찾을 수 없습니다.");
-        
-        // 날짜 계산 (오늘 기준, 이번 달 안내)
-        const now = new Date();
-        const month = now.getMonth() + 1;
-        
-        // 안내 문구 만들기
-        const msg = `[미래엔수학] ${month}월 교육비 결제 안내\n\n안녕하세요, ${s.name} 학부모님.\n${month}월 교육비 정산 기간입니다.\n\n- 학생명: ${s.name}\n- 기간: 매월 25일 ~ 다음달 5일\n\n원활한 학습 운영을 위해 기한 내 납부 부탁드립니다.\n감사합니다.`;
-        
-        const preview = document.getElementById('settlementPreview');
-        if(preview) preview.innerText = msg;
-        else alert(msg); // 화면이 없으면 창으로 띄움
-    };
-
-    // 2. 텍스트 복사 기능 (문구 복사 버튼용)
-    window.copyText = (elementId) => {
-        const el = document.getElementById(elementId);
-        const text = el ? el.innerText : "";
-        if(!text) return alert("복사할 내용이 없습니다. 먼저 '문구 생성'을 누르세요.");
-        
-        navigator.clipboard.writeText(text).then(() => {
-            alert("복사되었습니다! 카톡에 붙여넣으세요.");
-        }).catch(err => {
-            prompt("Ctrl+C를 눌러 복사하세요:", text);
-        });
-    };
-
-    // 3. 학생 정보 삭제 기능 (빨간 버튼용)
-    window.deleteStudent = async () => {
-        if(!window.currentStudentId) return;
-        if(!confirm("정말 이 학생 정보를 영구 삭제하시겠습니까?\n(복구할 수 없습니다!)")) return;
-
-        try {
-            await deleteDoc(doc(db, "students", window.currentStudentId));
-            alert("삭제되었습니다.");
-            document.getElementById('modalDetail').style.display = 'none'; // 상세창 닫기
-            window.showPage('list'); // 목록 새로고침
-        } catch(e) {
-            alert("삭제 실패: " + e.message);
-        }
+        if(isTeacherMode() || kioskSaved) window.showPage('list');
+        else window.showPage('calendar');
     };
 </script>
-
-
-
-
 <div id="toast" class="toast" aria-live="polite" aria-atomic="true">
     <span class="dot"></span><span id="toastText"></span>
 </div>
