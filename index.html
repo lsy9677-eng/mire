@@ -1061,8 +1061,12 @@ body.kiosk-mode .kiosk-header{
 
     /* [수정] 선생님 모드 시 설정 버튼 강제 표시 */
     body.show-admin .admin-only {
-        display: inline-flex !important;
-    }
+    display: inline-block !important; /* flex 대신 block이나 inline-block 사용 */
+}
+/* 학생 정보 수정 박스는 꽉 차게 보이도록 별도 지정 */
+body.show-admin div.info-box.admin-only {
+    display: block !important;
+}
 /* =========================================
    1. 메뉴 버튼 상단 배치 & 모바일 최적화
    ========================================= */
@@ -1280,7 +1284,96 @@ body.kiosk-mode .kiosk-exit-btn {
   .modal.modal-full{ width: 100vw !important; height: 100vh !important; max-height: 100vh !important; }
   .modal-overlay{ padding: 0 !important; }
 }
+/* =========================================
+   [수정] 상세 팝업 레이아웃 개선 (선생님 모드 최적화)
+   ========================================= */
 
+/* 모달 전체 크기 및 스크롤 고정 */
+.modal {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh !important; /* 화면 꽉 차지 않게 */
+    height: auto;
+    overflow: hidden; /* 전체 스크롤 방지 */
+    padding: 0 !important; /* 내부 패딩 제거 (구역별로 줌) */
+}
+
+/* 1. 상단 프로필 영역 (고정) */
+.modal-header-fixed {
+    background: #fff;
+    padding: 20px 20px 10px 20px;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0; /* 크기 줄어들지 않음 */
+    z-index: 10;
+}
+
+/* 닫기 버튼 위치 조정 */
+.close-btn {
+    top: 15px; 
+    right: 15px;
+    z-index: 20;
+    background: #f1f5f9;
+}
+
+/* 2. 탭 버튼 영역 (고정) */
+.modal-tab-nav {
+    margin: 0 20px;
+    flex-shrink: 0;
+}
+
+/* 3. 하단 콘텐츠 영역 (여기만 스크롤) */
+.modal-body-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f8fafc; /* 배경색 살짝 다르게 */
+}
+
+/* 탭 내부 박스 디자인 통일 */
+.info-box {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.info-box h4 {
+    margin: 0 0 12px 0;
+    font-size: 15px;
+    color: #334155;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+
+/* [중요] 정보 수정 폼 2단 배열 (공간 절약) */
+#modalEditForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 좌우 2칸 */
+    gap: 12px 10px; /* 세로 가로 간격 */
+}
+/* 모바일에서는 1단으로 */
+@media (max-width: 480px) {
+    #modalEditForm { grid-template-columns: 1fr; }
+}
+
+#modalEditForm label {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+#modalEditForm input, 
+#modalEditForm select,
+#modalEditForm textarea {
+    min-height: 38px;
+    padding: 8px;
+    font-size: 13px;
+    background: #f8fafc;
+}
+#modalEditForm .full-row {
+    grid-column: 1 / -1; /* 가로 전체 차지 */
+}
 </style>
 </head>
 <body>
@@ -1489,166 +1582,166 @@ body.kiosk-mode .kiosk-exit-btn {
     </div>
 </div>
 
-        <div class="modal-overlay" id="detailModal">
+      <div class="modal-overlay" id="detailModal">
     <div class="modal">
         <button class="close-btn" onclick="closeModal()">×</button>
 
-        <div class="modal-header-profile">
-            <div style="width:80px; height:80px; margin:0 auto; position:relative;" onclick="triggerPhotoEdit()">
-                <img id="modalImg" src="" style="width:100%; height:100%; border-radius:50%; object-fit:cover; border:3px solid var(--secondary); box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-                <div class="admin-only" style="position:absolute; bottom:0; right:0; background:var(--primary); color:white; padding:4px 7px; border-radius:50%; font-size:11px;"><i class="fas fa-camera"></i></div>
-            </div>
-            <h2 id="modalName" style="margin:8px 0 4px 0; font-size:20px;"></h2>
-            <div id="modalInfo" style="color:var(--text-sub); font-size:13px; margin-bottom:10px;"></div>
+        <div class="modal-header-fixed">
+            <div style="text-align:center;">
+                <div style="width:70px; height:70px; margin:0 auto 10px; position:relative;" onclick="triggerPhotoEdit()">
+                    <img id="modalImg" src="" style="width:100%; height:100%; border-radius:24px; object-fit:cover; border:1px solid #e2e8f0; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+                    <div class="admin-only" style="position:absolute; bottom:-5px; right:-5px; background:#3b82f6; color:white; width:24px; height:24px; line-height:24px; text-align:center; border-radius:50%; font-size:12px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <h2 id="modalName" style="margin:0 0 4px 0; font-size:18px; color:#1e293b;"></h2>
+                <div id="modalInfo" style="color:#64748b; font-size:13px; margin-bottom:12px;"></div>
 
-            <div class="contact-row">
-                <div class="contact-group">
-                    <span class="contact-label">학생</span>
-                    <a id="linkCallStu" class="contact-btn btn-call"><i class="fas fa-phone"></i></a>
-                    <a id="linkSmsStu" class="contact-btn btn-sms"><i class="fas fa-comment-dots"></i></a>
-                    <a id="linkKakaoStu" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('student')"><i class="fas fa-comment"></i></a>
+                <div class="contact-row" style="margin-bottom:5px;">
+                    <div class="contact-group">
+                        <span class="contact-label" style="font-size:11px; color:#94a3b8; margin-right:4px;">학생</span>
+                        <a id="linkCallStu" class="contact-btn btn-call" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-phone"></i></a>
+                        <a id="linkSmsStu" class="contact-btn btn-sms" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment-dots"></i></a>
+                        <a id="linkKakaoStu" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('student')" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment"></i></a>
+                    </div>
+                    <div style="width:1px; height:15px; background:#e2e8f0; margin:0 5px;"></div>
+                    <div class="contact-group">
+                        <span class="contact-label" style="font-size:11px; color:#94a3b8; margin-right:4px;">부모</span>
+                        <a id="linkCallPar" class="contact-btn btn-call" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-phone"></i></a>
+                        <a id="linkSmsPar" class="contact-btn btn-sms" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment-dots"></i></a>
+                        <a id="linkKakaoPar" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('parent')" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment"></i></a>
+                    </div>
                 </div>
-                <div style="width:1px; height:20px; background:#ddd;"></div>
-                <div class="contact-group">
-                    <span class="contact-label">부모</span>
-                    <a id="linkCallPar" class="contact-btn btn-call"><i class="fas fa-phone"></i></a>
-                    <a id="linkSmsPar" class="contact-btn btn-sms"><i class="fas fa-comment-dots"></i></a>
-                    <a id="linkKakaoPar" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('parent')"><i class="fas fa-comment"></i></a>
-                </div>
+                <input type="file" id="editPhotoInput" accept="image/*" style="display:none;" onchange="previewEditPhoto()">
             </div>
-            <input type="file" id="editPhotoInput" accept="image/*" style="display:none;" onchange="previewEditPhoto()">
         </div>
 
-        <div class="modal-tab-nav">
+        <div class="modal-tab-nav" style="margin-top:10px;">
             <button class="modal-tab-btn active" onclick="switchModalTab('tabDaily', this)">📋 학습/출석</button>
-            <button class="modal-tab-btn" onclick="switchModalTab('tabScore', this)">📈 성적/상담</button>
+            <button class="modal-tab-btn" onclick="switchModalTab('tabScore', this)">📈 성적/기록</button>
             <button class="modal-tab-btn" onclick="switchModalTab('tabInfo', this)">⚙️ 정보/정산</button>
         </div>
 
-<div id="tabDaily" class="modal-tab-pane active">
-    <div class="stat-box" style="margin: 0 0 15px 0;">
-        <div class="stat-item"><div class="stat-num" id="statMonth">0%</div><div style="font-size:12px;">이번달 출석률</div></div>
-        <div class="stat-item"><div class="stat-num" id="statTotal">0회</div><div style="font-size:12px;">총 등원일</div></div>
-    </div>
-
-    <div style="background:#fffde7; border:1px solid #fff9c4; border-radius:10px; padding:15px;">
-        <h4 style="margin:0 0 10px 0; color:#fbc02d;"><i class="fas fa-bullhorn"></i> 오늘의 학습 안내</h4>
-        <textarea id="dailyProgress" rows="3" placeholder="오늘 공부한 내용을 입력하세요" style="background:white; margin-bottom:8px;"></textarea>
-
-        <div id="noticePreview" style="background:white; padding:10px; border:1px dashed #ddd; font-size:12px; white-space:pre-wrap; color:#555; margin-bottom:8px; min-height:40px;">(내용 미리보기)</div>
-
-        <div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:5px;">
-            <button class="action-btn" onclick="generateNotice()" style="background:#fbc02d; margin:0; font-size:13px; padding:10px 0;">📝 양식</button>
-            <button class="action-btn" onclick="copyNotice()" style="background:#ffa000; margin:0; font-size:13px; padding:10px 0;">📋 복사</button>
-            <button class="action-btn" onclick="sendNoticeSms()" style="background:#4caf50; margin:0; font-size:13px; padding:10px 0;">📩 문자</button>
-            <button class="action-btn" onclick="sendNoticeKakao()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:10px 0;">🟡 카톡</button>
-        </div>
-    </div>
-</div>
-        <div id="tabScore" class="modal-tab-pane">
+        <div class="modal-body-scroll">
             
-            <div class="admin-only" style="background:#f0f9ff; padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid #bae6fd;">
-                <div style="font-weight:bold; color:#0369a1; margin-bottom:8px;">💬 상담/지도 내용 등록</div>
-                <div style="display:flex; gap:8px;">
-                    <input type="text" id="newCounsel" placeholder="내용을 입력하세요" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px; color:#333; background:#fff;">
-                    <button class="action-btn" onclick="addCounselLog()" style="width:70px; margin:0; padding:0; background:#0284c7; color:#ffffff; border-radius:8px; font-weight:bold;">등록</button>
+            <div id="tabDaily" class="modal-tab-pane active">
+                <div class="stat-box" style="margin: 0 0 15px 0; background:white;">
+                    <div class="stat-item"><div class="stat-num" id="statMonth">0회</div><div style="font-size:12px; color:#64748b;">이번달 등원</div></div>
+                    <div style="width:1px; height:30px; background:#eee;"></div>
+                    <div class="stat-item"><div class="stat-num" id="statTotal">0회</div><div style="font-size:12px; color:#64748b;">총 누적 등원</div></div>
+                </div>
+
+                <div class="info-box" style="background:#fffbeb; border-color:#fcd34d;">
+                    <h4 style="color:#d97706; border-color:#fde68a;"><i class="fas fa-bullhorn"></i> 오늘의 알림장 (학부모 전송)</h4>
+                    <textarea id="dailyProgress" rows="3" placeholder="오늘 공부한 내용이나 전달사항을 입력하세요." style="background:white; border:1px solid #fde68a; margin-bottom:8px;"></textarea>
+                    
+                    <div id="noticePreview" style="display:none;"></div> <div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                        <button class="action-btn" onclick="sendNoticeSms()" style="background:#22c55e; margin:0; font-size:14px; padding:12px 0;"><i class="fas fa-envelope"></i> 문자 전송</button>
+                        <button class="action-btn" onclick="sendNoticeKakao()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:14px; padding:12px 0;"><i class="fas fa-comment"></i> 카톡 공유</button>
+                    </div>
                 </div>
             </div>
 
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h4 style="margin:0; color:var(--text-main);">기록 목록</h4>
-                <span style="font-size:12px; color:#999;">최근 순</span>
-            </div>
-
-            <div id="modalCounselLog" style="background:#f8fafc; border-radius:8px; padding:15px; height:200px; overflow-y:auto; margin-bottom:15px; border:1px solid #e2e8f0; color:#333;"></div>
-            
-            <details style="background:white; border:1px solid #e0e0e0; border-radius:10px; padding:10px;">
-                <summary style="font-weight:bold; color:#7b1fa2; cursor:pointer; padding:5px; list-style:none; display:flex; align-items:center; justify-content:space-between;">
-                    <span>📈 성적 관리 (클릭)</span>
-                    <i class="fas fa-chevron-down" style="font-size:12px; color:#aaa;"></i>
-                </summary>
-                <div style="margin-top:15px;">
-                    <div class="chart-container" style="padding:0; margin-bottom:15px; border:none;">
-                        <canvas id="scoreChart" height="180"></canvas>
+            <div id="tabScore" class="modal-tab-pane">
+                <div class="info-box">
+                    <h4>💬 상담 및 지도 기록</h4>
+                    <div class="admin-only" style="display:flex; gap:6px; margin-bottom:10px;">
+                        <input type="text" id="newCounsel" placeholder="상담 내용을 입력하세요" style="flex:1;">
+                        <button class="action-btn" onclick="addCounselLog()" style="width:60px; margin:0; background:#3b82f6;">등록</button>
                     </div>
-                    <div class="admin-only" style="background:#f3e5f5; padding:12px; border-radius:8px; margin-bottom:15px;">
-                        <div style="font-size:12px; font-weight:bold; color:#7b1fa2; margin-bottom:5px;">성적 입력</div>
-                        <div class="score-input-group">
-                            <input type="text" id="scoreTitle" placeholder="시험명">
-                            <input type="number" id="scoreValue" placeholder="점수">
-                            <button onclick="addScore()" style="background:#7b1fa2; color:white;">추가</button>
+                    <div id="modalCounselLog" style="max-height:150px; overflow-y:auto; border:1px solid #f1f5f9; background:#f8fafc; padding:10px; border-radius:8px;"></div>
+                </div>
+
+                <div class="info-box">
+                    <h4 style="display:flex; justify-content:space-between; align-items:center;">
+                        📈 성적 관리 
+                        <button onclick="document.getElementById('scoreInputArea').style.display = document.getElementById('scoreInputArea').style.display=='none'?'block':'none'" style="font-size:11px; padding:4px 8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer;">입력창 열기</button>
+                    </h4>
+                    
+                    <div id="scoreInputArea" class="admin-only" style="display:none; background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+                        <div class="score-input-group" style="display:flex; gap:5px;">
+                            <input type="text" id="scoreTitle" placeholder="시험명(예: 3월모의)" style="flex:2;">
+                            <input type="number" id="scoreValue" placeholder="점수" style="flex:1;">
+                            <button onclick="addScore()" style="background:#7b1fa2; color:white; border:none; border-radius:6px; width:50px;">추가</button>
                         </div>
                     </div>
-                    <div id="scoreList" style="font-size:13px; max-height:150px; overflow-y:auto; color:#666;"></div>
-                </div>
-            </details>
-        </div>
 
-        </div> </div>
-</div>
- <div id="tabInfo" class="modal-tab-pane">
-
-            <!-- [추가] 학부모 의견 (학생별) -->
-            <div style="background:#fff7ed; padding:12px; border-radius:12px; margin-bottom:15px; border:1px solid #fed7aa;">
-                <div style="font-weight:bold; color:#9a3412; margin-bottom:8px;">📝 학부모 의견 (학생별)</div>
-                <div id="parentMsgList" style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="text-align:center; color:#9ca3af; padding:10px;">불러오는 중...</div>
-                </div>
-            </div>
-
-            <div class="settlement-box" style="margin-top:0;">
-                <h4 class="settlement-title" style="margin-top:0;"><i class="fas fa-file-invoice-dollar"></i> 교육비 정산 안내</h4>
-                <div id="settlementPreview" style="background:white; padding:10px; border:1px solid #bbdefb; font-size:12px; white-space:pre-wrap; margin-bottom:8px; color:#333;"></div>
-                <div class="modal-action-row">
-                    <button onclick="generateSettlement()" class="action-btn" style="background:#1976d2; margin-top:0;">문구 생성</button>
-                    <button onclick="copyText('settlementPreview')" class="action-btn" style="background:#1565c0; margin-top:0;">복사</button>
-                </div>
-            </div>
-
-            <div class="admin-only">
-                <h4 style="margin:20px 0 10px 0; border-top:1px solid #eee; padding-top:15px;">학생 정보 수정</h4>
-                <div id="modalEditForm" class="form-grid" style="grid-template-columns: 1fr;">
-                    <input type="hidden" id="editId">
-                    <div><label>이름</label><input type="text" id="editName"></div>
-                    <div style="display:flex; gap:10px;">
-                        <div style="flex:1;"><label>생년월일</label><input type="date" id="editBirth"></div>
-                        <div style="flex:1;"><label>성별</label><select id="editGender"><option value="남">남</option><option value="여">여</option></select></div>
+                    <div class="chart-container" style="height:180px; margin-bottom:10px;">
+                        <canvas id="scoreChart"></canvas>
                     </div>
-                    <div><label>학년/과정</label>
-                        <select id="editGrade"> 
-                            <option value="미취학">미취학</option><option value="초등1-2">초등 1~2학년</option>
-                            <option value="초등3-4">초등 3~4학년</option><option value="초등5-6">초등 5~6학년</option>
-                            <option value="중등부">중등부</option><option value="고등부">고등부</option>
-                        </select>
-                    </div>
-                    <div><label>학교</label><input type="text" id="editSchool"></div>
-                    <div><label>부모님 연락처</label><input type="tel" id="editParentPhone"></div>
-                    <div><label>학생 연락처</label><input type="tel" id="editStudentPhone"></div>
-                    <div><label>주소</label><input type="text" id="editAddress"></div>
-                    <div><label>특이사항</label><textarea id="editNotes" rows="2"></textarea></div>
-                </div>
-                <div class="modal-action-row" style="margin-top:15px;">
-                    <button class="action-btn" onclick="saveEdit()" style="background:var(--primary); margin-top:0;">저장</button>
-                    <button class="action-btn" onclick="deleteStudent()" style="background:var(--danger); margin-top:0;">삭제</button>
+                    <div id="scoreList" style="max-height:120px; overflow-y:auto; font-size:12px;"></div>
                 </div>
             </div>
 
-            <p style="text-align:center; color:#999; font-size:12px; margin-top:20px;">
-                * 정보 수정 및 정산 기능은<br>선생님 모드에서만 가능합니다.
-            </p>
-        </div>
-    </div>
-</div><div id="printArea">
-    <div style="text-align:center; font-size:24px; font-weight:bold; text-decoration:underline;">미래엔수학 능동해냄 교실 원생 명단</div>
-    <div style="text-align:right; font-size:12px; margin-top:10px;" id="printDate"></div>
-    <table class="print-table">
-        <thead>
-            <tr><th>No</th><th>이름</th><th>학년/과정</th><th>학교</th><th>학부모 연락처</th><th>학생 연락처</th></tr>
-        </thead>
-        <tbody id="printTbody"></tbody>
-    </table>
-</div>
+            <div id="tabInfo" class="modal-tab-pane">
+                
+                <div class="info-box" style="background:#f0f9ff; border-color:#bae6fd;">
+                    <h4 style="color:#0369a1; border-color:#e0f2fe;"><i class="fas fa-file-invoice-dollar"></i> 교육비 정산 안내</h4>
+                    <div style="font-size:12px; color:#555; margin-bottom:8px;">
+                        이번 달 출석일수와 안내 문구를 자동으로 생성합니다.
+                    </div>
+                    <div id="settlementPreview" style="background:white; padding:10px; border:1px solid #bae6fd; font-size:12px; white-space:pre-wrap; margin-bottom:8px; color:#333; min-height:60px; border-radius:6px;"></div>
+                    <div class="modal-action-row" style="display:flex; gap:8px;">
+                        <button onclick="generateSettlement()" class="action-btn" style="flex:1; background:#0ea5e9; font-size:13px; margin:0;">문구 생성</button>
+                        <button onclick="copyText('settlementPreview')" class="action-btn" style="flex:1; background:#0284c7; font-size:13px; margin:0;">내용 복사</button>
+                    </div>
+                </div>
 
+                <div class="info-box admin-only">
+                    <h4>⚙️ 학생 정보 수정</h4>
+                    
+                    <div id="modalEditForm">
+                        <input type="hidden" id="editId">
+                        
+                        <div class="full-row">
+                            <label>이름</label>
+                            <input type="text" id="editName">
+                        </div>
+                        
+                        <div>
+                            <label>학교</label>
+                            <input type="text" id="editSchool">
+                        </div>
+                        <div>
+                            <label>학년/과정</label>
+                            <select id="editGrade"> 
+                                <option value="미취학">미취학</option><option value="초등1-2">초등 1~2학년</option>
+                                <option value="초등3-4">초등 3~4학년</option><option value="초등5-6">초등 5~6학년</option>
+                                <option value="중등부">중등부</option><option value="고등부">고등부</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label>생년월일</label>
+                            <input type="date" id="editBirth">
+                        </div>
+                        <div>
+                            <label>성별</label>
+                            <select id="editGender"><option value="남">남</option><option value="여">여</option></select>
+                        </div>
+
+                        <div class="full-row">
+                            <label>부모님 연락처</label>
+                            <input type="tel" id="editParentPhone">
+                        </div>
+                        <div class="full-row">
+                            <label>학생 연락처</label>
+                            <input type="tel" id="editStudentPhone">
+                        </div>
+                        <div class="full-row">
+                            <label>특이사항 (메모)</label>
+                            <textarea id="editNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-action-row" style="margin-top:15px; display:flex; gap:10px;">
+                        <button class="action-btn" onclick="saveEdit()" style="background:#3b82f6; margin:0; flex:2;">저장하기</button>
+                        <button class="action-btn" onclick="deleteStudent()" style="background:#ef4444; margin:0; flex:1;">삭제</button>
+                    </div>
+                </div>
+                
+            </div> </div> </div>
+</div>
 
 <script type="module">
     // =========================================================
@@ -2071,51 +2164,57 @@ const SMS_API_URL = "/api/send-sms";
         if(s) window.openDetail(s);
     };
 
-    window.openDetail = (s) => {
-        currentStudentId = s.id;
-        document.getElementById('detailModal').style.display = 'flex';
-        const modalBox = document.querySelector('#detailModal .modal');
-        if(modalBox) modalBox.classList.add('modal-full');
-        try { document.querySelector('#detailModal .modal').classList.add('modal-full'); } catch(e) {}
+    // window.openDetail 함수 전체 교체
+window.openDetail = (s) => {
+    currentStudentId = s.id;
+    const modal = document.getElementById('detailModal');
+    modal.style.display = 'flex';
+    
+    // 모바일에서 모달 꽉 차게 (선택사항)
+    try { modal.querySelector('.modal').classList.add('modal-full'); } catch(e) {}
 
-        // 기본 정보
-        document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
-        document.getElementById('modalName').innerText = s.name;
-        document.getElementById('modalInfo').innerText = `${s.school||''} | ${s.belt||''}`;
+    // 1. 상단 고정영역 (프로필)
+    document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
+    document.getElementById('modalName').innerText = s.name;
+    document.getElementById('modalInfo').innerText = `${s.school||''} | ${s.belt||''}`;
 
-        // 연락처 링크 연결
-        const stuPhone = (s.studentPhone || "").replace(/[^0-9]/g, '');
-        const parPhone = (s.phone || "").replace(/[^0-9]/g, '');
-        document.getElementById('linkCallStu').href = stuPhone ? `tel:${stuPhone}` : "#";
-        document.getElementById('linkSmsStu').href = stuPhone ? `sms:${stuPhone}` : "#";
-        document.getElementById('linkCallPar').href = parPhone ? `tel:${parPhone}` : "#";
-        document.getElementById('linkSmsPar').href = parPhone ? `sms:${parPhone}` : "#";
+    // 2. 연락처 버튼 연결
+    const stuPhone = (s.studentPhone || "").replace(/[^0-9]/g, '');
+    const parPhone = (s.phone || "").replace(/[^0-9]/g, '');
+    
+    // 학생
+    document.getElementById('linkCallStu').href = stuPhone ? `tel:${stuPhone}` : "#";
+    document.getElementById('linkSmsStu').href = stuPhone ? `sms:${stuPhone}` : "#";
+    // 부모
+    document.getElementById('linkCallPar').href = parPhone ? `tel:${parPhone}` : "#";
+    document.getElementById('linkSmsPar').href = parPhone ? `sms:${parPhone}` : "#";
 
-        // 수정 폼 채우기
-        document.getElementById('editId').value = s.id;
-        document.getElementById('editName').value = s.name;
-        document.getElementById('editBirth').value = s.birth;
-        document.getElementById('editGrade').value = s.belt;
-        document.getElementById('editSchool').value = s.school || "";
-        document.getElementById('editGender').value = s.gender;
-        document.getElementById('editParentPhone').value = s.phone;
-        document.getElementById('editStudentPhone').value = s.studentPhone || "";
-        document.getElementById('editAddress').value = s.address || "";
-        document.getElementById('editNotes').value = s.notes || "";
+    // 3. [중요] 학생 정보 수정 탭 데이터 채우기 (HTML ID와 일치시킴)
+    document.getElementById('editId').value = s.id;
+    document.getElementById('editName').value = s.name || "";
+    document.getElementById('editSchool').value = s.school || "";
+    document.getElementById('editGrade').value = s.belt || "미취학"; // select
+    document.getElementById('editBirth').value = s.birth || "";
+    document.getElementById('editGender').value = s.gender || "남"; // select
+    
+    document.getElementById('editParentPhone').value = s.phone || "";
+    document.getElementById('editStudentPhone').value = s.studentPhone || "";
+    document.getElementById('editNotes').value = s.notes || ""; // textarea
 
-        // 통계 및 차트 렌더링
-        if(window.calcStats) window.calcStats(s);
-        if(window.renderScoreChart) window.renderScoreChart(s.scoreLog || []); 
+    // 4. 통계 및 기타 초기화
+    if(window.calcStats) window.calcStats(s);
+    if(window.renderScoreChart) window.renderScoreChart(s.scoreLog || []); 
+    renderCounselLog(s); // 상담 기록 로드
 
-        // 상담 로그 로드
-        renderCounselLog(s);
-
-        // 입력창 초기화
-        if(document.getElementById('dailyProgress')) document.getElementById('dailyProgress').value = ""; 
-        if(document.getElementById('newCounsel')) document.getElementById('newCounsel').value = "";
-        if(document.getElementById('noticePreview')) document.getElementById('noticePreview').innerText = "(내용 미리보기)";
-        if(document.getElementById('settlementPreview')) document.getElementById('settlementPreview').innerText = "";
-    };
+    // 입력창들 초기화
+    if(document.getElementById('dailyProgress')) document.getElementById('dailyProgress').value = ""; 
+    if(document.getElementById('newCounsel')) document.getElementById('newCounsel').value = "";
+    if(document.getElementById('noticePreview')) document.getElementById('noticePreview').innerText = "";
+    if(document.getElementById('settlementPreview')) document.getElementById('settlementPreview').innerText = "";
+    
+    // [팁] 상세창 열릴 때 기본 탭은 '학습/출석'으로 리셋하려면 아래 주석 해제
+    // switchModalTab('tabDaily', document.querySelector('.modal-tab-btn'));
+};
 
     // 상담 로그 그리기 함수 분리
     function renderCounselLog(s) {
@@ -2476,11 +2575,6 @@ const SMS_API_URL = "/api/send-sms";
     // =========================================================
     window.startKioskMode = () => {
         if (confirm("출석부 모드를 실행합니다.")) {
-            // [안정화] 출석부 모드 전환 시 설정/모달 닫기
-            try{ document.getElementById('settingsModal').style.display='none'; }catch(e){}
-            try{ document.getElementById('detailModal').style.display='none'; }catch(e){}
-            try{ document.getElementById('scheduleModal').style.display='none'; }catch(e){}
-
             setKioskSaved(true);
             document.body.classList.add('kiosk-mode');
             applyAccessUI();
@@ -3150,20 +3244,10 @@ const SMS_API_URL = "/api/send-sms";
     // 1. 학부모 의견함 불러오기 (자동 실행)
     (function initInbox() {
         const inboxArea = document.getElementById('inboxListArea');
-        const inboxList = document.getElementById('inboxList');
         const inboxBadge = document.getElementById('inboxBadge');
-
+        
         // 화면에 영역이 없으면 중단 (에러 방지)
-        if (!inboxArea && !inboxList) return;
-
-        const setHtml = (html) => {
-            if(inboxArea) inboxArea.innerHTML = html;
-            if(inboxList) inboxList.innerHTML = html;
-        };
-        const append = (el) => {
-            if(inboxArea) inboxArea.appendChild(el.cloneNode(true));
-            if(inboxList) inboxList.appendChild(el);
-        };
+        if (!inboxArea) return;
 
         // ★ 핵심: 에러를 피하기 위해 정렬(orderBy) 없이 가져옵니다.
         const q = query(collection(db, "parentMessages"));
@@ -3193,9 +3277,9 @@ const SMS_API_URL = "/api/send-sms";
 
             // 목록 화면에 그리기
             if (items.length === 0) {
-                setHtml("<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>");
+                inboxArea.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:30px;'>도착한 메시지가 없습니다.</div>";
             } else {
-                setHtml("");
+                inboxArea.innerHTML = "";
                 items.forEach(m => {
                     const dateObj = m.createdAt ? (m.createdAt.toDate ? m.createdAt.toDate() : new Date((m.createdAt.seconds || 0) * 1000)) : new Date();
                     const dateStr = dateObj.toLocaleString();
@@ -3220,7 +3304,7 @@ const SMS_API_URL = "/api/send-sms";
                         </div>
                         <div style="font-size:14px; color:#444; white-space:pre-wrap;">${(m.message || '').replace(/</g, "&lt;")}</div>
                     `;
-                    append(div);
+                    inboxArea.appendChild(div);
                 });
             }
         });
@@ -3377,83 +3461,6 @@ const SMS_API_URL = "/api/send-sms";
             alert("삭제 실패: " + e.message);
         }
     };
-
-// =========================================================
-// [추가] 학생별 학부모 의견(서브컬렉션) 표시
-//  - 저장 위치: students/{studentId}/parentMessages
-//  - parent.html에서 학부모가 글을 쓰면 여기에서 바로 보입니다.
-// =========================================================
-let __parentMsgUnsub = null;
-
-function fmtTs(ts){
-  try{
-    const d = ts?.toDate ? ts.toDate() : (ts?.seconds ? new Date(ts.seconds*1000) : (ts ? new Date(ts) : null));
-    if(!d) return '';
-    const yy = d.getFullYear();
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    const dd = String(d.getDate()).padStart(2,'0');
-    const hh = String(d.getHours()).padStart(2,'0');
-    const mi = String(d.getMinutes()).padStart(2,'0');
-    return `${yy}-${mm}-${dd} ${hh}:${mi}`;
-  }catch(e){ return ''; }
-}
-
-function renderParentMsgList(docsOrArr){
-  const box = document.getElementById('parentMsgList');
-  if(!box) return;
-  const items = (docsOrArr||[]).map(d=> (d && typeof d.data==='function') ? ({__id:d.id, ...((d.data()||{}))}) : (d||{}));
-  // createdAtMs(숫자) 우선, 없으면 createdAt(타임스탬프)
-  items.sort((a,b)=>{
-    const ta = (a.createdAtMs ?? (a.createdAt?.seconds ? a.createdAt.seconds*1000 : 0));
-    const tb = (b.createdAtMs ?? (b.createdAt?.seconds ? b.createdAt.seconds*1000 : 0));
-    return tb - ta;
-  });
-  if(items.length===0){
-    box.innerHTML = `<div style="text-align:center; color:#9ca3af; padding:10px;">등록된 학부모 의견이 없습니다.</div>`;
-    return;
-  }
-  box.innerHTML = items.map(data=>{
-    const when = fmtTs(data.createdAt) || (data.createdAtMs ? new Date(data.createdAtMs).toLocaleString() : '');
-    const txt = (data.text||'').toString().replace(/[<>&]/g, s=>({ '<':'&lt;','>':'&gt;','&':'&amp;' }[s]));
-    return `
-      <div style="border:1px solid #fed7aa; background:#fff; border-radius:10px; padding:10px;">
-        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
-          <div style="font-weight:bold; color:#7c2d12;">학부모</div>
-          <div style="font-size:12px; color:#9ca3af;">${when}</div>
-        </div>
-        <div style="white-space:pre-wrap; color:#333; margin-top:6px; line-height:1.4;">${txt}</div>
-      </div>
-    `;
-  }).join('');
-}
-
-
-function subscribeParentMessages(studentId){
-  const box = document.getElementById('parentMsgList');
-  if(box){ box.innerHTML = `<div style="text-align:center; color:#9ca3af; padding:10px;">불러오는 중...</div>`; }
-  try{
-    // ✅ 가장 안정적인 방식: 학생 문서의 parentOpinions 배열을 사용
-    const s = (window.allStudents||[]).find(x=>x.id===studentId);
-    const arr = Array.isArray(s?.parentOpinions) ? s.parentOpinions : [];
-    renderParentMsgList(arr);
-  }catch(e){
-    console.warn('subscribeParentMessages 오류:', e);
-    if(box){
-      box.innerHTML = `<div style="text-align:center; color:#9ca3af; padding:10px;">학부모 의견을 불러오지 못했습니다.</div>`;
-    }
-  }
-}
-
-// openDetail() 끝에서 studentId가 잡힌 후 구독 시작하도록 후킹
-const __origOpenDetail = window.openDetail;
-window.openDetail = function(s){
-  try{
-    __origOpenDetail(s);
-  } finally {
-    try{ if(s && s.id) subscribeParentMessages(s.id); } catch(e){}
-  }
-};
-
 </script>
 
 
