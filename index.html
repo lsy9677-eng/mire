@@ -1882,12 +1882,14 @@ if (!auth.currentUser) {
             // 일정 데이터 로드
             onSnapshot(query(collection(db, "schedules"), orderBy("date")), (snapshot) => {
                 window.allSchedules = [];
-                snapshot.forEach((doc) => { window.allSchedules.push({ id: doc.id, ...doc.data() }); 
-    }
-    startRealtimeListeners();
-});
-        if(window.renderCalendar) window.renderCalendar();
-    });
+                snapshot.forEach((doc) => { window.allSchedules.push({ id: doc.id, ...doc.data() }); });
+                if(window.renderCalendar) window.renderCalendar();
+            });
+
+}
+
+// ✅ Auth 준비 후 실시간 리스너 시작
+startRealtimeListeners();
 
     // ==========================================
     // 4. 리스트 및 카드 생성 (기능 복구됨)
