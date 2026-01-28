@@ -2280,24 +2280,103 @@ ${closing[Math.floor(Math.random()*closing.length)]}`;
     };
 
     // ==========================================
+    
+    // ==========================================
     // 7. 학부모 의견함 (통합)
     // ==========================================
-    const inboxListEl = document.getElementById('inboxList');
-    if(inboxListEl) {
-        
-    // ==========================================
-    // 학부모 의견함: 필터/정렬/학생별 보기
-    // ==========================================
     window.__inboxRaw = [];
+
+    // ✅ 미확인 메시지 팝업(선생님 로그인/모드 진입 시 1회)
+    window.showUnreadPopup = (docs) => {
+        try { sessionStorage.setItem('unreadPopupShown', '1'); } catch(e){}
+        window.__unreadPopupShown = true;
+
+        // 이미 열려있으면 중복 생성 방지
+        const existing = document.getElementById('unreadPopupOverlay');
+        if(existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'unreadPopupOverlay';
+        overlay.style.cssText = `
+            position:fixed; left:0; top:0; width:100vw; height:100vh;
+            background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center;
+            z-index:99999; padding:16px; box-sizing:border-box;
+        `;
+
+        const box = document.createElement('div');
+        box.style.cssText = `
+            width:min(520px, 100%); background:#fff; border-radius:16px;
+            box-shadow:0 10px 30px rgba(0,0,0,.2);
+            overflow:hidden;
+        `;
+
+        const header = document.createElement('div');
+        header.style.cssText = `padding:14px 16px; font-weight:800; border-bottom:1px solid #eee;`;
+        header.innerText = `새 학부모 메시지 ${docs.length}건`;
+
+        const body = document.createElement('div');
+        body.style.cssText = `max-height:50vh; overflow:auto; padding:12px 16px;`;
+
+        const items = (docs || []).slice(0, 10).map(d => {
+            const when = (()=>{ try{ return d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString() : ''; }catch(e){ return '';} })();
+            const msg = (d.message || '').toString().slice(0, 120);
+            return `<div style="padding:10px 0; border-bottom:1px dashed #eee;">
+                      <div style="font-weight:700;">${d.studentName || '학생'} <span style="color:#888; font-weight:500; font-size:12px;">${when}</span></div>
+                      <div style="color:#333; margin-top:4px; white-space:pre-wrap;">${escapeHtml(msg)}</div>
+                    </div>`;
+        }).join('');
+        body.innerHTML = items || `<div style="color:#666;">새 메시지가 없습니다.</div>`;
+
+        const footer = document.createElement('div');
+        footer.style.cssText = `display:flex; gap:8px; justify-content:flex-end; padding:12px 16px; border-top:1px solid #eee; background:#fafafa;`;
+
+        const btnClose = document.createElement('button');
+        btnClose.className = 'btn';
+        btnClose.innerText = '닫기';
+        btnClose.onclick = ()=> overlay.remove();
+
+        const btnOpen = document.createElement('button');
+        btnOpen.className = 'btn primary';
+        btnOpen.innerText = '의견함 열기';
+        btnOpen.onclick = ()=>{ overlay.remove(); try{ showPage('inbox'); }catch(e){} };
+
+        const btnReadAll = document.createElement('button');
+        btnReadAll.className = 'btn';
+        btnReadAll.innerText = '모두 읽음';
+        btnReadAll.onclick = async ()=>{
+            try{
+                const unreadIds = (docs||[]).map(d=>d.id).filter(Boolean);
+                for(const id of unreadIds){
+                    await updateDoc(doc(db, "parentMessages", id), { read: true });
+                }
+            }catch(e){}
+            overlay.remove();
+        };
+
+        footer.appendChild(btnReadAll);
+        footer.appendChild(btnOpen);
+        footer.appendChild(btnClose);
+
+        box.appendChild(header);
+        box.appendChild(body);
+        box.appendChild(footer);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    };
+
+    // ✅ 필터/정렬 적용 + 학생별 묶어서 표시
     window.__renderInbox = () => {
+        const inboxListEl = document.getElementById('inboxList');
+        if(!inboxListEl) return;
+
         let msgs = Array.isArray(window.__inboxRaw) ? [...window.__inboxRaw] : [];
 
         // 학생 필터 옵션 갱신
         const sel = document.getElementById('inboxStudentFilter');
-        if(sel && window.allStudents){
+        if(sel && Array.isArray(window.allStudents)){
             const cur = sel.value;
             const opts = ['<option value="">전체 학생</option>']
-              .concat(window.allStudents.map(s => `<option value="${s.id}">${s.name}</option>`));
+              .concat(window.allStudents.map(s => `<option value="${s.id}">${escapeHtml(s.name||'')}</option>`));
             sel.innerHTML = opts.join('');
             sel.value = cur;
         }
@@ -2308,26 +2387,22 @@ ${closing[Math.floor(Math.random()*closing.length)]}`;
         const ed = document.getElementById('inboxEndDate')?.value || '';
         const sort = document.getElementById('inboxSort')?.value || 'desc';
 
-        const inDateRange = (ts) => {
-            if(!sd && !ed) return true;
-            let d = '';
+        const toISODate = (ts) => {
             try{
                 const dt = ts?.toDate ? ts.toDate() : (ts instanceof Date ? ts : null);
-                if(dt) d = dt.toISOString().slice(0,10);
-            }catch(e){}
-            if(!d) return true;
-            if(sd && d < sd) return false;
-            if(ed && d > ed) return false;
-            return true;
+                return dt ? dt.toISOString().slice(0,10) : '';
+            }catch(e){ return ''; }
         };
 
         msgs = msgs.filter(d => {
             if(studentId && d.studentId !== studentId) return false;
+            const day = toISODate(d.createdAt);
+            if(sd && day && day < sd) return false;
+            if(ed && day && day > ed) return false;
             if(kw){
                 const blob = ((d.studentName||'')+' '+(d.message||'')+' '+(d.parentPhone||'')).toLowerCase();
                 if(!blob.includes(kw)) return false;
             }
-            if(!inDateRange(d.createdAt)) return false;
             return true;
         });
 
@@ -2337,91 +2412,91 @@ ${closing[Math.floor(Math.random()*closing.length)]}`;
             return sort === 'asc' ? at-bt : bt-at;
         });
 
-        const unreadDocs = msgs.filter(d => !d.read);
-        const unread = unreadDocs.length;
+        // 학생별 그룹
+        const groups = {};
+        msgs.forEach(m => {
+            const key = m.studentId || 'unknown';
+            (groups[key] ||= []).push(m);
+        });
 
-        const inboxListEl = document.getElementById('inboxList');
-        let html = "";
-        if(!msgs.length) html = "<div style='padding:20px; text-align:center; color:#999;'>메시지가 없습니다.</div>";
-        else {
-            const groups = {};
-            msgs.forEach(d => { (groups[d.studentId || ''] ||= []).push(d); });
-            html = Object.keys(groups).map(sid => {
-                const arr = groups[sid];
-                const name = arr[0]?.studentName || '학생';
-                const inner = arr.map(d => {
-                    const when = d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString() : '';
-                    const bg = d.read ? "white" : "#fff7ed";
-                    return `
-                      <div style="background:${bg}; padding:12px; margin-top:8px; border:1px solid #eee; border-radius:10px;">
-                        <div style="font-weight:700; margin-bottom:4px; display:flex; justify-content:space-between; gap:10px;">
-                          <span style="font-size:12px; color:#6b7280;">${when}</span>
-                          <div style="display:flex; gap:6px; align-items:center;">
-                            <button onclick="openMessageStudent('${d.studentId}')" style="background:#3b82f6; color:white; border:none; border-radius:8px; padding:4px 8px; cursor:pointer;">학생 열기</button>
-                            ${!d.read ? `<button onclick="markMessageRead('${d.id}')" style="background:#10b981; color:white; border:none; border-radius:8px; padding:4px 8px; cursor:pointer;">읽음</button>` : ''}
-                          </div>
-                        </div>
-                        <div style="font-size:14px; color:#333; white-space:pre-wrap;">${(d.message||'').replace(/</g,'&lt;')}</div>
-                      </div>`;
+        const unreadDocs = msgs.filter(d=>!d.read);
+        const unread = unreadDocs.length;
+        const badge = document.getElementById('inboxBadge');
+        if(badge) { badge.style.display = unread>0 ? 'inline-block' : 'none'; badge.innerText = unread; }
+
+        if(!msgs.length){
+            inboxListEl.innerHTML = `<div style="color:#999; padding:14px;">메시지가 없습니다.</div>`;
+        }else{
+            const html = Object.keys(groups).map(sid=>{
+                const list = groups[sid];
+                const name = list[0]?.studentName || '학생';
+                const inner = list.map(d=>{
+                    const when = (()=>{ try{ return d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString() : ''; }catch(e){ return ''; } })();
+                    const readTag = d.read ? '' : `<span style="margin-left:6px; font-size:11px; color:#fff; background:#ff4d4f; padding:2px 6px; border-radius:999px;">NEW</span>`;
+                    return `<div style="padding:10px 0; border-top:1px dashed #eee;">
+                              <div style="font-size:12px; color:#777;">${when}${readTag}</div>
+                              <div style="white-space:pre-wrap; margin-top:4px;">${escapeHtml(d.message||'')}</div>
+                              <div style="margin-top:8px;">
+                                <button class="btn" onclick="markMessageRead('${d.id}')">읽음</button>
+                              </div>
+                            </div>`;
                 }).join('');
-                return `<div style="padding:14px; border:1px solid #e5e7eb; border-radius:14px; margin-bottom:12px; background:#f9fafb;">
-                          <div style="font-weight:900; display:flex; justify-content:space-between; align-items:center;">
-                            <span>👩‍👦 ${name}</span>
-                            <span style="font-size:12px; color:#6b7280;">${arr.length}건</span>
+
+                return `<div style="border:1px solid #eee; border-radius:14px; padding:12px 14px; background:#fff; margin-bottom:12px;">
+                          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                            <div style="font-weight:800;">${escapeHtml(name)}</div>
+                            <button class="btn" onclick="openStudentDetailById('${sid}')">학생 열기</button>
                           </div>
                           ${inner}
                         </div>`;
             }).join('');
+            inboxListEl.innerHTML = html;
         }
-        if(inboxListEl) inboxListEl.innerHTML = html;
 
-        const badge = document.getElementById('inboxBadge');
-        if(badge) { badge.style.display = unread>0 ? 'inline-block' : 'none'; badge.innerText = unread; }
-
-        // 선생님 모드 진입 시 미확인 메시지 팝업
+        // ✅ 선생님 모드 진입 시 미확인 메시지 팝업(세션당 1회)
         try{
-            const teacher = isTeacherMode();
+            const teacher = (typeof isTeacherMode === 'function') ? isTeacherMode() : false;
             const already = sessionStorage.getItem('unreadPopupShown') === '1';
-            if(teacher && unread > 0 && !already && !__unreadPopupShown){
+            if(teacher && unread > 0 && !already && !window.__unreadPopupShown){
                 window.showUnreadPopup(unreadDocs.slice(0,10));
             }
         }catch(e){}
     };
 
-    // 필터 입력 즉시 반영
+    // 학생 상세 페이지 열기(존재하면 활용)
+    window.openStudentDetailById = (studentId) => {
+        try{
+            window.currentStudentId = studentId;
+            if(typeof showPage === 'function') showPage('list');
+            if(typeof openStudentDetail === 'function') openStudentDetail(studentId);
+        }catch(e){}
+    };
+
+    window.markMessageRead = async (id) => {
+        try { await updateDoc(doc(db, "parentMessages", id), { read: true }); } catch(e){}
+    };
+
+    // ✅ 필터 입력 즉시 반영
     (function(){
-      const ids = ['inboxStudentFilter','inboxStartDate','inboxEndDate','inboxKeyword','inboxSort'];
-      ids.forEach(id=>{
-        const el = document.getElementById(id);
-        if(!el) return;
-        el.addEventListener(id==='inboxKeyword'?'input':'change', ()=> window.__renderInbox());
-      });
+        const ids = ['inboxStudentFilter','inboxStartDate','inboxEndDate','inboxKeyword','inboxSort'];
+        ids.forEach(id=>{
+            const el = document.getElementById(id);
+            if(!el) return;
+            el.addEventListener(id==='inboxKeyword'?'input':'change', ()=> window.__renderInbox());
+        });
     })();
 
-onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
+    // ✅ Firestore 실시간 수신
+    try{
+        onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
             const raw = [];
-            snapshot.forEach(doc => raw.push({ id: doc.id, ...doc.data() }));
+            snapshot.forEach(d => raw.push({ id: d.id, ...d.data() }));
             window.__inboxRaw = raw;
             window.__renderInbox();
         });
-            inboxListEl.innerHTML = html;
-            const badge = document.getElementById('inboxBadge');
-            if(badge) {
-                badge.style.display = unread > 0 ? 'inline-block' : 'none';
-                badge.innerText = unread;
-            }
-        });
-    }
+    }catch(e){}
 
-    window.markMessageRead = async (id) => await updateDoc(doc(db, "parentMessages", id), { read: true });
-    window.openMessageStudent = (sid) => {
-        // 선생님 모드 켜고 이동
-        if(!isTeacherMode()) window.toggleAdminMode(true); 
-        window.showPage('list');
-        setTimeout(() => window.openDetailById(sid), 500);
-    };
 
-    // ==========================================
     // 8. 캘린더 & 일정
     // ==========================================
     window.renderCalendar = () => {
