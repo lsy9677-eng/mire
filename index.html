@@ -62,7 +62,7 @@ body{
               var(--bg);
   color:var(--ink);
   -webkit-font-smoothing:antialiased;
- padding: 14px 12px 160px; 
+ padding: 14px 12px 160px;
 }
 
 .container{
@@ -1046,7 +1046,7 @@ body.kiosk-mode .kiosk-exit-btn {
     right: 25px !important;  /* 오른쪽 벽에 붙임 */
     bottom: auto !important; /* 아래쪽 해제 */
     left: auto !important;   /* 왼쪽 해제 */
-    width: 45px; 
+    width: 45px;
     height: 45px;
     opacity: 0.4; /* 평소엔 연하게 */
 }
@@ -1121,7 +1121,7 @@ body { padding-bottom: 20px !important; }
     transition: all 0.1s;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
-.k-filter-btn:active, 
+.k-filter-btn:active,
 .k-filter-btn.active {
     background: #ffeb3b; /* 쨍한 노란색 */
     color: #5d4037;
@@ -1156,7 +1156,7 @@ body.kiosk-mode .student-card.arrived {
     transform: translateY(-2px);
 }
 body.kiosk-mode .student-card.arrived .kiosk-pill {
-    background: #22c55e; 
+    background: #22c55e;
     color: white;
     border: none;
     font-size: 16px;
@@ -1175,12 +1175,12 @@ body.kiosk-mode .student-card.left {
 
 /* 키오스크 모드에서 불필요한 요소 완벽 제거 */
 body.kiosk-mode .tabs,
-body.kiosk-mode header, 
+body.kiosk-mode header,
 body.kiosk-mode .kiosk-btn-group,
 body.kiosk-mode .kiosk-exit-btn {
     /* 저장/취소/메뉴 등 버튼 아예 안 보이게 처리 */
     /* 단, 종료 버튼이 필요하면 kiosk-exit-btn은 제외하세요 */
-   display: none !important; 
+   display: none !important;
 }
 
 /* 종료 버튼은 비상용으로 좌측 하단에 투명하게 숨김 (세 번 탭 기능 등 대체 가능하지만 일단 작게 표시) */
@@ -1309,7 +1309,7 @@ body.kiosk-mode .kiosk-exit-btn {
 
 /* 닫기 버튼 위치 조정 */
 .close-btn {
-    top: 15px; 
+    top: 15px;
     right: 15px;
     z-index: 20;
     background: #f1f5f9;
@@ -1363,7 +1363,7 @@ body.kiosk-mode .kiosk-exit-btn {
     color: #64748b;
     margin-bottom: 4px;
 }
-#modalEditForm input, 
+#modalEditForm input,
 #modalEditForm select,
 #modalEditForm textarea {
     min-height: 38px;
@@ -1393,9 +1393,9 @@ body.kiosk-mode .kiosk-exit-btn {
 
 <header>
         <div class="brand">
-            <img class="brand-mark" 
-                 src="nam-512.png" 
-                 alt="능동해냄" 
+            <img class="brand-mark"
+                 src="nam-512.png"
+                 alt="능동해냄"
                  style="background:#fff; object-fit:contain;"
                  onerror="this.src='https://cdn-icons-png.flaticon.com/512/3468/3468306.png'">
 
@@ -1409,12 +1409,12 @@ body.kiosk-mode .kiosk-exit-btn {
             <label class="admin-switch" style="margin:0; cursor:pointer;">
                 <input type="checkbox" id="adminToggle" onclick="toggleAdminMode()" style="width:auto; margin-right:6px;"> 선생님
             </label>
-            <button class="admin-only" onclick="document.getElementById('settingsModal').style.display='flex'" 
+            <button class="admin-only" onclick="document.getElementById('settingsModal').style.display='flex'"
                 style="border:none; background:white; width:36px; height:36px; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.1); color:#555;">
                 <i class="fas fa-cog"></i>
             </button>
         </div>
-    </header>    
+    </header>
     <div class="tabs">
         <button class="tab-btn active" onclick="showPage('register')"><i class="fas fa-user-plus"></i> 신규 등록</button>
         <button class="tab-btn" onclick="showPage('list')"><i class="fas fa-users"></i> 원생 관리</button>
@@ -1623,7 +1623,7 @@ body.kiosk-mode .kiosk-exit-btn {
         </div>
 
         <div class="modal-body-scroll">
-            
+
             <div id="tabDaily" class="modal-tab-pane active">
     <div class="stat-box" style="margin: 0 0 15px 0; background:white;">
         <div class="stat-item"><div class="stat-num" id="statMonth">0회</div><div style="font-size:12px; color:#64748b;">이번달 등원</div></div>
@@ -1633,9 +1633,9 @@ body.kiosk-mode .kiosk-exit-btn {
 
     <div class="info-box" style="background:#fffbeb; border-color:#fcd34d;">
         <h4 style="color:#d97706; border-color:#fde68a;"><i class="fas fa-bullhorn"></i> 오늘의 알림장 (학부모 전송)</h4>
-        
+
         <textarea id="dailyProgress" rows="3" placeholder="오늘 공부한 내용이나 전달사항을 입력하세요." style="background:white; border:1px solid #fde68a; margin-bottom:8px;"></textarea>
-        
+
         <div id="noticePreview" style="display:none; background:white; padding:10px; border:1px solid #fcd34d; font-size:13px; white-space:pre-wrap; margin-bottom:8px; color:#333; border-radius:6px;"></div>
 
         <div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
@@ -1658,10 +1658,10 @@ body.kiosk-mode .kiosk-exit-btn {
 
                 <div class="info-box">
                     <h4 style="display:flex; justify-content:space-between; align-items:center;">
-                        📈 성적 관리 
+                        📈 성적 관리
                         <button onclick="document.getElementById('scoreInputArea').style.display = document.getElementById('scoreInputArea').style.display=='none'?'block':'none'" style="font-size:11px; padding:4px 8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer;">입력창 열기</button>
                     </h4>
-                    
+
                     <div id="scoreInputArea" class="admin-only" style="display:none; background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
                         <div class="score-input-group" style="display:flex; gap:5px;">
                             <input type="text" id="scoreTitle" placeholder="시험명(예: 3월모의)" style="flex:2;">
@@ -1678,7 +1678,7 @@ body.kiosk-mode .kiosk-exit-btn {
             </div>
 
             <div id="tabInfo" class="modal-tab-pane">
-                
+
                 <div class="info-box" style="background:#f0f9ff; border-color:#bae6fd;">
                     <h4 style="color:#0369a1; border-color:#e0f2fe;"><i class="fas fa-file-invoice-dollar"></i> 교육비 정산 안내</h4>
                     <div style="font-size:12px; color:#555; margin-bottom:8px;">
@@ -1693,22 +1693,22 @@ body.kiosk-mode .kiosk-exit-btn {
 
                 <div class="info-box admin-only">
                     <h4>⚙️ 학생 정보 수정</h4>
-                    
+
                     <div id="modalEditForm">
                         <input type="hidden" id="editId">
-                        
+
                         <div class="full-row">
                             <label>이름</label>
                             <input type="text" id="editName">
                         </div>
-                        
+
                         <div>
                             <label>학교</label>
                             <input type="text" id="editSchool">
                         </div>
                         <div>
                             <label>학년/과정</label>
-                            <select id="editGrade"> 
+                            <select id="editGrade">
                                 <option value="미취학">미취학</option><option value="초등1-2">초등 1~2학년</option>
                                 <option value="초등3-4">초등 3~4학년</option><option value="초등5-6">초등 5~6학년</option>
                                 <option value="중등부">중등부</option><option value="고등부">고등부</option>
@@ -1743,7 +1743,7 @@ body.kiosk-mode .kiosk-exit-btn {
                         <button class="action-btn" onclick="deleteStudent()" style="background:#ef4444; margin:0; flex:1;">삭제</button>
                     </div>
                 </div>
-                
+
             </div> </div> </div>
 </div>
 
@@ -1763,6 +1763,12 @@ body.kiosk-mode .kiosk-exit-btn {
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // ================================
+    // 전화번호 정규화(하이픈/공백 제거)
+    // ================================
+    const normalizePhone = (v) => (v || '').toString().replace(/\D/g, '');
+
 
     // ==========================================
     // 1. SMS 서버 설정 (자동 문자용)
@@ -1793,10 +1799,10 @@ body.kiosk-mode .kiosk-exit-btn {
     window.currentStudentId = null;
     let selectedStudentIds = new Set();
     let selectedDateStr = new Date().toISOString().slice(0, 10);
-    let currentGradeFilter = 'all'; 
+    let currentGradeFilter = 'all';
     let currentKioskCategory = 'all';
     let calDate = new Date();
-    let myChart = null; 
+    let myChart = null;
 
     // 모드 설정 (localStorage)
     const LS_TEACHER = 'teacherMode';
@@ -1829,7 +1835,7 @@ body.kiosk-mode .kiosk-exit-btn {
             if(!teacher && !kiosk && restricted) btn.style.display = 'none';
             else btn.style.display = '';
         });
-        
+
         // 키오스크 시작 버튼 보이기/숨기기
         const kBtn = document.getElementById('btnKioskStart'); // 만약 버튼 ID가 있다면
         if(kBtn) kBtn.style.display = (teacher && !kiosk) ? 'inline-block' : 'none';
@@ -1838,16 +1844,16 @@ body.kiosk-mode .kiosk-exit-btn {
     // ==========================================
     // 3. 데이터 실시간 동기화
     // ==========================================
-    
+
     // 학생 데이터 로드
     onSnapshot(collection(db, "students"), (snapshot) => {
         window.allStudents = [];
         snapshot.forEach((doc) => { window.allStudents.push({ id: doc.id, ...doc.data() }); });
-        
+
         updateSchoolOptions();
         filterList();
         if(window.renderCalendar) window.renderCalendar();
-        
+
         // 상세창이 열려있다면 내용 갱신
         if(document.getElementById('detailModal').style.display === 'flex' && window.currentStudentId) {
             const s = window.allStudents.find(st => st.id === window.currentStudentId);
@@ -1875,7 +1881,7 @@ body.kiosk-mode .kiosk-exit-btn {
         let filtered = window.allStudents.filter(s => {
             const sName = s.name ? s.name.toLowerCase() : "";
             const sBelt = s.belt || "";
-            
+
             if (isKiosk) {
                 if (currentKioskCategory === 'all') return true;
                 return sBelt.includes(currentKioskCategory);
@@ -1891,7 +1897,7 @@ body.kiosk-mode .kiosk-exit-btn {
 
         const listArea = document.getElementById('studentListArea');
         listArea.innerHTML = "";
-        
+
         if(filtered.length === 0) {
             listArea.innerHTML = "<div style='text-align:center; padding:20px; color:#999; width:100%;'>검색된 원생이 없습니다.</div>";
             return;
@@ -1971,7 +1977,7 @@ body.kiosk-mode .kiosk-exit-btn {
         document.getElementById('editNotes').value = s.notes || "";
 
         // 기록 및 차트 로드
-        if(window.renderScoreChart) window.renderScoreChart(s.scoreLog || []); 
+        if(window.renderScoreChart) window.renderScoreChart(s.scoreLog || []);
         window.renderCounselLog(s);
         window.calcStats(s);
 
@@ -1981,7 +1987,7 @@ body.kiosk-mode .kiosk-exit-btn {
         document.getElementById('noticePreview').style.display = 'none';
         document.getElementById('settlementPreview').innerText = "";
     };
-    
+
     window.openDetailById = (id) => {
         const s = window.allStudents.find(st => st.id === id);
         if(s) window.openDetail(s);
@@ -1996,7 +2002,7 @@ body.kiosk-mode .kiosk-exit-btn {
     window.renderScoreChart = (scoreLog) => {
         const ctx = document.getElementById('scoreChart').getContext('2d');
         if (myChart) myChart.destroy();
-        
+
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -2071,8 +2077,8 @@ body.kiosk-mode .kiosk-exit-btn {
                 name: document.getElementById('editName').value,
                 school: document.getElementById('editSchool').value,
                 belt: document.getElementById('editGrade').value,
-                phone: document.getElementById('editParentPhone').value,
-                studentPhone: document.getElementById('editStudentPhone').value,
+                phone: normalizePhone(document.getElementById('editParentPhone').value),
+                studentPhone: normalizePhone(document.getElementById('editStudentPhone').value),
                 notes: document.getElementById('editNotes').value
             });
             alert("저장되었습니다.");
@@ -2091,20 +2097,20 @@ body.kiosk-mode .kiosk-exit-btn {
         addBtn.onclick = async () => {
             const name = document.getElementById('regName').value;
             if(!name) return alert("이름 필수");
-            
+
             // 사진 처리
             let photoUrl = "";
             const file = document.getElementById('regPhoto').files[0];
             if(file) photoUrl = await resizeImage(file);
 
             await addDoc(collection(db, "students"), {
-                name, 
+                name,
                 birth: document.getElementById('regBirth').value,
                 gender: document.getElementById('regGender').value,
                 school: document.getElementById('regSchool').value,
                 belt: document.getElementById('regGrade').value,
-                phone: document.getElementById('regParentPhone').value,
-                studentPhone: document.getElementById('regStudentPhone').value,
+                phone: normalizePhone(document.getElementById('regParentPhone').value),
+                studentPhone: normalizePhone(document.getElementById('regStudentPhone').value),
                 address: document.getElementById('regAddress').value,
                 notes: document.getElementById('regNotes').value,
                 photo: photoUrl,
@@ -2125,7 +2131,7 @@ body.kiosk-mode .kiosk-exit-btn {
                 const img = new Image();
                 img.onload = () => {
                     const cvs = document.createElement('canvas');
-                    const scale = 250/img.width; 
+                    const scale = 250/img.width;
                     cvs.width = 250; cvs.height = img.height * scale;
                     cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height);
                     resolve(cvs.toDataURL('image/jpeg', 0.5));
@@ -2143,13 +2149,13 @@ body.kiosk-mode .kiosk-exit-btn {
         const s = window.allStudents.find(st => st.id === window.currentStudentId);
         const text = document.getElementById('dailyProgress').value;
         if(!text) { alert("내용을 입력하세요"); return ""; }
-        
+
         const msg = `[미래엔수학] 알림장 📢\n\n안녕하세요, 학부모님!\n오늘 ${s.name} 학생 학습 내용입니다.\n\n📚 학습내용\n${text}\n\n감사합니다.`;
         const box = document.getElementById('noticePreview');
         if(box) { box.innerText = msg; box.style.display = 'block'; }
         return msg;
     };
-    
+
     // [Manual SMS] 버튼: 휴대폰 앱 열기
     window.sendNoticeSms = () => {
         const s = window.allStudents.find(st => st.id === window.currentStudentId);
@@ -2183,7 +2189,7 @@ body.kiosk-mode .kiosk-exit-btn {
     // [정산] 자동 문구 생성
     window.generateSettlement = () => {
         const s = window.allStudents.find(st => st.id === window.currentStudentId);
-        const m = new Date().getMonth() + 2; 
+        const m = new Date().getMonth() + 2;
         const nextM = m > 12 ? 1 : m;
         const msg = `[미래엔수학] 교육비 안내\n\n안녕하세요. ${s.name} 학생의 ${nextM}월 교육비 안내입니다.\n기간: 매월 1일~10일\n계좌: 농협 000-0000-0000\n\n감사합니다.`;
         document.getElementById('settlementPreview').innerText = msg;
@@ -2211,7 +2217,7 @@ body.kiosk-mode .kiosk-exit-btn {
             let unread = 0;
             let html = "";
             if(snapshot.empty) html = "<div style='padding:20px; text-align:center; color:#999;'>메시지가 없습니다.</div>";
-            
+
             snapshot.forEach(doc => {
                 const d = doc.data();
                 if(!d.read) unread++;
@@ -2240,7 +2246,7 @@ body.kiosk-mode .kiosk-exit-btn {
     window.markMessageRead = async (id) => await updateDoc(doc(db, "parentMessages", id), { read: true });
     window.openMessageStudent = (sid) => {
         // 선생님 모드 켜고 이동
-        if(!isTeacherMode()) window.toggleAdminMode(true); 
+        if(!isTeacherMode()) window.toggleAdminMode(true);
         window.showPage('list');
         setTimeout(() => window.openDetailById(sid), 500);
     };
@@ -2258,7 +2264,7 @@ body.kiosk-mode .kiosk-exit-btn {
         if(document.getElementById('showSchedule')?.checked) events = [...window.allSchedules.map(s => ({...s, type:'schedule'}))];
         if(document.getElementById('showBirthday')?.checked) {
             window.allStudents.forEach(s => {
-                if(s.birth && s.birth.includes(`-${String(m+1).padStart(2,'0')}-`)) 
+                if(s.birth && s.birth.includes(`-${String(m+1).padStart(2,'0')}-`))
                     events.push({date: `${y}-${s.birth.slice(5)}`, title: `${s.name} 생일`, type:'birthday'});
             });
         }
@@ -2288,7 +2294,7 @@ body.kiosk-mode .kiosk-exit-btn {
         document.getElementById('schedId').value = id || '';
         document.getElementById('schedTitle').value = title || '';
         document.getElementById('schedDate').value = date || selectedDateStr;
-        
+
         const list = document.getElementById('popupSchedList');
         const evts = window.allSchedules.filter(s => s.date === (date||selectedDateStr));
         list.innerHTML = evts.length ? evts.map(e => `<div style="padding:5px; border-bottom:1px solid #eee;">📅 ${e.title}</div>`).join('') : "일정 없음";
@@ -2313,7 +2319,7 @@ body.kiosk-mode .kiosk-exit-btn {
         const evts = window.allSchedules.filter(s => s.date === selectedDateStr);
         list.innerHTML = evts.length ? evts.map(e => `<div>📅 ${e.title}</div>`).join('') : "<div style='color:#ccc;'>일정 없음</div>";
     }
-    
+
     window.changeCalDate = (n) => { calDate.setMonth(calDate.getMonth() + n); window.renderCalendar(); };
     window.changeListView = () => {}; // 뷰모드 변경 placeholder
 
@@ -2340,7 +2346,7 @@ body.kiosk-mode .kiosk-exit-btn {
         const hasArrived = (s.attendanceLog || []).some(log => new Date(log.seconds ? log.seconds*1000 : log).toDateString() === todayStr);
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
+
         // 애니메이션 효과
         const card = document.getElementById(`card-${id}`);
         if(card) {
@@ -2387,19 +2393,19 @@ body.kiosk-mode .kiosk-exit-btn {
             window.showPage('calendar');
         }
     };
-    
+
     // 페이지 전환
     window.showPage = (id) => {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        
+
         const tabs = document.querySelectorAll('.tab-btn');
         if(id==='register') tabs[0].classList.add('active');
         if(id==='list') tabs[1].classList.add('active');
         if(id==='calendar') tabs[2].classList.add('active');
         if(id==='inbox') tabs[3].classList.add('active');
-        
+
         if(id==='calendar') window.renderCalendar();
         if(id==='list') window.filterList();
     };
@@ -2410,7 +2416,7 @@ body.kiosk-mode .kiosk-exit-btn {
         btn.classList.add('active');
         window.filterList();
     };
-    
+
     window.updateSchoolOptions = () => {
         const schools = new Set();
         window.allStudents.forEach(s => { if(s.school) schools.add(s.school); });
