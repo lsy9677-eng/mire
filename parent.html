@@ -73,17 +73,11 @@
                 </div>
             </div>
 
-            
             <div class="card">
-                <h3 style="margin-top:0;">💬 학부모 의견 게시판</h3>
-                <div style="font-size:13px; color:#64748b; line-height:1.5; margin-top:-6px; margin-bottom:10px;">
-                    선생님과 학부모가 이 학생에 대해 의견을 나누는 공간입니다.
-                </div>
-                <div id="parentBoardThread" style="max-height:320px; overflow-y:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;"></div>
+                <h3 style="margin-top:0;">💬 선생님께 답장하기</h3>
                 <textarea id="replyMsg" placeholder="선생님께 드릴 말씀이나 궁금한 점을 적어주세요."></textarea>
                 <button class="send-btn" onclick="sendReply()">메시지 보내기</button>
             </div>
-
             
             <button onclick="location.reload()" style="width:100%; padding:12px; background:#94a3b8; color:white; border:none; border-radius:12px; margin-top:20px; font-weight:bold;">로그아웃</button>
         </div>
@@ -91,7 +85,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
@@ -105,15 +100,28 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        let currentStudent = null;
+        
+// =========================================================
+// [추가] Firestore 권한을 위한 익명 로그인 (Anonymous Auth)
+// =========================================================
+const auth = getAuth(app);
+let __authReadyResolve;
+const __authReady = new Promise(res => (__authReadyResolve = res));
+onAuthStateChanged(auth, (u) => { if(u) __authReadyResolve(u); });
+if(!auth.currentUser){
+  signInAnonymously(auth).catch(e => {
+    console.error("Anonymous sign-in failed", e);
+    alert("Firebase 익명 로그인 실패: " + (e?.message || e));
+  });
+}
+
+let currentStudent = null;
         let unsubStudent = null;
         let parentChart = null;
 
         window.checkParent = async () => {
             const phoneInput = document.getElementById('inputPhone');
-            const raw = phoneInput.value.trim();
-            const phone = raw.replace(/\D/g, '');
-            const phoneAlt = raw.replace(/\s/g, '');
+            const phone = phoneInput.value.toString().replace(/\D/g,'').trim();
             
             if(phone.length < 8) return alert("전화번호를 올바르게 입력해주세요.");
 
@@ -123,16 +131,11 @@
             btn.disabled = true;
 
             try {
-                // 부모님 번호로 학생 검색 (하이픈 포함/미포함 모두 대응)
-                let snap = null;
-                // 1) 숫자만(권장 저장 형식)
-                const q1 = query(collection(db, "students"), where("phone", "==", phone));
-                snap = await getDocs(q1);
-                // 2) 예전 데이터(하이픈/공백 포함) 대응
-                if(snap.empty && phoneAlt && phoneAlt !== phone) {
-                    const q2 = query(collection(db, "students"), where("phone", "==", phoneAlt));
-                    snap = await getDocs(q2);
-                }
+                await __authReady;
+
+                // 부모님 번호로 학생 검색
+                const q = query(collection(db, "students"), where("phone", "==", phone));
+                const snap = await getDocs(q);
 
                 if(snap.empty) {
                     alert("등록된 번호가 없습니다.\n선생님께 확인해주세요.");
@@ -149,7 +152,6 @@
                     if(!docSnap.exists()) return;
                     currentStudent = { id: docSnap.id, ...docSnap.data() };
                     showData();
-                    try { subscribeBoard(); } catch(e) {}
                 });
 
             } catch(e) {
@@ -252,79 +254,22 @@
             }
         }
 
-        
-        let unsubBoard = null;
-
-        function escapeHtml(str){
-            return (str||"").toString()
-              .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-              .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-        }
-
-        function subscribeBoard(){
-            const threadEl = document.getElementById('parentBoardThread');
-            if(!threadEl || !currentStudent?.id) return;
-
-            try { if(unsubBoard) unsubBoard(); } catch(e) {}
-            threadEl.innerHTML = "<div style='padding:14px; text-align:center; color:#94a3b8;'>불러오는 중...</div>";
-
-            const boardRef = collection(db, "students", currentStudent.id, "board");
-            unsubBoard = onSnapshot(query(boardRef, orderBy("createdAt","asc")), (snap) => {
-                if(snap.empty){
-                    threadEl.innerHTML = "<div style='padding:14px; text-align:center; color:#94a3b8;'>아직 게시글이 없습니다.</div>";
-                    return;
-                }
-                let html="";
-                snap.forEach(d=>{
-                    const m=d.data()||{};
-                    const role=m.role || "parent";
-                    const when = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleString() : "";
-                    const label = role==="teacher" ? "선생님" : "학부모";
-                    const bg = role==="teacher" ? "#dbeafe" : "#fff";
-                    const align = role==="teacher" ? "flex-start" : "flex-end";
-                    html += `
-                      <div style="display:flex; justify-content:${align}; margin:8px 0;">
-                        <div style="max-width:85%; background:${bg}; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px;">
-                          <div style="font-size:12px; color:#64748b; margin-bottom:4px;">${label} · ${when}</div>
-                          <div style="white-space:pre-wrap; font-size:14px; color:#0f172a;">${escapeHtml(m.text||"")}</div>
-                        </div>
-                      </div>`;
-                });
-                threadEl.innerHTML = html;
-                threadEl.scrollTop = threadEl.scrollHeight;
-            });
-        }
-
-window.sendReply = async () => {
-            const msgEl = document.getElementById('replyMsg');
-            const msg = (msgEl?.value || "").trim();
+        window.sendReply = async () => {
+            const msg = document.getElementById('replyMsg').value.trim();
             if(!msg) return alert("내용을 입력해주세요.");
-
-            if(!currentStudent?.id) return alert("학생 정보를 먼저 불러와주세요.");
-
+            
             try {
-                // 1) 학생별 게시판에 저장 (양쪽 화면에 표시)
-                await addDoc(collection(db, "students", currentStudent.id, "board"), {
-                    role: "parent",
-                    text: msg,
-                    createdAt: serverTimestamp()
-                });
-
-                // 2) 선생님 앱 알림용(통합 의견함)
                 await addDoc(collection(db, "parentMessages"), {
-                    parentPhone: (currentStudent.phone || '').toString(),
+                    parentPhone: (currentStudent.phone || '').toString().replace(/\D/g,''),
                     studentId: currentStudent.id,
                     studentName: currentStudent.name,
                     message: msg,
                     createdAt: serverTimestamp(),
                     read: false
                 });
-
                 alert("선생님께 메시지를 보냈습니다! ✅");
-                msgEl.value = "";
-            } catch(e) {
-                alert("전송 실패: " + e.message);
-            }
+                document.getElementById('replyMsg').value = "";
+            } catch(e) { alert("전송 실패: " + e.message); }
         };
     </script>
 </body>
