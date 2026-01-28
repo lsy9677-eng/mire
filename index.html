@@ -1620,6 +1620,7 @@ body.kiosk-mode .kiosk-exit-btn {
             <button class="modal-tab-btn active" onclick="switchModalTab('tabDaily', this)">📋 학습/출석</button>
             <button class="modal-tab-btn" onclick="switchModalTab('tabScore', this)">📈 성적/기록</button>
             <button class="modal-tab-btn" onclick="switchModalTab('tabInfo', this)">⚙️ 정보/정산</button>
+            <button class="modal-tab-btn" onclick="switchModalTab('tabBoard', this)">💬 학부모 게시판</button>
         </div>
 
         <div class="modal-body-scroll">
@@ -1744,6 +1745,33 @@ body.kiosk-mode .kiosk-exit-btn {
                     </div>
                 </div>
 
+
+            <div id="tabBoard" class="modal-tab-pane">
+                <div class="card" style="margin-top:10px;">
+                    <h3 style="margin:0 0 6px 0;">💬 학부모 게시판</h3>
+                    <div style="font-size:13px; color:#64748b; line-height:1.5;">
+                        이 학생(해당 학부모)과 선생님만 사용하는 대화 게시판입니다.<br>
+                        새 글이 오면 상단에 알림이 뜨고, 여기서 바로 확인/답글할 수 있습니다.
+                    </div>
+                </div>
+
+                <div class="card" style="padding:12px;">
+                    <div id="boardThread" style="max-height:320px; overflow-y:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px;"></div>
+
+                    <div class="admin-only" style="margin-top:10px;">
+                        <textarea id="boardTeacherMsg" rows="3" placeholder="학부모에게 보낼 답글을 입력하세요." style="background:white;"></textarea>
+                        <div style="display:flex; gap:8px; margin-top:8px;">
+                            <button class="action-btn" onclick="sendBoardMessage('teacher')" style="margin:0; flex:1; background:#3b82f6;">선생님 글 등록</button>
+                            <button class="action-btn" onclick="markBoardSeen()" style="margin:0; flex:1; background:#10b981;">읽음 처리</button>
+                        </div>
+                    </div>
+
+                    <div class="not-admin" style="margin-top:10px; font-size:13px; color:#94a3b8;">
+                        ※ 선생님 모드에서만 답글 입력이 가능합니다.
+                    </div>
+                </div>
+            </div>
+
             </div> </div> </div>
 </div>
 
@@ -1764,7 +1792,122 @@ body.kiosk-mode .kiosk-exit-btn {
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ================================
+    
+    // ==========================================
+    // [추가] 학생별 학부모 게시판 (Teacher <-> Parent)
+    // ==========================================
+    let __boardUnsub = null;
+    let __boardLastNotifyTs = 0;
+
+    const escapeHtml = (str) => (str||"").toString()
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+
+    window.subscribeBoardForStudent = (s) => {
+        const threadEl = document.getElementById('boardThread');
+        if(!threadEl || !s?.id) return;
+
+        // 이전 구독 해제
+        try { if(__boardUnsub) __boardUnsub(); } catch(e) {}
+        threadEl.innerHTML = "<div style='padding:14px; text-align:center; color:#94a3b8;'>불러오는 중...</div>";
+
+        const boardRef = collection(db, "students", s.id, "board");
+        __boardUnsub = onSnapshot(query(boardRef, orderBy("createdAt","asc")), (snap) => {
+            if(snap.empty){
+                threadEl.innerHTML = "<div style='padding:14px; text-align:center; color:#94a3b8;'>아직 게시글이 없습니다.</div>";
+                return;
+            }
+
+            let html = "";
+            let latestParentTs = 0;
+            snap.forEach(d => {
+                const m = d.data() || {};
+                const role = m.role || "parent";
+                const ts = m.createdAt?.toMillis ? m.createdAt.toMillis() : 0;
+                const when = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleString() : "";
+                const bubbleBg = role === "teacher" ? "#dbeafe" : "#fff";
+                const align = role === "teacher" ? "flex-end" : "flex-start";
+                const label = role === "teacher" ? "선생님" : "학부모";
+                const text = escapeHtml(m.text || "");
+                html += `
+                  <div style="display:flex; justify-content:${align}; margin:8px 0;">
+                    <div style="max-width:85%; background:${bubbleBg}; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px;">
+                      <div style="font-size:12px; color:#64748b; margin-bottom:4px;">${label} · ${when}</div>
+                      <div style="white-space:pre-wrap; font-size:14px; color:#0f172a;">${text}</div>
+                    </div>
+                  </div>`;
+                if(role === "parent") latestParentTs = Math.max(latestParentTs, ts);
+            });
+
+            threadEl.innerHTML = html;
+            threadEl.scrollTop = threadEl.scrollHeight;
+
+            // 새 학부모 글 알림(모달 열려있을 때)
+            const modalOpen = document.getElementById('detailModal')?.style?.display === 'flex';
+            if(modalOpen && latestParentTs && latestParentTs > __boardLastNotifyTs){
+                __boardLastNotifyTs = latestParentTs;
+                // 선생님 모드일 때만 알림
+                if(isTeacherMode()){
+                    showToast("📩 학부모 새 글", `${s.name} 학부모가 새 글을 남겼습니다.`);
+                }
+            }
+        });
+    };
+
+    window.sendBoardMessage = async (role) => {
+        const sid = window.currentStudentId;
+        if(!sid) return alert("학생을 먼저 선택해주세요.");
+        if(role !== "teacher") return;
+
+        const msgEl = document.getElementById('boardTeacherMsg');
+        const text = (msgEl?.value || "").trim();
+        if(!text) return alert("내용을 입력해주세요.");
+
+        const s = window.allStudents.find(st => st.id === sid) || {};
+        try{
+            await addDoc(collection(db, "students", sid, "board"), {
+                role: "teacher",
+                text,
+                createdAt: serverTimestamp()
+            });
+            // 알림용(기존 의견함에도 표시되게)
+            await addDoc(collection(db, "parentMessages"), {
+                parentPhone: (s.phone || ""),
+                studentId: sid,
+                studentName: (s.name || ""),
+                message: "[선생님] " + text,
+                createdAt: serverTimestamp(),
+                read: true
+            });
+            msgEl.value = "";
+        }catch(e){
+            alert("등록 실패: " + e.message);
+        }
+    };
+
+    window.markBoardSeen = () => {
+        // 현재 구현은 게시판 자체에 read 필드가 없어서,
+        // 최소한 선생님 의견함 배지(읽지 않음)를 줄이려면, 해당 학생의 unread 메시지를 읽음 처리해야 함.
+        // (간단 구현) 전체 parentMessages 중 read:false 를 일괄 읽음 처리하는 건 위험하니,
+        // 현재는 안내만.
+        showToast("✅ 확인", "게시판 글을 확인했습니다.");
+    };
+
+    // 간단 토스트 UI
+    const __toast = (() => {
+        const el = document.createElement("div");
+        el.style.cssText = "position:fixed; left:50%; top:14px; transform:translateX(-50%); z-index:9999; background:#111827; color:#fff; padding:10px 14px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.25); font-size:13px; display:none; max-width:92vw;";
+        document.body.appendChild(el);
+        let t=null;
+        return (title, msg) => {
+            el.innerHTML = `<div style="font-weight:800; margin-bottom:2px;">${escapeHtml(title)}</div><div style="opacity:.9;">${escapeHtml(msg||"")}</div>`;
+            el.style.display="block";
+            clearTimeout(t);
+            t=setTimeout(()=>{el.style.display="none";}, 2600);
+        };
+    })();
+    window.showToast = (title, msg) => __toast(title, msg);
+// ================================
     // 전화번호 정규화(하이픈/공백 제거)
     // ================================
     const normalizePhone = (v) => (v || '').toString().replace(/\D/g, '');
@@ -1981,6 +2124,9 @@ body.kiosk-mode .kiosk-exit-btn {
         window.renderCounselLog(s);
         window.calcStats(s);
 
+        // 학부모 게시판 로드
+        try { window.subscribeBoardForStudent(s); } catch(e) {}
+
         // 입력창 초기화
         document.getElementById('dailyProgress').value = "";
         document.getElementById('noticePreview').innerText = "";
@@ -1996,6 +2142,7 @@ body.kiosk-mode .kiosk-exit-btn {
     window.closeModal = () => {
         document.getElementById('detailModal').style.display = 'none';
         window.currentStudentId = null;
+        try { if(__boardUnsub) __boardUnsub(); } catch(e) {}
     };
 
     // 차트
@@ -2211,6 +2358,7 @@ body.kiosk-mode .kiosk-exit-btn {
     // ==========================================
     // 7. 학부모 의견함 (통합)
     // ==========================================
+    const __notifiedMsgIds = new Set(JSON.parse(sessionStorage.getItem('notifiedMsgIds')||'[]'));
     const inboxListEl = document.getElementById('inboxList');
     if(inboxListEl) {
         onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
@@ -2220,6 +2368,13 @@ body.kiosk-mode .kiosk-exit-btn {
 
             snapshot.forEach(doc => {
                 const d = doc.data();
+                // 새 학부모 메시지 토스트 알림 (선생님 모드가 아니어도 알려주기)
+                if(!d.read && !__notifiedMsgIds.has(doc.id)){
+                    __notifiedMsgIds.add(doc.id);
+                    sessionStorage.setItem('notifiedMsgIds', JSON.stringify(Array.from(__notifiedMsgIds).slice(-200)));
+                    showToast('📩 학부모 메시지', `${d.studentName} 학부모가 글을 남겼습니다.`);
+                }
+
                 if(!d.read) unread++;
                 const bg = d.read ? "white" : "#fff7ed";
                 html += `
@@ -2248,7 +2403,7 @@ body.kiosk-mode .kiosk-exit-btn {
         // 선생님 모드 켜고 이동
         if(!isTeacherMode()) window.toggleAdminMode(true);
         window.showPage('list');
-        setTimeout(() => window.openDetailById(sid), 500);
+        setTimeout(() => { window.openDetailById(sid); try{ const btns=document.querySelectorAll('.modal-tab-btn'); if(btns&&btns[3]) btns[3].click(); }catch(e){} }, 500);
     };
 
     // ==========================================
