@@ -2486,9 +2486,21 @@ ${closing[Math.floor(Math.random()*closing.length)]}`;
         });
     })();
 
-    // ✅ Firestore 실시간 수신
-    try{
+    
+    // ✅ Firestore 실시간 수신 (익명 로그인 완료 후 시작)
+    __authReady.then(() => {
         onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
+            const raw = [];
+            snapshot.forEach(d => raw.push({ id: d.id, ...d.data() }));
+            window.__inboxRaw = raw;
+            window.__renderInbox();
+        }, (err) => {
+            console.error("inbox listener error", err);
+        });
+    }).catch((e)=>{
+        console.error("auth not ready for inbox", e);
+    });
+
             const raw = [];
             snapshot.forEach(d => raw.push({ id: d.id, ...d.data() }));
             window.__inboxRaw = raw;
