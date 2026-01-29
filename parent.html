@@ -3,278 +3,2655 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>학부모 전용 | 미래엔수학</title>
-    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
-    <style>
-        body { margin: 0; padding: 20px; font-family: 'Pretendard', sans-serif; background: #f1f5f9; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; }
-        
-        /* 로그인 화면 */
-        #login-screen { text-align: center; margin-top: 60px; }
-        .login-card { background: white; padding: 40px 20px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-        .login-input { width: 100%; padding: 16px; font-size: 18px; border: 2px solid #e2e8f0; border-radius: 12px; margin: 20px 0; box-sizing: border-box; text-align: center; outline: none; transition: 0.2s; }
-        .login-input:focus { border-color: #3b82f6; }
-        .login-btn { width: 100%; padding: 16px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; }
-        .login-btn:active { transform: scale(0.98); }
+    <title>미래엔수학 능동해냄 교실 관리</title>
 
-        /* 메인 화면 */
-        .card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { margin: 0 0 5px; font-size: 22px; color: #1e293b; }
-        .tag { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
-        .tag-notice { background: #fff7ed; color: #c2410c; }
-        .tag-counsel { background: #eff6ff; color: #1d4ed8; }
-        .log-item { border-bottom: 1px dashed #e2e8f0; padding: 12px 0; }
-        
-        /* 학부모 입력창: 작아서 안 보인다는 피드백 반영 */
-        textarea { width: 100%; height: 160px; padding: 14px; border: 1px solid #cbd5e1; border-radius: 14px; box-sizing: border-box; resize: vertical; font-size: 16px; line-height: 1.5; }
-        .send-btn { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3B82F6">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+/* =========================================================
+   2026 Parent-Friendly UI System (Mobile-first)
+   - Soft card UI + gentle 3D
+   - Bottom navigation on phone
+   - Tablet kiosk: big, tappable 3D attendance cards
+   ========================================================= */
+
+:root{
+  --brand-blue:#3B82F6;
+  --brand-blue-700:#1D4ED8;
+  --brand-blue-soft:#EFF6FF;
+
+  --brand-yellow:#FACC15;
+  --brand-yellow-soft:#FEF9C3;
+
+  --ink:#0F172A;
+  --ink-sub:#475569;
+
+  --bg:#F8FAFC;
+  --card:#FFFFFF;
+
+  --line: rgba(15,23,42,.08);
+  --shadow: 0 10px 30px rgba(15,23,42,.08);
+  --shadow-soft: 0 6px 16px rgba(15,23,42,.08);
+
+  --success:#22C55E;
+  --warning:#F59E0B;
+  --danger:#EF4444;
+
+  --r-lg: 22px;
+  --r-md: 16px;
+  --r-sm: 12px;
+
+  --tap: 48px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family:'Pretendard', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: radial-gradient(1200px 600px at 30% -10%, #DBEAFE 0%, rgba(219,234,254,0) 60%),
+              radial-gradient(900px 500px at 90% 10%, #FEF9C3 0%, rgba(254,249,195,0) 55%),
+              var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+ padding: 14px 12px 160px; 
+}
+
+.container{
+  max-width: 860px;
+  margin: 0 auto;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(255,255,255,.6);
+  backdrop-filter: blur(14px);
+  border-radius: calc(var(--r-lg) + 6px);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+/* ----- Header (Brand) ----- */
+header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding: 10px 10px 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.brand-mark{
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(59,130,246,.18);
+  background: #fff;
+  border: 1px solid rgba(15,23,42,.06);
+}
+.brand-title{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.brand-title strong{
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  line-height: 1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.brand-title span{
+  font-size: 12px;
+  color: var(--ink-sub);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.admin-switch{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.65);
+  border: 1px solid rgba(15,23,42,.06);
+  box-shadow: 0 6px 16px rgba(15,23,42,.06);
+  font-size: 12px;
+  color: var(--ink-sub);
+}
+.admin-switch input{ transform: translateY(1px); }
+#btnKioskStart{
+  display:none;
+  border:none;
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-weight: 800;
+  color:#0F172A;
+  background: linear-gradient(180deg, #FEF9C3 0%, #FDE68A 100%);
+  box-shadow: 0 8px 18px rgba(250,204,21,.25);
+  cursor:pointer;
+}
+
+/* ----- Pages / Tabs ----- */
+.page{ display:none; animation: fadeIn .2s ease; }
+.page.active{ display:block; }
+@keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+
+/* Bottom Navigation (re-using existing .tabs markup) */
+.tabs{
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 50;
+
+  display:flex;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.78);
+  border: 1px solid rgba(15,23,42,.08);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 40px rgba(15,23,42,.12);
+}
+.tab-btn{
+  flex:1;
+  min-height: var(--tap);
+  border:none;
+  border-radius: 999px;
+  background: transparent;
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-sub);
+  transition: transform .12s ease, background .12s ease, color .12s ease;
+}
+.tab-btn i{ font-size: 16px; }
+.tab-btn.active{
+  background: linear-gradient(180deg, rgba(59,130,246,.18) 0%, rgba(59,130,246,.10) 100%);
+  color: var(--brand-blue-700);
+}
+.tab-btn:active{ transform: scale(.98); }
+
+/* On wider screens, make tabs inline (not fixed) */
+@media (min-width: 900px){
+  body{ padding-bottom: 14px; }
+  .tabs{
+    position: static;
+    margin: 8px 0 14px;
+    border-radius: 18px;
+    box-shadow: 0 10px 26px rgba(15,23,42,.10);
+  }
+}
+
+/* ----- Forms ----- */
+.form-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.full-width{ grid-column: 1 / -1; }
+
+label{
+  display:block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-sub);
+  margin: 0 0 6px;
+}
+input, select, textarea{
+  width:100%;
+  min-height: var(--tap);
+  padding: 12px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(15,23,42,.10);
+  background: rgba(255,255,255,.85);
+  color: var(--ink);
+  outline: none;
+  font-size: 14px;
+  transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
+}
+textarea{ min-height: 110px; resize: vertical; }
+input:focus, select:focus, textarea:focus{
+  border-color: rgba(59,130,246,.55);
+  box-shadow: 0 0 0 4px rgba(59,130,246,.14);
+  background: #fff;
+}
+input::placeholder, textarea::placeholder{ color: rgba(71,85,105,.7); }
+
+button{ min-height: var(--tap); }
+
+button.action-btn{
+  width:100%;
+  border:none;
+  border-radius: 18px;
+  padding: 14px 14px;
+  font-weight: 900;
+  font-size: 15px;
+  cursor:pointer;
+  color: white;
+  background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue-700) 100%);
+  box-shadow: 0 12px 28px rgba(59,130,246,.24);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+button.action-btn:hover{ filter: brightness(1.02); }
+button.action-btn:active{ transform: translateY(1px) scale(.995); box-shadow: 0 8px 22px rgba(59,130,246,.20); }
+button.action-btn:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+/* ----- Filter Chips ----- */
+.filter-container{
+  border-radius: var(--r-lg);
+  background: rgba(255,255,255,.75);
+  border: 1px solid rgba(15,23,42,.08);
+  box-shadow: var(--shadow-soft);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.filter-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.filter-label{
+  font-size:12px;
+  font-weight:900;
+  color: var(--ink-sub);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(59,130,246,.10);
+}
+.filter-group{ display:flex; gap:6px; flex-wrap: wrap; flex: 1; }
+
+.filter-chip{
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,.08);
+  background: rgba(255,255,255,.85);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-sub);
+  cursor:pointer;
+  transition: transform .12s ease, background .12s ease, color .12s ease;
+}
+.filter-chip.active{
+  background: linear-gradient(180deg, rgba(250,204,21,.35) 0%, rgba(250,204,21,.18) 100%);
+  border-color: rgba(250,204,21,.55);
+  color: #7C5A00;
+}
+
+/* ----- Student Cards (Parent-friendly) ----- */
+#studentListArea{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 4px;
+}
+.student-card{
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(15,23,42,.08);
+  border-radius: 20px;
+  padding: 14px 12px;
+  box-shadow: 0 10px 22px rgba(15,23,42,.08);
+  cursor: pointer;
+  position: relative;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  height: 170px;
+
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align:center;
+}
+.student-card:hover{
+  transform: translateY(-2px);
+  border-color: rgba(59,130,246,.25);
+  box-shadow: 0 16px 30px rgba(15,23,42,.10);
+}
+.student-card:active{ transform: scale(.985); }
+
+.chk-wrapper{ position:absolute; top:10px; left:10px; }
+.list-chk{ width:20px; height:20px; accent-color: var(--brand-blue); }
+
+.profile-wrapper{ width: 64px; height: 64px; margin-bottom: 8px; }
+.profile-img{
+  width:100%; height:100%;
+  border-radius: 22px;
+  object-fit: cover;
+  background:#eee;
+  border: 1px solid rgba(15,23,42,.06);
+  box-shadow: 0 10px 20px rgba(15,23,42,.12);
+}
+.info-area{ width:100%; }
+.info-area div:first-child{
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+}
+.info-area small{
+  display:block;
+  font-size: 12px;
+  color: var(--ink-sub);
+  margin-top: 2px;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.grade-tag{
+  display:inline-block;
+  margin-left: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #0F172A;
+  background: rgba(59,130,246,.12);
+  border: 1px solid rgba(59,130,246,.18);
+}
+
+/* ----- Modal (Glass) ----- */
+.modal-overlay{
+  display:none;
+  position: fixed;
+  inset:0;
+  background: rgba(2,6,23,.52);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  justify-content:center;
+  align-items:center;
+  padding: 18px;
+}
+.modal{
+  width: min(1100px, 98vw);
+  max-height: 94vh;
+  overflow:auto;
+  border-radius: 26px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.55);
+  box-shadow: 0 26px 70px rgba(2,6,23,.35);
+  padding: 18px;
+  position: relative;
+}
+.close-btn{
+  position:absolute;
+  right: 14px; top: 14px;
+  width: 42px; height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,.08);
+  background: rgba(255,255,255,.75);
+  cursor:pointer;
+  font-size: 22px;
+  color: var(--ink-sub);
+}
+.modal-header-profile{
+  text-align:center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(15,23,42,.08);
+}
+.modal-tab-nav{
+  display:flex;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgba(59,130,246,.08);
+  border: 1px solid rgba(59,130,246,.10);
+  margin: 10px 0 12px;
+}
+.modal-tab-btn{
+  flex:1;
+  border:none;
+  border-radius: 14px;
+  background: transparent;
+  padding: 12px 10px;
+  font-weight: 900;
+  color: var(--ink-sub);
+  cursor:pointer;
+}
+.modal-tab-btn.active{
+  background: rgba(255,255,255,.85);
+  color: var(--brand-blue-700);
+  box-shadow: 0 10px 18px rgba(15,23,42,.08);
+}
+.modal-tab-pane{ display:none; }
+.modal-tab-pane.active{ display:block; }
+
+.stat-box{
+  display:flex;
+  gap: 10px;
+  background: rgba(59,130,246,.08);
+  border: 1px solid rgba(59,130,246,.12);
+  border-radius: 18px;
+  padding: 12px;
+}
+.stat-num{ font-size: 20px; font-weight: 950; color: var(--brand-blue-700); }
+
+/* Contact buttons (keep existing classes) */
+.contact-row{ display:flex; justify-content:center; align-items:center; gap: 14px; flex-wrap: wrap; }
+.contact-btn{
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  display:flex; align-items:center; justify-content:center;
+  border: 1px solid rgba(15,23,42,.08);
+  box-shadow: 0 10px 18px rgba(15,23,42,.10);
+}
+.btn-call{ background: rgba(34,197,94,.12); color: #166534; }
+.btn-sms{ background: rgba(59,130,246,.12); color: #1D4ED8; }
+.btn-kakao{ background: rgba(250,204,21,.25); color: #3c1e1e; }
+
+/* ----- Toast (cute) ----- */
+.toast{
+  position: fixed;
+  left:50%;
+  bottom: calc(120px + env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(10px);
+  opacity: 0;
+  pointer-events:none;
+  z-index: 9999;
+  max-width: calc(100vw - 24px);
+
+  display:flex;
+  align-items:center;
+  gap:10px;
+
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(15,23,42,.10);
+  box-shadow: 0 18px 40px rgba(2,6,23,.20);
+  border-radius: 999px;
+  padding: 12px 14px;
+  color: var(--ink);
+  font-weight: 800;
+}
+.toast.show{ opacity:1; transform: translateX(-50%) translateY(0); transition: opacity .16s ease, transform .16s ease; }
+.toast .dot{ width:10px; height:10px; border-radius:999px; background: var(--success); }
+.toast.error .dot{ background: var(--danger); }
+.toast.warn .dot{ background: var(--warning); }
+
+/* =========================================================
+   Tablet Kiosk Mode (Attendance)
+   - Big 3D cards
+   - Minimal distractions
+   ========================================================= */
+
+body.kiosk-mode{
+  padding: 0;
+  background: radial-gradient(1100px 600px at 20% -10%, #DBEAFE 0%, rgba(219,234,254,0) 60%),
+              radial-gradient(900px 500px at 95% 0%, #FEF9C3 0%, rgba(254,249,195,0) 55%),
+              linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 100%);
+}
+
+body.kiosk-mode .container{
+  max-width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 12px;
+}
+
+body.kiosk-mode header,
+body.kiosk-mode .tabs,
+body.kiosk-mode .filter-container,
+body.kiosk-mode .admin-toolbar,
+body.kiosk-mode .admin-only,
+body.kiosk-mode #register,
+body.kiosk-mode #calendar{
+  display:none !important;
+}
+body.kiosk-mode #list{ display:block !important; }
+body.kiosk-mode #studentListArea{
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+  padding: 8px;
+}
+
+/* Kiosk header category chips */
+.kiosk-header{
+  display:none;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  padding: 12px 10px;
+  margin: 0 0 12px;
+  border-radius: 22px;
+  background: rgba(255,255,255,.82);
+  border: 1px solid rgba(15,23,42,.08);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 40px rgba(15,23,42,.10);
+  justify-content:center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+body.kiosk-mode .kiosk-header{ display:flex; }
+
+.k-filter-btn{
+  border:none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 950;
+  cursor:pointer;
+  color: var(--ink-sub);
+  background: rgba(59,130,246,.08);
+  border: 1px solid rgba(59,130,246,.12);
+  transition: transform .12s ease, background .12s ease;
+}
+.k-filter-btn.active{
+  background: linear-gradient(180deg, rgba(250,204,21,.55) 0%, rgba(250,204,21,.28) 100%);
+  border-color: rgba(250,204,21,.60);
+  color: #7C5A00;
+  transform: scale(1.03);
+}
+
+/* Kiosk Exit button */
+.kiosk-exit-btn{
+  position: fixed;
+  right: 18px;
+  top: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index: 99999;
+
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(15,23,42,.10);
+  box-shadow: 0 18px 40px rgba(2,6,23,.18);
+  color: var(--brand-blue-700);
+}
+body.kiosk-mode .kiosk-exit-btn{ display:flex; }
+
+/* Kiosk 3D cards (tap = attendance) */
+body.kiosk-mode .student-card{
+  height: 360px;
+  padding: 18px 16px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.82) 100%);
+  border: 1px solid rgba(15,23,42,.10);
+
+  box-shadow:
+    0 16px 0 rgba(148,163,184,.35),
+    0 28px 45px rgba(15,23,42,.18);
+}
+body.kiosk-mode .student-card:active{
+  transform: translateY(10px);
+  box-shadow:
+    0 6px 0 rgba(148,163,184,.35),
+    0 18px 32px rgba(15,23,42,.14);
+}
+
+/* Arrived state (soft green) */
+body.kiosk-mode .student-card.arrived{
+  background: linear-gradient(180deg, rgba(34,197,94,.18) 0%, rgba(255,255,255,.86) 70%);
+  border-color: rgba(34,197,94,.25);
+}
+
+/* ----- Kiosk status (멀리서도 구분) ----- */
+.kiosk-pill{
+  position:absolute;
+  top: 14px;
+  right: 14px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 950;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  border: 1px solid rgba(15,23,42,.10);
+  background: rgba(255,255,255,.85);
+  box-shadow: 0 10px 20px rgba(15,23,42,.10);
+}
+.kiosk-pill.missing{ background: rgba(148,163,184,.22); border-color: rgba(148,163,184,.32); color:#334155; }
+.kiosk-pill.arrived{ background: rgba(34,197,94,.22); border-color: rgba(34,197,94,.32); color:#14532d; }
+.kiosk-pill.left{ background: rgba(100,116,139,.18); border-color: rgba(100,116,139,.28); color:#334155; }
+
+.kiosk-hint{
+  margin-top: 10px;
+  width:100%;
+  padding: 10px 12px;
+  border-radius: 18px;
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--ink-sub);
+  background: rgba(59,130,246,.08);
+  border: 1px solid rgba(59,130,246,.10);
+}
+.kiosk-hint strong{ color: var(--brand-blue-700); }
+
+body.kiosk-mode .student-card.missing{
+  background: linear-gradient(180deg, rgba(148,163,184,.18) 0%, rgba(255,255,255,.86) 70%);
+  border-color: rgba(148,163,184,.30);
+  filter: saturate(.92);
+}
+body.kiosk-mode .student-card.left{
+  background: linear-gradient(180deg, rgba(100,116,139,.14) 0%, rgba(255,255,255,.82) 75%);
+  border-color: rgba(100,116,139,.26);
+  opacity: .72;
+  filter: grayscale(.22);
+}
+body.kiosk-mode .student-card.left .profile-img{ filter: grayscale(.35); opacity:.9; }
+
+/* Bigger profile + name */
+body.kiosk-mode .profile-wrapper{ width: 150px; height: 150px; margin-bottom: 14px; }
+body.kiosk-mode .profile-img{ border-radius: 28px; }
+body.kiosk-mode .info-area div:first-child{ font-size: 28px; }
+body.kiosk-mode .info-area small{ font-size: 14px; }
+
+/* Keep existing kiosk buttons if your JS injects them */
+body.kiosk-mode .kiosk-btn-group{
+  display:flex;
+  gap: 10px;
+  width:100%;
+  margin-top: auto;
+}
+.k-btn{
+  flex:1;
+  border:none;
+  border-radius: 18px;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 950;
+  cursor:pointer;
+  box-shadow: 0 14px 26px rgba(2,6,23,.10);
+}
+.k-btn-in{ background: linear-gradient(180deg, rgba(250,204,21,.80) 0%, rgba(250,204,21,.55) 100%); color:#7C5A00; }
+.k-btn-out{ background: rgba(59,130,246,.12); color: var(--brand-blue-700); border: 1px solid rgba(59,130,246,.18); }
+
+.k-btn:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+/* Small tweaks */
+.dept-badge{ border-radius: 999px; padding: 3px 8px; font-weight: 900; }
+
+
+/* ===== Calendar (restored & modernized) ===== */
+#calendar .calendar-controls{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--r-lg);
+  background: rgba(255,255,255,.78);
+  border: 1px solid rgba(15,23,42,.08);
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 12px;
+}
+#calendar .cal-btn{
+  min-height: var(--tap);
+  padding: 10px 12px;
+  border:none;
+  border-radius: 16px;
+  font-weight: 950;
+  cursor:pointer;
+  background: rgba(59,130,246,.10);
+  color: var(--brand-blue-700);
+}
+#calendar .current-date{
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+
+.calendar-grid{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+.day-name{
+  text-align:center;
+  font-weight: 950;
+  font-size: 12px;
+  color: var(--ink-sub);
+  padding: 6px 0;
+}
+.day-cell{
+  border-radius: 16px;
+  border: 1px solid rgba(15,23,42,.08);
+  background: rgba(255,255,255,.86);
+  box-shadow: 0 8px 18px rgba(15,23,42,.06);
+  min-height: 54px;
+  padding: 6px 6px 10px;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.day-cell:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(15,23,42,.08);
+}
+.day-num{
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--ink);
+}
+.day-cell.selected{
+  outline: 4px solid rgba(59,130,246,.18);
+  border-color: rgba(59,130,246,.35);
+}
+.event-dot{
+  width: 7px; height: 7px;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+.dot-schedule{ background: rgba(59,130,246,.90); }
+.dot-birthday{ background: rgba(250,204,21,.95); }
+
+#dateDetailArea{
+  margin-top: 12px;
+  border-radius: var(--r-lg);
+  background: rgba(255,255,255,.78);
+  border: 1px solid rgba(15,23,42,.08);
+  box-shadow: var(--shadow-soft);
+  padding: 12px;
+}
+.view-mode-group{
+  display:flex;
+  gap: 8px;
+  justify-content:center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.view-mode-btn{
+  border:none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 950;
+  cursor:pointer;
+  background: rgba(59,130,246,.08);
+  color: var(--ink-sub);
+}
+.view-mode-btn.active{
+  background: linear-gradient(180deg, rgba(250,204,21,.55) 0%, rgba(250,204,21,.26) 100%);
+  color: #7C5A00;
+  border: 1px solid rgba(250,204,21,.55);
+}
+
+/* ===== Admin selection layout fixes (원생관리) ===== */
+body.show-admin #studentListArea{
+  grid-template-columns: 1fr !important;
+}
+body.show-admin .student-card{
+  height: auto !important;
+  flex-direction: row !important;
+  justify-content:flex-start !important;
+  text-align:left !important;
+  gap: 12px;
+  padding: 12px 14px;
+}
+body.show-admin .profile-wrapper{
+  width: 56px !important;
+  height: 56px !important;
+  margin: 0 !important;
+}
+body.show-admin .profile-img{ border-radius: 18px !important; }
+body.show-admin .info-area{ width: auto !important; flex: 1; }
+body.show-admin .chk-wrapper{
+  position: static !important;
+  margin-left: auto;
+  width: auto;
+  display:flex;
+  align-items:center;
+}
+body.show-admin .list-chk{
+  width: 22px;
+  height: 22px;
+}
+body.show-admin #selectedCount{
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(59,130,246,.10);
+  border: 1px solid rgba(59,130,246,.12);
+}
+body.show-admin #selectAll{
+  width: 20px;
+  height: 20px;
+  accent-color: var(--brand-blue);
+}
+
+/* ===== Cute sparkle (cat accent) ===== */
+.sparkle-fx{
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  pointer-events:none;
+  animation: sparkle-pop .55s ease-out forwards;
+  filter: drop-shadow(0 10px 14px rgba(250,204,21,.25));
+}
+@keyframes sparkle-pop{
+  0%{ transform: translate(-50%,-50%) scale(.2); opacity:0; }
+  35%{ opacity:1; transform: translate(-50%,-50%) scale(1); }
+  100%{ opacity:0; transform: translate(-50%,-80%) scale(.8); }
+}
+
+
+/* =========================
+   KIOSK: True metal/plastic card feel + remove ghost print text
+   ========================= */
+
+/* Hide print area during normal use (it was showing at bottom) */
+#printArea{ display:none !important; }
+
+/* Print support: show printArea only when printing */
+@media print{
+  body{ background:#fff !important; padding:0 !important; }
+  body > *:not(#printArea){ display:none !important; }
+  #printArea{
+    display:block !important;
+    position: static !important;
+    width: 210mm !important;
+    padding: 10mm !important;
+  }
+}
+
+/* Remove any watermark/label that looks like floating text */
+.card-label{ display:none !important; }
+
+/* Stronger "kiosk" look */
+body.kiosk-mode{
+  background:
+    radial-gradient(900px 540px at 15% 0%, rgba(59,130,246,.28) 0%, rgba(59,130,246,0) 55%),
+    radial-gradient(720px 520px at 85% 10%, rgba(250,204,21,.30) 0%, rgba(250,204,21,0) 55%),
+    linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 100%) !important;
+}
+
+/* Kiosk cards: metal + plastic hybrid */
+body.kiosk-mode .student-card{
+  height: 380px;
+  border-radius: 30px;
+  padding: 18px 16px;
+  cursor: pointer;
+
+  /* "metal shell" */
+  background:
+    radial-gradient(140px 120px at 25% 22%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 60%),
+    radial-gradient(260px 180px at 70% 28%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 62%),
+    linear-gradient(135deg, rgba(15,23,42,.10) 0%, rgba(255,255,255,.92) 22%, rgba(255,255,255,.86) 60%, rgba(15,23,42,.10) 100%);
+
+  border: 1px solid rgba(15,23,42,.12);
+
+  /* 3D plate + floor shadow */
+  box-shadow:
+    0 18px 0 rgba(148,163,184,.30),
+    0 34px 54px rgba(2,6,23,.22);
+
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+}
+
+/* glossy highlight strip */
+body.kiosk-mode .student-card::before{
+  content:"";
+  position:absolute;
+  inset: -40% -30%;
+  background: linear-gradient(115deg,
+    rgba(255,255,255,0) 20%,
+    rgba(255,255,255,.28) 38%,
+    rgba(255,255,255,0) 58%);
+  transform: rotate(12deg);
+  opacity: .9;
+  pointer-events:none;
+}
+
+/* subtle noise to feel "plastic" */
+body.kiosk-mode .student-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:
+    radial-gradient(rgba(15,23,42,.06) 1px, rgba(255,255,255,0) 1px);
+  background-size: 18px 18px;
+  opacity: .06;
+  mix-blend-mode: multiply;
+  pointer-events:none;
+}
+
+body.kiosk-mode .student-card:active{
+  transform: translateY(12px);
+  box-shadow:
+    0 8px 0 rgba(148,163,184,.28),
+    0 22px 36px rgba(2,6,23,.18);
+}
+
+/* Arrived state: green glow rim */
+body.kiosk-mode .student-card.arrived{
+  border-color: rgba(34,197,94,.30) !important;
+  box-shadow:
+    0 18px 0 rgba(148,163,184,.28),
+    0 34px 54px rgba(2,6,23,.20),
+    0 0 0 2px rgba(34,197,94,.18) inset,
+    0 0 26px rgba(34,197,94,.14);
+}
+
+/* Profile: inset frame like ID */
+body.kiosk-mode .profile-wrapper{
+  width: 154px;
+  height: 154px;
+  border-radius: 26px;
+  padding: 6px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.9) 0%, rgba(15,23,42,.08) 100%);
+  box-shadow:
+    0 10px 22px rgba(2,6,23,.20),
+    0 0 0 1px rgba(15,23,42,.10) inset;
+}
+body.kiosk-mode .profile-img{
+  border-radius: 20px;
+}
+
+/* Title typography */
+body.kiosk-mode .info-area div:first-child{
+  font-size: 30px !important;
+  letter-spacing: -0.6px;
+}
+body.kiosk-mode .info-area small{
+  font-size: 14px !important;
+  color: rgba(71,85,105,.85) !important;
+}
+
+/* Buttons: tactile plastic/metal */
+body.kiosk-mode .kiosk-btn-group{ gap: 12px; }
+
+.k-btn{
+  border-radius: 20px !important;
+  font-size: 17px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.k-btn::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 55%);
+  opacity:.55;
+  pointer-events:none;
+}
+
+/* "Gold plastic" for 등원 */
+.k-btn-in{
+  background:
+    radial-gradient(120px 60px at 30% 20%, rgba(255,255,255,.75) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(135deg, rgba(161,98,7,.22) 0%, rgba(250,204,21,.95) 26%, rgba(250,204,21,.62) 70%, rgba(161,98,7,.22) 100%) !important;
+  color: #3B2A00 !important;
+  border: 1px solid rgba(161,98,7,.22) !important;
+  box-shadow:
+    0 10px 0 rgba(161,98,7,.20),
+    0 18px 28px rgba(2,6,23,.18) !important;
+}
+
+/* "Steel" for 하원 */
+.k-btn-out{
+  background:
+    radial-gradient(120px 60px at 30% 20%, rgba(255,255,255,.8) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(135deg, rgba(15,23,42,.18) 0%, rgba(226,232,240,.95) 28%, rgba(203,213,225,.70) 70%, rgba(15,23,42,.14) 100%) !important;
+  color: #0F172A !important;
+  border: 1px solid rgba(15,23,42,.14) !important;
+  box-shadow:
+    0 10px 0 rgba(15,23,42,.12),
+    0 18px 28px rgba(2,6,23,.16) !important;
+}
+
+.k-btn:active{
+  transform: translateY(6px) !important;
+  box-shadow: none !important;
+}
+
+/* Kiosk exit button: clearer */
+/* 종료 버튼 위치 수정 (상단 오른쪽) */
+body.kiosk-mode .kiosk-exit-btn {
+    display: flex !important;
+    top: 25px !important;    /* 위쪽으로 이동 */
+    right: 25px !important;  /* 오른쪽 벽에 붙임 */
+    bottom: auto !important; /* 아래쪽 해제 */
+    left: auto !important;   /* 왼쪽 해제 */
+    width: 45px; 
+    height: 45px;
+    opacity: 0.4; /* 평소엔 연하게 */
+}
+/* Kiosk header chips slightly more premium */
+body.kiosk-mode .kiosk-header{
+  border-radius: 26px !important;
+}
+/* [수정] 신규 등록 화면 하단 여백 추가 (버튼 가림 방지) */
+    #register {
+        padding-bottom: 90px !important;
+    }
+
+    /* [수정] 선생님 모드 시 설정 버튼 강제 표시 */
+    body.show-admin .admin-only {
+    display: inline-block !important; /* flex 대신 block이나 inline-block 사용 */
+}
+/* 학생 정보 수정 박스는 꽉 차게 보이도록 별도 지정 */
+body.show-admin div.info-box.admin-only {
+    display: block !important;
+}
+/* =========================================
+   1. 메뉴 버튼 상단 배치 & 모바일 최적화
+   ========================================= */
+.tabs {
+    position: sticky; /* 스크롤 내려도 상단에 고정 */
+    top: 0;
+    z-index: 90;
+    margin: 0 0 15px 0;
+    padding: 8px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 0 0 16px 16px; /* 아래쪽만 둥글게 */
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    width: 100%; /* 가로 꽉 차게 */
+    left: 0;
+}
+/* 탭 버튼 스타일 단순화 */
+.tab-btn {
+    border-radius: 12px;
+    font-size: 14px;
+    padding: 8px 0; /* 높이 조절 */
+}
+
+/* 본문 여백 재조정 (버튼이 위로 갔으므로 아래 여백 제거) */
+body { padding-bottom: 20px !important; }
+#register { padding-bottom: 20px !important; }
+
+
+/* =========================================
+   2. [출석부 모드] 3D 입체 버튼 & 카드 디자인
+   ========================================= */
+
+/* (1) 분류 버튼 (전체, 미취학...) - 입체감 강화 */
+.kiosk-header {
+    gap: 8px;
+    padding: 10px;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+}
+.k-filter-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-bottom: 4px solid #94a3b8; /* 두꺼운 하단 테두리로 3D 효과 */
+    border-radius: 12px;
+    color: #64748b;
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: 800;
+    transform: translateY(0);
+    transition: all 0.1s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+.k-filter-btn:active, 
+.k-filter-btn.active {
+    background: #ffeb3b; /* 쨍한 노란색 */
+    color: #5d4037;
+    border-color: #fbc02d;
+    border-bottom-width: 2px; /* 눌렸을 때 높이 줄임 */
+    transform: translateY(2px); /* 눌리는 애니메이션 */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* (2) 학생 카드 상태별 디자인 (확실한 구분) */
+body.kiosk-mode .student-card {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    height: 320px; /* 카드 높이 조정 */
+}
+
+/* [상태 1: 미등원] - 깔끔한 흰색 */
+body.kiosk-mode .student-card.missing {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 0 #cbd5e1; /* 회색 그림자 */
+    opacity: 1;
+}
+body.kiosk-mode .student-card.missing .profile-img {
+    filter: grayscale(0%); /* 사진 선명하게 */
+}
+
+/* [상태 2: 등원완료] - 눈에 띄는 초록색 테두리 & 입체감 */
+body.kiosk-mode .student-card.arrived {
+    background: linear-gradient(135deg, #ffffff 40%, #dcfce7 100%);
+    border: 3px solid #22c55e; /* 굵은 초록 테두리 */
+    box-shadow: 0 8px 0 #15803d; /* 진한 초록 그림자 */
+    transform: translateY(-2px);
+}
+body.kiosk-mode .student-card.arrived .kiosk-pill {
+    background: #22c55e; 
+    color: white;
+    border: none;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(34,197,94,0.4);
+}
+
+/* [상태 3: 하원완료] - 어둡고 흐릿하게 (확실히 꺼진 느낌) */
+body.kiosk-mode .student-card.left {
+    background: #f1f5f9;
+    border: 2px dashed #94a3b8;
+    box-shadow: none; /* 그림자 없음 (납작하게) */
+    opacity: 0.5; /* 반투명 */
+    transform: scale(0.95); /* 약간 축소 */
+    filter: grayscale(100%); /* 흑백 처리 */
+}
+
+/* 키오스크 모드에서 불필요한 요소 완벽 제거 */
+body.kiosk-mode .tabs,
+body.kiosk-mode header, 
+body.kiosk-mode .kiosk-btn-group,
+body.kiosk-mode .kiosk-exit-btn {
+    /* 저장/취소/메뉴 등 버튼 아예 안 보이게 처리 */
+    /* 단, 종료 버튼이 필요하면 kiosk-exit-btn은 제외하세요 */
+   display: none !important; 
+}
+
+/* 종료 버튼은 비상용으로 좌측 하단에 투명하게 숨김 (세 번 탭 기능 등 대체 가능하지만 일단 작게 표시) */
+body.kiosk-mode .kiosk-exit-btn {
+    display: flex !important;
+    top: auto; bottom: 20px; left: 20px; right: auto;
+    width: 40px; height: 40px;
+    opacity: 0.3;
+}
+/* (혹시 모를 키오스크 상단 분류 버튼도 같이 고정 해제) */
+.kiosk-header {
+    position: relative !important;
+    top: auto !important;
+}
+/* [수정] 일반 모드 원생 카드 사진 확대 */
+
+/* 1. 카드 전체 높이를 늘림 (사진이 커진 만큼 공간 확보) */
+.student-card {
+    height: 210px !important; /* 기존 170px -> 210px로 변경 */
+}
+
+/* 2. 사진 크기를 대폭 확대 */
+.profile-wrapper {
+    width: 100px !important;  /* 기존 64px -> 100px */
+    height: 100px !important; /* 정사각형 유지 */
+    margin-bottom: 12px !important; /* 사진과 이름 사이 간격 벌림 */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08); /* 그림자도 살짝 진하게 */
+}
+
+/* 3. 사진 테두리 둥글기 조절 (선택사항) */
+.profile-img {
+    border-radius: 30px !important; /* 조금 더 둥글게 */
+}
+
+/* 4. 이름 글자 크기도 균형에 맞춰 약간 키움 */
+.info-area div:first-child {
+    font-size: 17px !important;
+    margin-bottom: 5px !important;
+}
+/* [수정] 브랜드 로고 및 타이틀 크기 확대 */
+.brand-mark {
+    width: 54px !important;       /* 로고 가로 크기 (기존 38px) */
+    height: 54px !important;      /* 로고 세로 크기 */
+    border-radius: 18px !important; /* 모서리 둥글기 */
+    box-shadow: 0 4px 12px rgba(59,130,246,0.25) !important; /* 그림자 강조 */
+}
+
+.brand-title strong {
+    font-size: 21px !important;   /* 제목 글자 크기 (기존 16px) */
+    letter-spacing: -0.5px !important; /* 자간 조절 */
+    margin-bottom: 3px !important;
+}
+
+.brand-title span {
+    font-size: 13px !important;   /* 아래 작은 설명글도 살짝 키움 */
+    color: #64748b !important;    /* 글자색을 조금 더 진하게 */
+}
+
+/* 로고와 글자 사이 간격도 조금 넓힘 */
+.brand {
+    gap: 14px !important;
+}
+/* [수정] 학습일정 체크박스 크기 조절 및 정렬 */
+#calendar .filter-group {
+    display: flex !important;       /* 가로로 나란히 배치 */
+    justify-content: center !important; /* 가운데 정렬 */
+    gap: 24px !important;           /* '학원일정'과 '생일' 사이 간격 */
+    margin-bottom: 18px !important;
+}
+
+#calendar .filter-group label {
+    display: inline-flex !important; /* 글자와 체크박스를 한 줄로 */
+    align-items: center !important;  /* 수직 중앙 정렬 */
+    gap: 8px !important;             /* 체크박스와 글자 사이 간격 */
+    font-size: 15px !important;      /* 글자 크기 적당하게 */
+    font-weight: 700 !important;     /* 글자 굵게 */
+    cursor: pointer;
+    width: auto !important;          /* 꽉 차는 문제 해결 */
+    margin: 0 !important;
+}
+
+#calendar .filter-group input[type="checkbox"] {
+    width: 22px !important;          /* 가로 크기 축소 */
+    height: 22px !important;         /* 세로 크기 축소 */
+    min-height: 0 !important;        /* 최소 높이 제한 해제 */
+    margin: 0 !important;            /* 불필요한 여백 제거 */
+    accent-color: #3B82F6;           /* 체크했을 때 브랜드 색상(파랑) */
+    cursor: pointer;
+    transform: translateY(-1px);     /* 글자와 높이 미세 조정 */
+}
+
+
+/* Fullscreen detail modal */
+.modal.modal-full{
+  width: min(1200px, 100vw);
+  height: 94vh;
+  max-height: 94vh;
+}
+@media (max-width: 640px){
+  .modal{ width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; }
+  .modal.modal-full{ width: 100vw !important; height: 100vh !important; max-height: 100vh !important; }
+  .modal-overlay{ padding: 0 !important; }
+}
+/* =========================================
+   [수정] 상세 팝업 레이아웃 개선 (선생님 모드 최적화)
+   ========================================= */
+
+/* 모달 전체 크기 및 스크롤 고정 */
+.modal {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh !important; /* 화면 꽉 차지 않게 */
+    height: auto;
+    overflow: hidden; /* 전체 스크롤 방지 */
+    padding: 0 !important; /* 내부 패딩 제거 (구역별로 줌) */
+}
+
+/* 1. 상단 프로필 영역 (고정) */
+.modal-header-fixed {
+    background: #fff;
+    padding: 20px 20px 10px 20px;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0; /* 크기 줄어들지 않음 */
+    z-index: 10;
+}
+
+/* 닫기 버튼 위치 조정 */
+.close-btn {
+    top: 15px; 
+    right: 15px;
+    z-index: 20;
+    background: #f1f5f9;
+}
+
+/* 2. 탭 버튼 영역 (고정) */
+.modal-tab-nav {
+    margin: 0 20px;
+    flex-shrink: 0;
+}
+
+/* 3. 하단 콘텐츠 영역 (여기만 스크롤) */
+.modal-body-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f8fafc; /* 배경색 살짝 다르게 */
+}
+
+/* 탭 내부 박스 디자인 통일 */
+.info-box {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.info-box h4 {
+    margin: 0 0 12px 0;
+    font-size: 15px;
+    color: #334155;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+
+/* [중요] 정보 수정 폼 2단 배열 (공간 절약) */
+#modalEditForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 좌우 2칸 */
+    gap: 12px 10px; /* 세로 가로 간격 */
+}
+/* 모바일에서는 1단으로 */
+@media (max-width: 480px) {
+    #modalEditForm { grid-template-columns: 1fr; }
+}
+
+#modalEditForm label {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+#modalEditForm input, 
+#modalEditForm select,
+#modalEditForm textarea {
+    min-height: 38px;
+    padding: 8px;
+    font-size: 13px;
+    background: #f8fafc;
+}
+#modalEditForm .full-row {
+    grid-column: 1 / -1; /* 가로 전체 차지 */
+}
+</style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="login-screen">
-            <div class="login-card">
-                <img src="nam-192.png" style="width:80px; border-radius:20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin-bottom:20px;">
-                <h2 style="margin-bottom:10px;">학부모 인증</h2>
-                <p style="color:#64748b; font-size:15px; line-height:1.5;">
-                    선생님께 등록된 <b>학부모님 전화번호</b>를<br>입력해주세요. (숫자만 입력)
-                </p>
-                <input type="tel" id="inputPhone" class="login-input" placeholder="01012345678">
-                <button class="login-btn" onclick="checkParent()">내 자녀 조회하기</button>
-            </div>
-        </div>
+<div class="kiosk-exit-btn" onclick="exitKioskMode()">
+    <i class="fas fa-lock"></i>
+</div>
 
-        <div id="content-screen" style="display:none;">
-            <div class="card" style="text-align:center;">
-                <h2 id="sName">-</h2>
-                <p id="sInfo" style="color:#64748b;">-</p>
-                <div style="background:#f0f9ff; color:#0369a1; padding:12px; border-radius:12px; font-weight:bold; margin-top:15px;">
-                    📅 이번 달 등원: <span id="sAtt" style="font-size:1.2em;">0</span>회
-                </div>
-            </div>
-
-            <div class="card">
-                <h3 style="margin-top:0;">📢 최신 알림장</h3>
-                <div id="sNotice" style="background:#fffbeb; padding:15px; border-radius:12px; border:1px solid #fcd34d; line-height:1.6; white-space:pre-wrap; color:#451a03;">(내용 없음)</div>
-            </div>
-
-            <div class="card">
-                <h3 style="margin-top:0;">🗂️ 지난 학습/상담 기록</h3>
-                <div id="historyList" style="max-height:420px; overflow-y:auto;"></div>
-            </div>
-
-            <div class="card">
-                <h3 style="margin-top:0;">📈 성적 그래프/기록</h3>
-                <div style="background:#f5f3ff; border:1px solid #ddd6fe; padding:14px; border-radius:12px;">
-                    <canvas id="parentScoreChart" height="180"></canvas>
-                    <div id="parentScoreList" style="margin-top:12px; font-size:14px; line-height:1.5; color:#475569;"></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3 style="margin-top:0;">💬 선생님께 답장하기</h3>
-                <textarea id="replyMsg" placeholder="선생님께 드릴 말씀이나 궁금한 점을 적어주세요."></textarea>
-                <button class="send-btn" onclick="sendReply()">메시지 보내기</button>
-            </div>
-            
-            <button onclick="location.reload()" style="width:100%; padding:12px; background:#94a3b8; color:white; border:none; border-radius:12px; margin-top:20px; font-weight:bold;">로그아웃</button>
-        </div>
+<div class="container">
+    <div class="kiosk-header" id="kioskHeader">
+        <button class="k-filter-btn active" onclick="setKioskCategory('all', this)">전체</button>
+        <button class="k-filter-btn" onclick="setKioskCategory('미취학', this)">미취학</button>
+        <button class="k-filter-btn" onclick="setKioskCategory('초등', this)">초등부</button>
+        <button class="k-filter-btn" onclick="setKioskCategory('중등', this)">중등부</button>
+        <button class="k-filter-btn" onclick="setKioskCategory('고등', this)">고등부</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<header>
+        <div class="brand">
+            <img class="brand-mark" 
+                 src="nam-512.png" 
+                 alt="능동해냄" 
+                 style="background:#fff; object-fit:contain;"
+                 onerror="this.src='https://cdn-icons-png.flaticon.com/512/3468/3468306.png'">
+
+            <div class="brand-title">
+                <strong>미래엔수학 능동해냄</strong>
+                <span>학부모용 · 알림/출석/상담</span>
+            </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label class="admin-switch" style="margin:0; cursor:pointer;">
+                <input type="checkbox" id="adminToggle" onclick="toggleAdminMode()" style="width:auto; margin-right:6px;"> 선생님
+            </label>
+            <button class="admin-only" onclick="document.getElementById('settingsModal').style.display='flex'" 
+                style="border:none; background:white; width:36px; height:36px; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.1); color:#555;">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </header>    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showPage('register')"><i class="fas fa-user-plus"></i> 신규 등록</button>
+        <button class="tab-btn" onclick="showPage('list')"><i class="fas fa-users"></i> 원생 관리</button>
+        <button class="tab-btn" onclick="showPage('calendar')"><i class="fas fa-calendar-alt"></i> 학습 일정</button>
+        <button class="tab-btn admin-only" onclick="showPage('inbox')"><i class="fas fa-inbox"></i> 학부모 의견 <span id="inboxBadge" style="display:none; margin-left:6px; background:#ef4444; color:white; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:900;">0</span></button>
+    </div>
+
+    <div id="register" class="page active">
+        <div class="form-grid">
+            <div class="full-width">
+                <label>학생 사진</label>
+                <input type="file" id="regPhoto" accept="image/*">
+            </div>
+            <div>
+                <label>이름</label>
+                <input type="text" id="regName" placeholder="예: 김수학">
+            </div>
+            <div>
+                <label>생년월일</label>
+                <input type="date" id="regBirth">
+            </div>
+            <div>
+                <label>성별</label>
+                <select id="regGender">
+                    <option value="남">남자</option>
+                    <option value="여">여자</option>
+                </select>
+            </div>
+            <div>
+                <label>학교</label>
+                <input type="text" id="regSchool" placeholder="예: 능동초">
+            </div>
+            <div>
+                <label>학년/과정</label>
+                <select id="regGrade">
+                    <option value="미취학">미취학</option>
+                    <option value="초등1-2">초등 1~2학년</option>
+                    <option value="초등3-4">초등 3~4학년</option>
+                    <option value="초등5-6">초등 5~6학년</option>
+                    <option value="중등부">중등부</option>
+                    <option value="고등부">고등부</option>
+                </select>
+            </div>
+            <div class="full-width" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div>
+                    <label style="color:var(--primary);">학부모 연락처 (알림용)</label>
+                    <input type="tel" id="regParentPhone" placeholder="01012345678">
+                </div>
+                <div>
+                    <label>학생 본인 연락처</label>
+                    <input type="tel" id="regStudentPhone" placeholder="01012345678">
+                </div>
+            </div>
+            <div class="full-width">
+                <label>주소</label>
+                <input type="text" id="regAddress" placeholder="주소를 입력하세요">
+            </div>
+            <div class="full-width">
+                <label>학습 특이사항 (진도, 성향 등)</label>
+                <textarea id="regNotes" rows="3" placeholder="상담 및 지도 시 참고할 사항"></textarea>
+            </div>
+        </div>
+        <button class="action-btn" id="addBtn">학생 등록하기</button>
+    </div>
+
+  <div id="list" class="page">
+        <div class="filter-container">
+            <div class="filter-row">
+                <span class="filter-label">과정</span>
+                <div class="filter-group" id="ageFilterGroup">
+                    <div class="filter-chip active" onclick="setGradeFilter('all', this)">전체</div>
+                    <div class="filter-chip" onclick="setGradeFilter('미취학', this)">미취학</div>
+                    <div class="filter-chip" onclick="setGradeFilter('초등', this)">초등부</div>
+                    <div class="filter-chip" onclick="setGradeFilter('중등', this)">중등부</div>
+                    <div class="filter-chip" onclick="setGradeFilter('고등', this)">고등부</div>
+                </div>
+            </div>
+            <div class="filter-row">
+                <span class="filter-label">검색</span>
+                <input type="text" id="searchKeyword" placeholder="이름 검색" onkeyup="filterList()" style="flex:1;">
+                <select id="schoolFilter" onchange="filterList()" style="width: auto; flex:1;">
+                    <option value="all">전체 학교</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="studentListArea">로딩중...</div>
+    </div>
+
+
+<div id="calendar" class="page">
+    <div class="calendar-controls">
+        <button class="cal-btn" onclick="changeCalDate(-1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="current-date" id="calTitle"></div>
+        <button class="cal-btn" onclick="changeCalDate(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div class="filter-group" style="justify-content:center; margin-bottom:10px;">
+        <label><input type="checkbox" id="showSchedule" checked onchange="renderCalendar()"> 학원일정</label> &nbsp;
+        <label><input type="checkbox" id="showBirthday" checked onchange="renderCalendar()"> 생일</label>
+    </div>
+
+    <div class="calendar-grid">
+        <div class="day-name" style="color:var(--danger)">일</div><div class="day-name">월</div><div class="day-name">화</div>
+        <div class="day-name">수</div><div class="day-name">목</div><div class="day-name">금</div><div class="day-name" style="color:var(--primary)">토</div>
+    </div>
+    <div class="calendar-grid" id="calGrid"></div>
+
+<div id="dateDetailArea" style="margin-top:20px;">
+        <div class="view-mode-group">
+            <button class="view-mode-btn active" onclick="changeListView('day', this)">일간</button>
+            <button class="view-mode-btn" onclick="changeListView('week', this)">주간</button>
+            <button class="view-mode-btn" onclick="changeListView('month', this)">월간</button>
+            <button class="view-mode-btn" onclick="changeListView('year', this)">연간</button>
+        </div>
+
+        <h3 id="selectedDateText" style="font-size:15px; margin-bottom:10px; border-bottom:2px solid var(--primary); padding-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+            <span>날짜를 선택하세요</span>
+            <button class="action-btn admin-only" id="addSchedBtn" onclick="openScheduleModal()" style="width:auto; margin:0; padding:5px 10px; font-size:12px; display:none;">+ 일정 등록</button>
+        </h3>
+
+        <div id="dailyEventList" style="max-height:300px; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<!-- ===========================
+     학부모 의견함 (선생님 전용)
+     =========================== -->
+<div id="inbox" class="page">
+    <div class="card" style="margin-top:10px;">
+        <h3 style="margin:0 0 6px 0;">📨 학부모 의견함</h3>
+        <div style="font-size:13px; color:#64748b; line-height:1.5;">
+            학부모가 <b>parent.html</b>에서 보낸 메시지가 여기 모입니다.
+            <br>각 메시지에서 <b>학생 열기</b>를 눌러 바로 해당 학생 상세로 이동할 수 있습니다.
+        </div>
+    </div>
+    <div class="card">
+        <div id="inboxList" style="max-height:520px; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="scheduleModal">
+    <div class="modal" style="max-width:340px;">
+        <h3 id="schedModalTitle" style="margin-top:0;">📅 일정 관리</h3>
+
+        <div style="margin-bottom:15px;">
+            <label style="margin-bottom:5px;">등록된 일정</label>
+            <div id="popupSchedList" style="background:#f1f5f9; padding:10px; border-radius:8px; min-height:50px; max-height:120px; overflow-y:auto; font-size:13px;">
+                </div>
+        </div>
+
+        <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
+
+        <label>날짜 선택</label>
+        <input type="date" id="schedDate" style="margin-bottom:10px;">
+
+        <label>일정 내용</label>
+        <input type="hidden" id="schedId"> <input type="text" id="schedTitle" placeholder="새 내용을 입력하거나 위 목록을 클릭" style="margin-bottom:15px;">
+
+        <div class="modal-btn-group" style="display:flex; gap:8px;">
+            <button class="action-btn" onclick="saveSchedule()" style="margin:0; flex:2;">저장/추가</button>
+            <button class="action-btn" onclick="deleteSchedule()" id="btnDelSched" style="margin:0; flex:1; background:var(--danger); display:none;">삭제</button>
+            <button class="action-btn" onclick="document.getElementById('scheduleModal').style.display='none'" style="margin:0; flex:1; background:#94a3b8;">닫기</button>
+        </div>
+    </div>
+</div>
+
+      <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <button class="close-btn" onclick="window.closeModal()">×</button>
+
+        <div class="modal-header-fixed">
+            <div style="text-align:center;">
+                <div style="width:70px; height:70px; margin:0 auto 10px; position:relative;" onclick="triggerPhotoEdit()">
+                    <img id="modalImg" src="" style="width:100%; height:100%; border-radius:24px; object-fit:cover; border:1px solid #e2e8f0; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+                    <div class="admin-only" style="position:absolute; bottom:-5px; right:-5px; background:#3b82f6; color:white; width:24px; height:24px; line-height:24px; text-align:center; border-radius:50%; font-size:12px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <h2 id="modalName" style="margin:0 0 4px 0; font-size:18px; color:#1e293b;"></h2>
+                <div id="modalInfo" style="color:#64748b; font-size:13px; margin-bottom:12px;"></div>
+
+                <div class="contact-row" style="margin-bottom:5px;">
+                    <div class="contact-group">
+                        <span class="contact-label" style="font-size:11px; color:#94a3b8; margin-right:4px;">학생</span>
+                        <a id="linkCallStu" class="contact-btn btn-call" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-phone"></i></a>
+                        <a id="linkSmsStu" class="contact-btn btn-sms" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment-dots"></i></a>
+                        <a id="linkKakaoStu" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('student')" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment"></i></a>
+                    </div>
+                    <div style="width:1px; height:15px; background:#e2e8f0; margin:0 5px;"></div>
+                    <div class="contact-group">
+                        <span class="contact-label" style="font-size:11px; color:#94a3b8; margin-right:4px;">부모</span>
+                        <a id="linkCallPar" class="contact-btn btn-call" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-phone"></i></a>
+                        <a id="linkSmsPar" class="contact-btn btn-sms" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment-dots"></i></a>
+                        <a id="linkKakaoPar" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('parent')" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment"></i></a>
+                    </div>
+                </div>
+                <input type="file" id="editPhotoInput" accept="image/*" style="display:none;" onchange="previewEditPhoto()">
+            </div>
+        </div>
+
+        <div class="modal-tab-nav" style="margin-top:10px;">
+            <button class="modal-tab-btn active" onclick="switchModalTab('tabDaily', this)">📋 학습/출석</button>
+            <button class="modal-tab-btn" onclick="switchModalTab('tabScore', this)">📈 성적/기록</button>
+            <button class="modal-tab-btn" onclick="switchModalTab('tabInfo', this)">⚙️ 정보/정산</button>
+        </div>
+
+        <div class="modal-body-scroll">
+            
+            <div id="tabDaily" class="modal-tab-pane active">
+    <div class="stat-box" style="margin: 0 0 15px 0; background:white;">
+        <div class="stat-item"><div class="stat-num" id="statMonth">0회</div><div style="font-size:12px; color:#64748b;">이번달 등원</div></div>
+        <div style="width:1px; height:30px; background:#eee;"></div>
+        <div class="stat-item"><div class="stat-num" id="statTotal">0회</div><div style="font-size:12px; color:#64748b;">총 누적 등원</div></div>
+    </div>
+
+    <div class="info-box" style="background:#fffbeb; border-color:#fcd34d;">
+        <h4 style="color:#d97706; border-color:#fde68a;"><i class="fas fa-bullhorn"></i> 오늘의 알림장 (학부모 전송)</h4>
+        
+        <textarea id="dailyProgress" rows="3" placeholder="오늘 공부한 내용이나 전달사항을 입력하세요." style="background:white; border:1px solid #fde68a; margin-bottom:8px;"></textarea>
+        
+        <div id="noticePreview" style="display:none; background:white; padding:10px; border:1px solid #fcd34d; font-size:13px; white-space:pre-wrap; margin-bottom:8px; color:#333; border-radius:6px;"></div>
+
+        <div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+            <button class="action-btn" onclick="generateNotice()" style="background:#f59e0b; margin:0; font-size:13px; padding:12px 0;">📝 문구 생성</button>
+            <button class="action-btn" onclick="sendNoticeSms()" style="background:#22c55e; margin:0; font-size:13px; padding:12px 0;"><i class="fas fa-envelope"></i> 문자</button>
+            <button class="action-btn" onclick="sendNoticeKakao()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:12px 0;"><i class="fas fa-comment"></i> 카톡</button>
+        </div>
+    </div>
+</div>
+
+            <div id="tabScore" class="modal-tab-pane">
+                <div class="info-box">
+                    <h4>💬 상담 및 지도 기록</h4>
+                    <div class="admin-only" style="display:flex; gap:6px; margin-bottom:10px;">
+                        <input type="text" id="newCounsel" placeholder="상담 내용을 입력하세요" style="flex:1;">
+                        <button class="action-btn" onclick="addCounselLog()" style="width:60px; margin:0; background:#3b82f6;">등록</button>
+                    </div>
+                    <div id="modalCounselLog" style="max-height:150px; overflow-y:auto; border:1px solid #f1f5f9; background:#f8fafc; padding:10px; border-radius:8px;"></div>
+                </div>
+
+                <div class="info-box">
+                    <h4 style="display:flex; justify-content:space-between; align-items:center;">
+                        📈 성적 관리 
+                        <button onclick="document.getElementById('scoreInputArea').style.display = document.getElementById('scoreInputArea').style.display=='none'?'block':'none'" style="font-size:11px; padding:4px 8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer;">입력창 열기</button>
+                    </h4>
+                    
+                    <div id="scoreInputArea" class="admin-only" style="display:none; background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+                        <div class="score-input-group" style="display:flex; gap:5px;">
+                            <input type="text" id="scoreTitle" placeholder="시험명(예: 3월모의)" style="flex:2;">
+                            <input type="number" id="scoreValue" placeholder="점수" style="flex:1;">
+                            <button onclick="addScore()" style="background:#7b1fa2; color:white; border:none; border-radius:6px; width:50px;">추가</button>
+                        </div>
+                    </div>
+
+                    <div class="chart-container" style="height:180px; margin-bottom:10px;">
+                        <canvas id="scoreChart"></canvas>
+                    </div>
+                    <div id="scoreList" style="max-height:120px; overflow-y:auto; font-size:12px;"></div>
+                </div>
+            </div>
+
+            <div id="tabInfo" class="modal-tab-pane">
+                
+                <div class="info-box" style="background:#f0f9ff; border-color:#bae6fd;">
+                    <h4 style="color:#0369a1; border-color:#e0f2fe;"><i class="fas fa-file-invoice-dollar"></i> 교육비 정산 안내</h4>
+                    <div style="font-size:12px; color:#555; margin-bottom:8px;">
+                        이번 달 출석일수와 안내 문구를 자동으로 생성합니다.
+                    </div>
+                    <div id="settlementPreview" style="background:white; padding:10px; border:1px solid #bae6fd; font-size:12px; white-space:pre-wrap; margin-bottom:8px; color:#333; min-height:60px; border-radius:6px;"></div>
+                    <div class="modal-action-row" style="display:flex; gap:8px;">
+                        <button onclick="generateSettlement()" class="action-btn" style="flex:1; background:#0ea5e9; font-size:13px; margin:0;">문구 생성</button>
+                        <button onclick="copyText('settlementPreview')" class="action-btn" style="flex:1; background:#0284c7; font-size:13px; margin:0;">내용 복사</button>
+                    </div>
+                </div>
+
+                <div class="info-box admin-only">
+                    <h4>⚙️ 학생 정보 수정</h4>
+                    
+                    <div id="modalEditForm">
+                        <input type="hidden" id="editId">
+                        
+                        <div class="full-row">
+                            <label>이름</label>
+                            <input type="text" id="editName">
+                        </div>
+                        
+                        <div>
+                            <label>학교</label>
+                            <input type="text" id="editSchool">
+                        </div>
+                        <div>
+                            <label>학년/과정</label>
+                            <select id="editGrade"> 
+                                <option value="미취학">미취학</option><option value="초등1-2">초등 1~2학년</option>
+                                <option value="초등3-4">초등 3~4학년</option><option value="초등5-6">초등 5~6학년</option>
+                                <option value="중등부">중등부</option><option value="고등부">고등부</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label>생년월일</label>
+                            <input type="date" id="editBirth">
+                        </div>
+                        <div>
+                            <label>성별</label>
+                            <select id="editGender"><option value="남">남</option><option value="여">여</option></select>
+                        </div>
+
+                        <div class="full-row">
+                            <label>부모님 연락처</label>
+                            <input type="tel" id="editParentPhone">
+                        </div>
+                        <div class="full-row">
+                            <label>학생 연락처</label>
+                            <input type="tel" id="editStudentPhone">
+                        </div>
+                        <div class="full-row">
+                            <label>특이사항 (메모)</label>
+                            <textarea id="editNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-action-row" style="margin-top:15px; display:flex; gap:10px;">
+                        <button class="action-btn" onclick="saveEdit()" style="background:#3b82f6; margin:0; flex:2;">저장하기</button>
+                        <button class="action-btn" onclick="deleteStudent()" style="background:#ef4444; margin:0; flex:1;">삭제</button>
+                    </div>
+                </div>
+                
+            </div> </div> </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot, updateDoc, deleteDoc, arrayUnion, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
-            authDomain: "namyang-f3a98.firebaseapp.com",
-            projectId: "namyang-f3a98",
-            storageBucket: "namyang-f3a98.firebasestorage.app",
-            messagingSenderId: "641432133626",
-            appId: "1:641432133626:web:4d31e36d5dbb0db4df4e43",
-            measurementId: "G-23L6KZERMF"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
+        authDomain: "namyang-f3a98.firebaseapp.com",
+        projectId: "namyang-f3a98",
+        storageBucket: "namyang-f3a98.firebasestorage.app",
+        messagingSenderId: "641432133626",
+        appId: "1:641432133626:web:4d31e36d5dbb0db4df4e43",
+        measurementId: "G-23L6KZERMF"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        // ✅ Firestore rules가 request.auth != null 인 경우를 위해 익명 로그인 사용
-        signInAnonymously(auth).catch((e)=>console.error("anon auth failed", e));
-        const __authReady = new Promise((resolve)=>{
-            const unsub = onAuthStateChanged(auth, (user)=>{
-                if(user){ try{unsub();}catch(e){}; resolve(user); }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    
+// =========================================================
+// [추가] Firestore 권한을 위한 익명 로그인 (Anonymous Auth)
+// =========================================================
+const auth = getAuth(app);
+let __authReadyResolve;
+const __authReady = new Promise(res => (__authReadyResolve = res));
+onAuthStateChanged(auth, (u) => {
+  if (u) __authReadyResolve(u);
+});
+if (!auth.currentUser) {
+  signInAnonymously(auth).catch(e => {
+    console.error("Anonymous sign-in failed", e);
+    alert("Firebase 익명 로그인 실패: " + (e?.message || e));
+  });
+}
+
+// ==========================================
+    // 1. SMS 서버 설정 (자동 문자용)
+    // ==========================================
+    const SMS_CLIENT_KEY = "CHANGE_ME_TO_A_LONG_RANDOM_STRING"; // 실제 키가 있다면 변경하세요
+    const SMS_API_URL = "/api/send-sms";
+
+    async function sendSmsByServer(receiver, msg) {
+      try {
+          const res = await fetch(SMS_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-api-key": SMS_CLIENT_KEY },
+            body: JSON.stringify({ receiver, msg })
+          });
+          const data = await res.json().catch(async () => ({ raw: await res.text() }));
+          return { ok: data.success === true || data.result_code === "1", data };
+      } catch (e) {
+          console.error("SMS 발송 실패:", e);
+          return { ok: false, error: e };
+      }
+    }
+
+    // ==========================================
+    // 2. 전역 변수 및 상태 관리
+    // ==========================================
+    window.allStudents = [];
+    window.allSchedules = [];
+    window.currentStudentId = null;
+    let selectedStudentIds = new Set();
+    let selectedDateStr = new Date().toISOString().slice(0, 10);
+    let currentGradeFilter = 'all'; 
+    let currentKioskCategory = 'all';
+    let calDate = new Date();
+    let myChart = null; 
+
+    // 모드 설정 (localStorage)
+    const LS_TEACHER = 'teacherMode';
+    const LS_KIOSK = 'kioskMode';
+
+    function isTeacherMode(){ return localStorage.getItem(LS_TEACHER) === '1'; }
+    function setTeacherMode(on){
+        if(on) localStorage.setItem(LS_TEACHER,'1');
+        else localStorage.removeItem(LS_TEACHER);
+    }
+    function isKioskSaved(){ return localStorage.getItem(LS_KIOSK) === '1'; }
+    function setKioskSaved(on){
+        if(on) localStorage.setItem(LS_KIOSK,'1');
+        else localStorage.removeItem(LS_KIOSK);
+    }
+
+    function applyAccessUI(){
+        const teacher = isTeacherMode();
+        const kiosk = document.body.classList.contains('kiosk-mode');
+
+        // 선생님 모드 CSS 적용
+        document.body.classList.toggle('show-admin', teacher && !kiosk);
+        const chk = document.getElementById('adminToggle');
+        if(chk) chk.checked = teacher;
+
+        // 탭 버튼 제어 (선생님 아니면 원생관리 등 숨김)
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const oc = btn.getAttribute('onclick') || '';
+            const restricted = oc.includes("showPage('register')") || oc.includes("showPage('list')") || oc.includes("showPage('inbox')");
+            if(!teacher && !kiosk && restricted) btn.style.display = 'none';
+            else btn.style.display = '';
+        });
+        
+        // 키오스크 시작 버튼 보이기/숨기기
+        const kBtn = document.getElementById('btnKioskStart'); // 만약 버튼 ID가 있다면
+        if(kBtn) kBtn.style.display = (teacher && !kiosk) ? 'inline-block' : 'none';
+    }
+
+    // ==========================================
+    // 3. 데이터 실시간 동기화
+    // ==========================================
+    
+        // 학생/일정 실시간 리스너는 Auth 준비 후 시작
+    async function startRealtimeListeners(){
+        if(window.__REALTIME_STARTED__) return;
+        window.__REALTIME_STARTED__ = true;
+        await __authReady;
+
+        // 학생 데이터 로드
+            onSnapshot(collection(db, "students"), (snapshot) => {
+                window.allStudents = [];
+                snapshot.forEach((doc) => { window.allStudents.push({ id: doc.id, ...doc.data() }); });
+
+                updateSchoolOptions();
+                filterList();
+                if(window.renderCalendar) window.renderCalendar();
+
+                // 상세창이 열려있다면 내용 갱신
+                if(document.getElementById('detailModal').style.display === 'flex' && window.currentStudentId) {
+                    const s = window.allStudents.find(st => st.id === window.currentStudentId);
+                    if(s) window.openDetail(s);
+                }
             });
+
+            // 일정 데이터 로드
+            onSnapshot(query(collection(db, "schedules"), orderBy("date")), (snapshot) => {
+                window.allSchedules = [];
+                snapshot.forEach((doc) => { window.allSchedules.push({ id: doc.id, ...doc.data() }); });
+                if(window.renderCalendar) window.renderCalendar();
+            });
+
+}
+
+// ✅ Auth 준비 후 실시간 리스너 시작
+startRealtimeListeners();
+
+    // ==========================================
+    // 4. 리스트 및 카드 생성 (기능 복구됨)
+    // ==========================================
+    window.filterList = () => {
+        const searchInput = document.getElementById('searchKeyword');
+        let keyword = (searchInput && !document.body.classList.contains('kiosk-mode')) ? searchInput.value.toLowerCase() : "";
+        const schoolFilter = document.getElementById('schoolFilter') ? document.getElementById('schoolFilter').value : 'all';
+        const todayStr = new Date().toDateString();
+        const isKiosk = document.body.classList.contains('kiosk-mode');
+
+        let filtered = window.allStudents.filter(s => {
+            const sName = s.name ? s.name.toLowerCase() : "";
+            const sBelt = s.belt || "";
+            
+            if (isKiosk) {
+                if (currentKioskCategory === 'all') return true;
+                return sBelt.includes(currentKioskCategory);
+            } else {
+                const matchName = sName.includes(keyword);
+                const matchSchool = schoolFilter === 'all' || s.school === schoolFilter;
+                const matchGrade = currentGradeFilter === 'all' || sBelt === currentGradeFilter;
+                return matchName && matchSchool && matchGrade;
+            }
         });
 
-        let currentStudent = null;
-        let unsubStudent = null;
-        let parentChart = null;
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
 
-        window.checkParent = async () => {
-            const phoneInput = document.getElementById('inputPhone');
-            const phone = phoneInput.value.replace(/-/g, '').trim();
-            
-            if(phone.length < 8) return alert("전화번호를 올바르게 입력해주세요.");
+        const listArea = document.getElementById('studentListArea');
+        listArea.innerHTML = "";
+        
+        if(filtered.length === 0) {
+            listArea.innerHTML = "<div style='text-align:center; padding:20px; color:#999; width:100%;'>검색된 원생이 없습니다.</div>";
+            return;
+        }
 
-            const btn = document.querySelector('.login-btn');
-            const originalText = btn.innerText;
-            btn.innerText = "조회 중...";
-            btn.disabled = true;
+        filtered.forEach(s => {
+            const imgSrc = s.photo || "https://via.placeholder.com/150?text=NO+IMAGE";
+            const hasArrived = (s.attendanceLog || []).some(log => new Date(log.seconds ? log.seconds*1000 : log).toDateString() === todayStr);
+            const hasLeft = (s.attendanceOutLog || []).some(log => new Date(log.seconds ? log.seconds*1000 : log).toDateString() === todayStr);
 
-            try {
-                await __authReady;
-                // 부모님 번호로 학생 검색
-                const q = query(collection(db, "students"), where("phone", "==", phone));
-                const snap = await getDocs(q);
+            const div = document.createElement('div');
+            div.id = `card-${s.id}`;
+            const stateClass = hasLeft ? 'left' : (hasArrived ? 'arrived' : 'missing');
 
-                if(snap.empty) {
-                    alert("등록된 번호가 없습니다.\n선생님께 확인해주세요.");
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    return;
-                }
-
-                // 로그인 성공: 학생 doc를 실시간 구독해서
-                // 선생님이 상담/알림을 추가해도 부모 화면이 자동으로 갱신되게 함
-                const id = snap.docs[0].id;
-                if (unsubStudent) try { unsubStudent(); } catch(e) {}
-                unsubStudent = onSnapshot(doc(db, "students", id), (docSnap) => {
-                    if(!docSnap.exists()) return;
-                    currentStudent = { id: docSnap.id, ...docSnap.data() };
-                    showData();
-                });
-
-            } catch(e) {
-                console.error(e);
-                alert("조회 중 오류가 발생했습니다.");
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        };
-
-        function renderParentScore(scoreLog = []) {
-            const canvas = document.getElementById('parentScoreChart');
-            const listEl = document.getElementById('parentScoreList');
-            if(!canvas || !listEl) return;
-
-            // 리스트
-            if(!Array.isArray(scoreLog) || scoreLog.length === 0) {
-                listEl.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:10px;'>등록된 성적이 없습니다.</div>";
+            if (isKiosk) {
+                // [키오스크] 카드
+                const pillText = hasLeft ? '하원 완료' : (hasArrived ? '등원 완료' : '미등원');
+                const hint = hasLeft ? '완료 상태' : (hasArrived ? '<strong>한 번 더 탭</strong>하면 하원 처리' : '<strong>한 번 탭</strong>하면 등원 처리');
+                div.className = `student-card ${stateClass}`;
+                div.innerHTML = `
+                    <div class="kiosk-pill ${stateClass}">${pillText}</div>
+                    <div class="profile-wrapper"><img src="${imgSrc}" class="profile-img"></div>
+                    <div class="info-area">
+                        <div>${s.name}</div>
+                        <small>${s.school || '학교미입력'} | <span style="font-weight:900;">${s.belt || '학년없음'}</span></small>
+                    </div>
+                    <div class="kiosk-hint">${hint}</div>
+                `;
+                div.onclick = () => window.kioskTapAttendance(s.id);
             } else {
-                const rows = scoreLog.slice().reverse().map(s => {
-                    const date = s.date || '';
-                    const title = s.title || '시험';
-                    const score = (s.score ?? '');
-                    return `<div style="padding:8px 0; border-bottom:1px dashed #e2e8f0;">
-                        <div style="font-size:12px; color:#94a3b8;">${date}</div>
-                        <div style="display:flex; justify-content:space-between; gap:10px;">
-                            <div style="font-weight:800; color:#1e293b;">${title}</div>
-                            <div style="font-weight:900; color:#7c3aed;">${score}점</div>
-                        </div>
-                    </div>`;
-                }).join('');
-                listEl.innerHTML = rows;
+                // [선생님] 카드
+                div.className = `student-card ${stateClass}`;
+                div.innerHTML = `
+                    <div class="profile-wrapper" style="width:55px; height:55px; margin:0;"><img src="${imgSrc}" class="profile-img" style="border-radius:18px;"></div>
+                    <div class="info-area" style="text-align:left; padding-left:15px;">
+                        <div><strong style="color:#333; font-size:16px;">${s.name}</strong> <span class="dept-badge">${s.belt || ''}</span></div>
+                        <div style="font-size:13px; color:#777; margin-top:4px;">${s.school || ''}</div>
+                    </div>
+                `;
+                div.onclick = () => window.openDetail(s);
             }
+            listArea.appendChild(div);
+        });
+    };
 
-            // 차트
-            if(!window.Chart) return;
-            const ctx = canvas.getContext('2d');
-            if(parentChart) { try { parentChart.destroy(); } catch(e){} }
+    // ==========================================
+    // 5. 상세 팝업 및 데이터 관리
+    // ==========================================
+    window.openDetail = (s) => {
+        window.currentStudentId = s.id;
+        const modal = document.getElementById('detailModal');
+        modal.style.display = 'flex';
+        try { modal.querySelector('.modal').classList.add('modal-full'); } catch(e) {}
 
-            const labels = (scoreLog || []).map(s => s.title || '');
-            const data = (scoreLog || []).map(s => Number(s.score || 0));
+        // 기본정보
+        document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
+        document.getElementById('modalName').innerText = s.name;
+        document.getElementById('modalInfo').innerText = `${s.school||''} | ${s.belt||''}`;
 
-            parentChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: '성적',
-                        data,
-                        tension: 0.25,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, suggestedMax: 100 }
-                    }
-                }
+        // 연락처 연결
+        const stuPhone = (s.studentPhone || "").replace(/[^0-9]/g, '');
+        const parPhone = (s.phone || "").replace(/[^0-9]/g, '');
+        document.getElementById('linkCallStu').href = stuPhone ? `tel:${stuPhone}` : "#";
+        document.getElementById('linkSmsStu').href = stuPhone ? `sms:${stuPhone}` : "#";
+        document.getElementById('linkCallPar').href = parPhone ? `tel:${parPhone}` : "#";
+        document.getElementById('linkSmsPar').href = parPhone ? `sms:${parPhone}` : "#";
+
+        // 수정 폼 채우기
+        document.getElementById('editId').value = s.id;
+        document.getElementById('editName').value = s.name || "";
+        document.getElementById('editSchool').value = s.school || "";
+        document.getElementById('editGrade').value = s.belt || "미취학";
+        document.getElementById('editBirth').value = s.birth || "";
+        document.getElementById('editGender').value = s.gender || "남";
+        document.getElementById('editParentPhone').value = s.phone || "";
+        document.getElementById('editStudentPhone').value = s.studentPhone || "";
+        document.getElementById('editNotes').value = s.notes || "";
+
+        // 기록 및 차트 로드
+        if(window.renderScoreChart) window.renderScoreChart(s.scoreLog || []); 
+        window.renderCounselLog(s);
+        window.calcStats(s);
+
+        // 입력창 초기화
+        document.getElementById('dailyProgress').value = "";
+        document.getElementById('noticePreview').innerText = "";
+        document.getElementById('noticePreview').style.display = 'none';
+        document.getElementById('settlementPreview').innerText = "";
+    };
+    
+    window.openDetailById = (id) => {
+        const s = window.allStudents.find(st => st.id === id);
+        if(s) window.openDetail(s);
+    };
+
+    window.closeModal = () => {
+        document.getElementById('detailModal').style.display = 'none';
+        window.currentStudentId = null;
+    };
+
+    // 차트
+    window.renderScoreChart = (scoreLog) => {
+        const ctx = document.getElementById('scoreChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: scoreLog.map(s => s.title),
+                datasets: [{
+                    label: '성적', data: scoreLog.map(s => s.score),
+                    borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
+        });
+
+        const list = document.getElementById('scoreList');
+        if(list) list.innerHTML = scoreLog.map((s, i) => `
+            <div style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                <span>${s.title} (${s.date})</span>
+                <div>
+                    <strong style="color:#3b82f6;">${s.score}점</strong>
+                    <i class="fas fa-trash admin-only" onclick="deleteScore(${i})" style="color:red; cursor:pointer; margin-left:8px;"></i>
+                </div>
+            </div>`).reverse().join('');
+    };
+
+    // 상담 기록
+    window.renderCounselLog = (s) => {
+        const list = document.getElementById('modalCounselLog');
+        if(!list) return;
+        const logs = s.counselLog || [];
+        list.innerHTML = logs.length ? logs.map((l, i) => `
+            <div style="padding:8px; background:white; margin-bottom:5px; border-radius:5px; border:1px solid #eee;">
+                <span style="color:#009688;">[${l.date}]</span> ${l.text}
+                <i class="fas fa-trash admin-only" onclick="deleteCounselLog(${i})" style="float:right; color:red; cursor:pointer;"></i>
+            </div>`).reverse().join('') : "<div style='text-align:center; padding:10px; color:#999;'>기록 없음</div>";
+    };
+
+    // [CRUD 기능] - 추가/수정/삭제
+    window.addScore = async () => {
+        const title = document.getElementById('scoreTitle').value;
+        const score = document.getElementById('scoreValue').value;
+        if(!title || !score) return;
+        await updateDoc(doc(db, "students", window.currentStudentId), {
+            scoreLog: arrayUnion({ date: new Date().toLocaleDateString(), title, score })
+        });
+        document.getElementById('scoreTitle').value = ""; document.getElementById('scoreValue').value = "";
+    };
+    window.deleteScore = async (idx) => {
+        if(!confirm("삭제합니까?")) return;
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const newLog = s.scoreLog.filter((_, i) => i !== idx);
+        await updateDoc(doc(db, "students", window.currentStudentId), { scoreLog: newLog });
+    };
+
+    window.addCounselLog = async () => {
+        const text = document.getElementById('newCounsel').value;
+        if(!text) return;
+        await updateDoc(doc(db, "students", window.currentStudentId), {
+            counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text })
+        });
+        document.getElementById('newCounsel').value = "";
+        window.renderCounselLog(window.allStudents.find(st => st.id === window.currentStudentId)); // 즉시 갱신
+    };
+    window.deleteCounselLog = async (idx) => {
+        if(!confirm("삭제합니까?")) return;
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const newLog = s.counselLog.filter((_, i) => i !== idx);
+        await updateDoc(doc(db, "students", window.currentStudentId), { counselLog: newLog });
+    };
+
+    window.saveEdit = async () => {
+        try {
+            await updateDoc(doc(db, "students", document.getElementById('editId').value), {
+                name: document.getElementById('editName').value,
+                school: document.getElementById('editSchool').value,
+                belt: document.getElementById('editGrade').value,
+                phone: normalizePhone(document.getElementById('editParentPhone').value),
+                studentPhone: normalizePhone(document.getElementById('editStudentPhone').value),
+                notes: document.getElementById('editNotes').value
+            });
+            alert("저장되었습니다.");
+        } catch(e) { alert("오류: "+e.message); }
+    };
+    window.deleteStudent = async () => {
+        if(confirm("정말 삭제합니까? 복구 불가!")) {
+            await deleteDoc(doc(db, "students", window.currentStudentId));
+            window.closeModal();
+        }
+    };
+
+    // 신규 등록 로직
+    const addBtn = document.getElementById('addBtn');
+    if(addBtn) {
+        addBtn.onclick = async () => {
+            const name = document.getElementById('regName').value;
+            if(!name) return alert("이름 필수");
+            
+            // 사진 처리
+            let photoUrl = "";
+            const file = document.getElementById('regPhoto').files[0];
+            if(file) photoUrl = await resizeImage(file);
+
+            await addDoc(collection(db, "students"), {
+                name, 
+                birth: document.getElementById('regBirth').value,
+                gender: document.getElementById('regGender').value,
+                school: document.getElementById('regSchool').value,
+                belt: document.getElementById('regGrade').value,
+                phone: normalizePhone(document.getElementById('regParentPhone').value),
+                studentPhone: normalizePhone(document.getElementById('regStudentPhone').value),
+                address: document.getElementById('regAddress').value,
+                notes: document.getElementById('regNotes').value,
+                photo: photoUrl,
+                regDate: serverTimestamp(),
+                attendanceLog:[], attendanceOutLog:[], scoreLog:[], counselLog:[]
+            });
+            alert("등록 완료");
+            window.showPage('list');
+            // 입력창 초기화
+            document.querySelectorAll('#register input').forEach(i => i.value='');
+        };
+    }
+
+    function normalizePhone(v){ return (v||'').toString().replace(/\D/g,''); }
+
+    function resizeImage(file) {
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const cvs = document.createElement('canvas');
+                    const scale = 250/img.width; 
+                    cvs.width = 250; cvs.height = img.height * scale;
+                    cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height);
+                    resolve(cvs.toDataURL('image/jpeg', 0.5));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ==========================================
+    // 6. 알림장, 정산, 카톡 공유 (기능 복구)
+    // ==========================================
+    
+// ✅ 알림장 기본 문구(배려/센스 확장)
+const __noticeGreetings = [
+    "안녕하세요, 학부모님!",
+    "안녕하세요 😊 오늘도 믿고 맡겨주셔서 감사합니다.",
+    "학부모님 안녕하세요! 오늘 학습 소식 전해드립니다."
+];
+const __noticeClosings = [
+    "가정에서도 짧게 복습해주시면 학습 효과가 더 좋아요. 감사합니다.",
+    "궁금하신 점은 언제든 편하게 연락 주세요. 감사합니다!",
+    "따뜻한 저녁 보내세요 😊 감사합니다."
+];
+window.generateNotice = () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const text = document.getElementById('dailyProgress').value;
+        if(!text) { alert("내용을 입력하세요"); return ""; }
+        
+        const greeting = __noticeGreetings[Math.floor(Math.random()*__noticeGreetings.length)];
+        const closing = __noticeClosings[Math.floor(Math.random()*__noticeClosings.length)];
+        const msg = `[미래엔수학] 알림장 📢
+
+${greeting}
+오늘 ${s.name} 학생 학습 내용입니다.
+
+📚 학습내용
+${text}
+
+${closing}`;
+        const box = document.getElementById('noticePreview');
+        if(box) { box.innerText = msg; box.style.display = 'block'; }
+        return msg;
+    };
+    
+    // [Manual SMS] 버튼: 휴대폰 앱 열기
+    window.sendNoticeSms = async () => {
+    const s = window.allStudents.find(st => st.id === window.currentStudentId);
+    if(!s || !s.phone) return alert("부모님 연락처 없음");
+    const text = (document.getElementById('dailyProgress')?.value || "").trim();
+    if(!text) return alert("내용을 입력하세요");
+
+    // ✅ DB에 최신 알림장/히스토리 저장 (카톡이든 SMS든 동일)
+    try{
+        await updateDoc(doc(db, 'students', window.currentStudentId), {
+            lastNotice: text,
+            lastNoticeAt: new Date(),
+            noticeLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text }),
+            counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
+        });
+    }catch(e){
+        console.warn("notice save failed (SMS)", e);
+    }
+
+    const msg = window.generateNotice();
+    if(msg) location.href = `sms:${(s.phone||'').toString().replace(/\D/g,'')}?body=${encodeURIComponent(msg)}`;
+};
+
+    // [Kakao] 버튼: 링크 생성 및 공유
+    window.sendNoticeKakao = async () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const text = document.getElementById('dailyProgress').value;
+        if(!text) return alert("내용을 입력하세요");
+        const parentUrl = location.origin + '/parent.html?v=' + Date.now();
+        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 확인하기\n${parentUrl}`;
+
+        // DB 저장 (알림장 내용 기록)
+        await updateDoc(doc(db, 'students', window.currentStudentId), {
+            // ✅ 최신 알림(요약)
+            lastNotice: text,
+            lastNoticeAt: new Date(),
+            // ✅ 알림장 히스토리(날짜별 저장)
+            noticeLog: arrayUnion({ date: new Date().toLocaleDateString(), text: text }),
+            // ✅ 기존 상담/기록에도 같이 남김(기존 UI 유지)
+            counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
+        });
+
+        if (navigator.share) {
+            try { await navigator.share({ title: '알림장', text: msg, url: parentUrl }); } catch(e){}
+        } else {
+            navigator.clipboard.writeText(msg).then(()=>alert("복사되었습니다. 카톡에 붙여넣으세요."));
+        }
+    };
+    window.sendKakaoToTarget = (target) => window.sendNoticeKakao();
+
+    // [정산] 자동 문구 생성
+    window.generateSettlement = () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const m = new Date().getMonth() + 2; 
+        const nextM = m > 12 ? 1 : m;
+        const msg = `[미래엔수학] 교육비 안내\n\n안녕하세요. ${s.name} 학생의 ${nextM}월 교육비 안내입니다.\n기간: 매월 1일~10일\n계좌: 농협 000-0000-0000\n\n감사합니다.`;
+        document.getElementById('settlementPreview').innerText = msg;
+    };
+    window.copyText = (id) => navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>alert("복사됨"));
+
+    // 통계 계산
+    window.calcStats = (s) => {
+        const logs = s.attendanceLog || [];
+        const now = new Date();
+        const monthLogs = logs.filter(ts => {
+            const d = new Date(ts.seconds ? ts.seconds*1000 : ts);
+            return d.getMonth() === now.getMonth();
+        });
+        document.getElementById('statTotal').innerText = logs.length + "회";
+        document.getElementById('statMonth').innerText = monthLogs.length + "회";
+    };
+
+    // ==========================================
+    // 7. 학부모 의견함 (통합)
+    // ==========================================
+    const inboxListEl = document.getElementById('inboxList');
+    if(inboxListEl) {
+    onSnapshot(collection(db,"parentMessages"), (snapshot) => {
+        let unread = 0;
+
+        const items = [];
+        snapshot.forEach(d => {
+            const v = d.data() || {};
+            items.push({ id: d.id, ...v });
+        });
+
+        // ✅ createdAt(타임스탬프) 기준 최신순 정렬 (없으면 아래로)
+        const toMs = (t) => {
+            try{
+                if(!t) return 0;
+                if(typeof t === 'number') return t;
+                if(t.toDate) return t.toDate().getTime();
+                if(t.seconds) return t.seconds * 1000;
+                const dt = new Date(t); 
+                return isNaN(dt.getTime()) ? 0 : dt.getTime();
+            }catch(e){ return 0; }
+        };
+        items.sort((a,b)=> toMs(b.createdAt) - toMs(a.createdAt));
+
+        let html = "";
+        if(items.length === 0) html = "<div style='padding:20px; text-align:center; color:#999;'>메시지가 없습니다.</div>";
+
+        for(const d of items){
+            if(!d.read) unread++;
+            const bg = d.read ? "white" : "#fff7ed";
+            const when = toMs(d.createdAt) ? new Date(toMs(d.createdAt)).toLocaleString() : "";
+            html += `
+                <div style="background:${bg}; padding:15px; margin-bottom:10px; border:1px solid #eee; border-radius:10px;">
+                    <div style="font-weight:bold; margin-bottom:5px; display:flex; justify-content:space-between; gap:10px;">
+                        <span>${d.studentName || '학생'} (${d.parentPhone || ''})</span>
+                        <span style="font-size:12px; font-weight:normal; color:#94a3b8;">${when}</span>
+                    </div>
+                    <div style="font-size:14px; color:#333; white-space:pre-wrap; margin-bottom:10px;">${(d.message||'')}</div>
+                    <div style="display:flex; gap:6px; justify-content:flex-end;">
+                        <button onclick="openMessageStudent('${d.studentId||''}')" style="background:#3b82f6; color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer;">학생 열기</button>
+                        ${!d.read ? `<button onclick="markMessageRead('${d.id}')" style="background:#10b981; color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer;">읽음 처리</button>` : ``}
+                    </div>
+                </div>`;
+        }
+
+        inboxListEl.innerHTML = html;
+
+        const badge = document.getElementById('inboxBadge');
+        if(badge) {
+            badge.style.display = unread > 0 ? 'inline-block' : 'none';
+            badge.innerText = unread;
+        }
+
+        // ✅ 선생님 모드 진입 시 미확인 메시지 자동 안내(세션당 1회)
+        try{
+            if(unread > 0 && isTeacherMode() && !window.__UNREAD_POPUP_SHOWN__){
+                window.__UNREAD_POPUP_SHOWN__ = true;
+                const go = confirm(`학부모 메시지가 ${unread}건 있습니다. 지금 확인할까요?`);
+                if(go) window.showPage('inbox');
+            }
+        }catch(e){}
+    });
+}
+
+    window.markMessageRead = async (id) => await updateDoc(doc(db, "parentMessages", id), { read: true });
+    window.openMessageStudent = (sid) => {
+        // 선생님 모드 켜고 이동
+        if(!isTeacherMode()) window.toggleAdminMode(true); 
+        window.showPage('list');
+        setTimeout(() => window.openDetailById(sid), 500);
+    };
+
+    // ==========================================
+    // 8. 캘린더 & 일정
+    // ==========================================
+    window.renderCalendar = () => {
+        const y = calDate.getFullYear(), m = calDate.getMonth();
+        document.getElementById('calTitle').innerText = `${y}년 ${m+1}월`;
+        const grid = document.getElementById('calGrid');
+        grid.innerHTML = "";
+
+        let events = [];
+        if(document.getElementById('showSchedule')?.checked) events = [...window.allSchedules.map(s => ({...s, type:'schedule'}))];
+        if(document.getElementById('showBirthday')?.checked) {
+            window.allStudents.forEach(s => {
+                if(s.birth && s.birth.includes(`-${String(m+1).padStart(2,'0')}-`)) 
+                    events.push({date: `${y}-${s.birth.slice(5)}`, title: `${s.name} 생일`, type:'birthday'});
             });
         }
 
-        function showData() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('content-screen').style.display = 'block';
-            
-            const s = currentStudent;
-            document.getElementById('sName').innerText = s.name + " 학생";
-            document.getElementById('sInfo').innerText = `${s.school||''} | ${s.belt||''}`;
-            // 최신 알림장: lastNotice → noticeLog 최신 → counselLog의 [알림장] 최신 순으로 fallback
-            let noticeText = s.lastNotice || '';
-            if(!noticeText && Array.isArray(s.noticeLog) && s.noticeLog.length){
-                const last = s.noticeLog.slice().reverse().find(x=>x && x.text);
-                if(last) noticeText = last.text;
-            }
-            if(!noticeText && Array.isArray(s.counselLog) && s.counselLog.length){
-                const lastN = s.counselLog.slice().reverse().find(h => (h.text||'').includes('[알림장]'));
-                if(lastN) noticeText = (lastN.text||'').replace('[알림장]','').trim();
-            }
-            document.getElementById('sNotice').innerText = noticeText || "최신 알림이 없습니다.";
+        const first = new Date(y, m, 1).getDay();
+        const last = new Date(y, m+1, 0).getDate();
+        for(let i=0; i<first; i++) grid.innerHTML += `<div></div>`;
+        for(let d=1; d<=last; d++) {
+            const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const dots = events.filter(e => e.date === dateStr).map(e => `<span class="event-dot dot-${e.type}"></span>`).join('');
+            const isToday = dateStr === new Date().toISOString().slice(0,10) ? 'today' : '';
+            grid.innerHTML += `<div class="day-cell ${isToday}" onclick="clickDate('${dateStr}')"><span class="day-num">${d}</span><div style="display:flex; gap:2px; justify-content:center;">${dots}</div></div>`;
+        }
+        updateScheduleList();
+    };
 
-            // 성적(읽기 전용)
-            renderParentScore(s.scoreLog || []);
+    window.clickDate = (date) => {
+        selectedDateStr = date;
+        window.renderCalendar();
+        if(isTeacherMode()) window.openScheduleModal('', '', date);
+        else updateScheduleList();
+    };
 
-            // 출석 수
-            const now = new Date();
-            const logs = (s.attendanceLog || []).map(ts => ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000));
-            const count = logs.filter(d => d.getMonth() === now.getMonth()).length;
-            document.getElementById('sAtt').innerText = count;
+    window.openScheduleModal = (id, title, date) => {
+        const modal = document.getElementById('scheduleModal');
+        modal.style.display = 'flex';
+        document.getElementById('schedId').value = id || '';
+        document.getElementById('schedTitle').value = title || '';
+        document.getElementById('schedDate').value = date || selectedDateStr;
+        
+        const list = document.getElementById('popupSchedList');
+        const evts = window.allSchedules.filter(s => s.date === (date||selectedDateStr));
+        list.innerHTML = evts.length ? evts.map(e => `<div style="padding:5px; border-bottom:1px solid #eee;">📅 ${e.title}</div>`).join('') : "일정 없음";
+    };
 
-            // 기록 (상담 + 알림장)
-            const list = document.getElementById('historyList');
-            list.innerHTML = "";
-            const history = s.counselLog || [];
-            
-            if(history.length === 0) list.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>기록이 없습니다.</div>";
-            else {
-                history.reverse().forEach(h => {
-                    const isNotice = h.text.includes("[알림장]");
-                    const tag = isNotice ? '<span class="tag tag-notice">알림장</span>' : '<span class="tag tag-counsel">지도내역</span>';
-                    const cleanText = h.text.replace("[알림장]", "").trim();
-                    list.innerHTML += `
-                        <div class="log-item">
-                            <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">${h.date}</div>
-                            ${tag}
-                            <div style="margin-top:6px; line-height:1.5; white-space:pre-wrap;">${cleanText}</div>
-                        </div>`;
-                });
-            }
+    window.saveSchedule = async () => {
+        const id = document.getElementById('schedId').value;
+        const title = document.getElementById('schedTitle').value;
+        const date = document.getElementById('schedDate').value;
+        if(id) await updateDoc(doc(db, "schedules", id), { title, date });
+        else await addDoc(collection(db, "schedules"), { title, date });
+        document.getElementById('scheduleModal').style.display = 'none';
+    };
+    window.deleteSchedule = async () => {
+        if(confirm("삭제?")) await deleteDoc(doc(db, "schedules", document.getElementById('schedId').value));
+        document.getElementById('scheduleModal').style.display = 'none';
+    };
+
+    function updateScheduleList() {
+    const list = document.getElementById('dailyEventList');
+    const titleEl = document.getElementById('selectedDateText');
+    if(!list) return;
+
+    const mode = window.__listViewMode || 'day';
+    const base = new Date(selectedDateStr + 'T00:00:00');
+    const y = base.getFullYear();
+
+    let evts = [];
+    if(mode === 'day'){
+        evts = window.allSchedules.filter(s => s.date === selectedDateStr);
+        if(titleEl) titleEl.firstChild ? (titleEl.firstChild.textContent = `📅 ${selectedDateStr} 일정`) : (titleEl.textContent = `📅 ${selectedDateStr} 일정`);
+    } else if(mode === 'week'){
+        // 월요일~일요일 기준
+        const day = (base.getDay()+6)%7; // 월=0
+        const start = new Date(base); start.setDate(base.getDate()-day);
+        const end = new Date(start); end.setDate(start.getDate()+6);
+        const startStr = start.toISOString().slice(0,10);
+        const endStr = end.toISOString().slice(0,10);
+        evts = window.allSchedules.filter(s => s.date >= startStr && s.date <= endStr);
+        if(titleEl) titleEl.firstChild ? (titleEl.firstChild.textContent = `📅 주간 일정 (${startStr} ~ ${endStr})`) : (titleEl.textContent = `📅 주간 일정 (${startStr} ~ ${endStr})`);
+    } else if(mode === 'month'){
+        const ym = selectedDateStr.slice(0,7);
+        evts = window.allSchedules.filter(s => (s.date||'').slice(0,7) === ym);
+        if(titleEl) titleEl.firstChild ? (titleEl.firstChild.textContent = `📅 ${ym} 월간 일정`) : (titleEl.textContent = `📅 ${ym} 월간 일정`);
+    } else if(mode === 'year'){
+        evts = window.allSchedules.filter(s => (s.date||'').slice(0,4) === String(y));
+        if(titleEl) titleEl.firstChild ? (titleEl.firstChild.textContent = `📅 ${y} 연간 일정`) : (titleEl.textContent = `📅 ${y} 연간 일정`);
+    } else {
+        evts = window.allSchedules.filter(s => s.date === selectedDateStr);
+    }
+
+    // 날짜순 정렬
+    evts.sort((a,b)=> (a.date||'').localeCompare(b.date||'') || (a.title||'').localeCompare(b.title||''));
+
+    list.innerHTML = evts.length
+      ? evts.map(e => `<div style="padding:6px 0; border-bottom:1px solid #eee;">📅 <b>${e.date}</b> - ${e.title}</div>`).join('')
+      : "<div style='color:#ccc; padding:10px;'>일정 없음</div>";
+}
+    
+    window.changeCalDate = (n) => { calDate.setMonth(calDate.getMonth() + n); window.renderCalendar(); };
+    window.__listViewMode = window.__listViewMode || 'day';
+
+// ✅ 일정 리스트(일/주/월/연) 보기 전환
+window.changeListView = (mode, btn) => {
+    window.__listViewMode = mode || 'day';
+
+    // 버튼 active 처리
+    document.querySelectorAll('#dateDetailArea .view-mode-btn').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+
+    // 리스트 갱신
+    try { updateScheduleList(); } catch(e){ console.warn(e); }
+};
+
+    // ==========================================
+    // 9. 키오스크 모드 (자동 SMS 복구됨)
+    // ==========================================
+    window.startKioskMode = () => {
+        if(confirm("출석부 모드 시작?")) { setKioskSaved(true); document.body.classList.add('kiosk-mode'); applyAccessUI(); window.showPage('list'); }
+    };
+    window.exitKioskMode = () => {
+        if(prompt("비밀번호")==="1234") { setKioskSaved(false); document.body.classList.remove('kiosk-mode'); applyAccessUI(); window.showPage('list'); }
+    };
+    window.setKioskCategory = (cat, btn) => {
+        currentKioskCategory = cat;
+        document.querySelectorAll('.k-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        window.filterList();
+    };
+
+    // [중요] 키오스크 등하원 탭 (문자 발송 포함)
+    window.kioskTapAttendance = async (id) => {
+        const s = window.allStudents.find(st => st.id === id);
+        const todayStr = new Date().toDateString();
+        const hasArrived = (s.attendanceLog || []).some(log => new Date(log.seconds ? log.seconds*1000 : log).toDateString() === todayStr);
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // 애니메이션 효과
+        const card = document.getElementById(`card-${id}`);
+        if(card) {
+            card.style.transform = "scale(0.95)";
+            setTimeout(() => card.style.transform = "scale(1)", 150);
         }
 
-        window.sendReply = async () => {
-            const msg = document.getElementById('replyMsg').value.trim();
-            if(!msg) return alert("내용을 입력해주세요.");
-            
-            try {
-                await __authReady;
-                await addDoc(collection(db, "parentMessages"), {
-                    parentPhone: (currentStudent.phone || '').toString(),
-                    studentId: currentStudent.id,
-                    studentName: currentStudent.name,
-                    message: msg,
-                    createdAt: serverTimestamp(),
-                    read: false
-                });
-                alert("선생님께 메시지를 보냈습니다! ✅");
-                document.getElementById('replyMsg').value = "";
-            } catch(e) { alert("전송 실패: " + e.message); }
+        const msg = hasArrived ? `${s.name}, 하원 처리가 완료되었습니다.` : `${s.name}, 등원 처리가 완료되었습니다.`;
+        speakText(msg);
+
+        if(!hasArrived) {
+            // 등원 처리
+            await updateDoc(doc(db, "students", id), { attendanceLog: arrayUnion(now) });
+            // [복구됨] 자동 등원 문자
+            if(s.phone) sendSmsByServer(s.phone.replace(/-/g,''), `[미래엔수학] ${s.name} 학생이 ${timeStr}에 등원했습니다.`);
+        } else {
+            // 하원 처리
+            await updateDoc(doc(db, "students", id), { attendanceOutLog: arrayUnion(now) });
+            // [복구됨] 자동 하원 문자
+            if(s.phone) sendSmsByServer(s.phone.replace(/-/g,''), `[미래엔수학] ${s.name} 학생이 ${timeStr}에 하원했습니다.`);
+        }
+    };
+
+    // 음성 안내 (TTS)
+    function speakText(txt) {
+        if(!window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'ko-KR'; u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+    }
+
+    // 선생님 모드 전환
+    window.toggleAdminMode = (force) => {
+        const chk = document.getElementById('adminToggle');
+        if(force === true || chk.checked) {
+            if(force !== true && prompt("비번:") !== "1234") { chk.checked = false; return; }
+            setTeacherMode(true);
+            applyAccessUI();
+            window.showPage('list');
+        } else {
+            setTeacherMode(false);
+            applyAccessUI();
+            window.showPage('calendar');
+        }
+    };
+    
+    // 페이지 전환
+    window.showPage = (id) => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        
+        const tabs = document.querySelectorAll('.tab-btn');
+        if(id==='register') tabs[0].classList.add('active');
+        if(id==='list') tabs[1].classList.add('active');
+        if(id==='calendar') tabs[2].classList.add('active');
+        if(id==='inbox') tabs[3].classList.add('active');
+        
+        if(id==='calendar') window.renderCalendar();
+        if(id==='list') window.filterList();
+    };
+
+    window.setGradeFilter = (val, btn) => {
+        currentGradeFilter = val;
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        window.filterList();
+    };
+    
+    window.updateSchoolOptions = () => {
+        const schools = new Set();
+        window.allStudents.forEach(s => { if(s.school) schools.add(s.school); });
+        const sel = document.getElementById('schoolFilter');
+        if(sel) {
+            sel.innerHTML = '<option value="all">전체 학교</option>';
+            schools.forEach(sc => sel.innerHTML += `<option value="${sc}">${sc}</option>`);
+        }
+    };
+
+    window.triggerPhotoEdit = () => { if(isTeacherMode()) document.getElementById('editPhotoInput').click(); };
+    window.previewEditPhoto = async () => {
+        const file = document.getElementById('editPhotoInput').files[0];
+        if(file) document.getElementById('modalImg').src = await resizeImage(file);
+    };
+    window.switchModalTab = (id, btn) => {
+        document.querySelectorAll('.modal-tab-pane').forEach(p => p.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    // 기타 유틸 (백업/복구)
+    window.downloadExcel = () => {
+        const data = window.allStudents.map((s, i) => ({ "No": i+1, "이름": s.name, "학교": s.school, "학년": s.belt, "부모님": s.phone }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "명단");
+        XLSX.writeFile(wb, `원생명단_${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+    window.downloadBackup = () => {
+        const blob = new Blob([JSON.stringify(window.allStudents)], {type: "application/json"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = "backup.json"; a.click();
+    };
+    window.restoreData = (e) => {
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            const data = JSON.parse(evt.target.result);
+            if(confirm(`${data.length}명 복구?`)) {
+                for(const s of data) { const { id, ...rest } = s; await addDoc(collection(db, "students"), { ...rest, regDate: serverTimestamp() }); }
+                alert("복구 완료");
+            }
         };
-    </script>
+        reader.readAsText(e.target.files[0]);
+    };
+    window.changeAdminPassword = async () => {
+        const newPw = prompt("새 비밀번호:");
+        if(newPw) { await setDoc(doc(db, "settings", "admin"), { password: newPw }); alert("변경됨"); }
+    };
+
+    // 초기 실행
+    window.onload = () => {
+        const kioskSaved = isKioskSaved();
+        if(kioskSaved) document.body.classList.add('kiosk-mode');
+        applyAccessUI();
+        if(isTeacherMode() || kioskSaved) window.showPage('list');
+        else window.showPage('calendar');
+    };
+</script>
+<div id="toast" class="toast" aria-live="polite" aria-atomic="true">
+    <span class="dot"></span><span id="toastText"></span>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal" style="max-width:340px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+            <h3 style="margin:0;">⚙️ 관리자 설정</h3>
+            <button onclick="document.getElementById('settingsModal').style.display='none'" style="border:none; background:none; font-size:20px;">&times;</button>
+        </div>
+
+        <div style="display:grid; gap:10px;">
+            <button class="action-btn" onclick="startKioskMode()" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; box-shadow:none;">
+                <i class="fas fa-tablet-alt"></i> 출석부 모드 시작
+            </button>
+            <button class="action-btn" onclick="downloadExcel()" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; box-shadow:none;">
+                <i class="fas fa-file-excel"></i> 엑셀 명단 저장
+            </button>
+            <button class="action-btn" onclick="downloadBackup()" style="background:#eff6ff; color:#1d4ed8; border:1px solid #93c5fd; box-shadow:none;">
+                <i class="fas fa-download"></i> 데이터 백업 (JSON)
+            </button>
+            <button class="action-btn" onclick="document.getElementById('restoreInput').click()" style="background:#faf5ff; color:#7e22ce; border:1px solid #d8b4fe; box-shadow:none;">
+                <i class="fas fa-upload"></i> 데이터 복구
+            </button>
+            <button class="action-btn" onclick="changeAdminPassword()" style="background:#fff1f2; color:#be123c; border:1px solid #fda4af; box-shadow:none;">
+                <i class="fas fa-key"></i> 관리자 비번 변경
+            </button>
+        </div>
+        <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
+    </div>
+</div>
 </body>
 </html>
