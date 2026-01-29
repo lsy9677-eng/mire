@@ -2486,30 +2486,37 @@ ${closing[Math.floor(Math.random()*closing.length)]}`;
         });
     })();
 
-    
-    // ✅ Firestore 실시간 수신 (익명 로그인 완료 후 시작)
-    __authReady.then(() => {
-        onSnapshot(query(collection(db, "parentMessages"), orderBy("createdAt", "desc")), (snapshot) => {
-            const raw = [];
-            snapshot.forEach(d => raw.push({ id: d.id, ...d.data() }));
-            window.__inboxRaw = raw;
-            window.__renderInbox();
-        }, (err) => {
-            console.error("inbox listener error", err);
-        });
-    }).catch((e)=>{
-        console.error("auth not ready for inbox", e);
+    // ✅ Firestore 실시간 수신 (익명로그인 완료 후 시작 + 에러시 재시도)
+window.__startInboxListener = async function(){
+  try{
+    // auth 준비
+    await __authReady;
+    // 기존 리스너 정리
+    if(window.__inboxUnsub){ try{ window.__inboxUnsub(); }catch(e){} }
+    const q = query(collection(db, "parentMessages"), orderBy("createdAt", "desc"));
+    window.__inboxUnsub = onSnapshot(q, (snapshot) => {
+      const raw = [];
+      snapshot.forEach(d => raw.push({ id: d.id, ...d.data() }));
+      window.__inboxRaw = raw;
+      // DOM이 아직 준비 안 됐을 수 있으니 방어
+      try{ window.__renderInbox && window.__renderInbox(); }catch(e){}
+    }, (err) => {
+      console.warn("inbox listener error:", err);
+      // 권한/네트워크 등 일시 오류 시 재시도
+      setTimeout(()=>window.__startInboxListener(), 1500);
     });
-
-            const raw = [];
-            snapshot.forEach(d => raw.push({ id: d.id, ...d.data() }));
-            window.__inboxRaw = raw;
-            window.__renderInbox();
-        });
-    }catch(e){}
-
-
-    // 8. 캘린더 & 일정
+  }catch(e){
+    console.warn("start inbox listener failed:", e);
+    setTimeout(()=>window.__startInboxListener(), 1500);
+  }
+};
+// DOM 로딩 후 시작 (초기 멈춤 방지)
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', ()=>window.__startInboxListener());
+} else {
+  window.__startInboxListener();
+}
+// 8. 캘린더 & 일정
     // ==========================================
     window.renderCalendar = () => {
         const y = calDate.getFullYear(), m = calDate.getMonth();
