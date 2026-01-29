@@ -2021,6 +2021,15 @@ startRealtimeListeners();
         window.currentStudentId = null;
     };
 
+
+    // 상세 모달 안정화: 배경 클릭/ESC 닫기
+    (function detailModalOverlayClose(){
+        const modal = document.getElementById('detailModal');
+        if(!modal) return;
+        modal.addEventListener('click', (e)=>{ if(e.target===modal) window.closeModal(); });
+        document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') { const m=document.getElementById('detailModal'); if(m && m.style.display==='flex') window.closeModal(); } });
+    })();
+
     // 차트
     window.renderScoreChart = (scoreLog) => {
         const ctx = document.getElementById('scoreChart').getContext('2d');
@@ -2182,11 +2191,25 @@ startRealtimeListeners();
     };
     
     // [Manual SMS] 버튼: 휴대폰 앱 열기
-    window.sendNoticeSms = () => {
+    window.sendNoticeSms = async () => {
         const s = window.allStudents.find(st => st.id === window.currentStudentId);
-        if(!s.phone) return alert("부모님 연락처 없음");
+        if(!s?.phone) return alert("부모님 연락처 없음");
         const msg = window.generateNotice();
-        if(msg) location.href = `sms:${s.phone.replace(/-/g,'')}?body=${encodeURIComponent(msg)}`;
+        if(!msg) return;
+
+        // ✅ SMS로 보내도 DB에 최신 알림/히스토리 저장
+        try{
+            await updateDoc(doc(db, 'students', window.currentStudentId), {
+                lastNotice: msg,
+                lastNoticeAt: new Date(),
+                noticeLog: arrayUnion({ date: new Date().toLocaleDateString(), text: msg }),
+                counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + msg })
+            });
+        }catch(e){
+            console.warn("알림장 저장 실패(그래도 SMS는 보냄):", e);
+        }
+
+        location.href = `sms:${String(s.phone).replace(/-/g,'')}?body=${encodeURIComponent(msg)}`;
     };
 
     // [Kakao] 버튼: 링크 생성 및 공유
@@ -2244,35 +2267,53 @@ startRealtimeListeners();
     const inboxListEl = document.getElementById('inboxList');
     if(inboxListEl) {
         onSnapshot(collection(db,"parentMessages"), (snapshot) => {
-            let unread = 0;
+            const items = [];
+            snapshot.forEach(d0 => {
+                const d = d0.data() || {};
+                const ts = d.createdAt && d.createdAt.seconds ? (d.createdAt.seconds*1000) : (d.createdAt?.toMillis ? d.createdAt.toMillis() : 0);
+                items.push({ id: d0.id, ...d, _ts: ts });
+            });
+            // 최신순 정렬(createdAt 없는 건 아래로)
+            items.sort((a,b)=> (b._ts||0) - (a._ts||0));
+
+            let unread = items.filter(x=>!x.read).length;
             let html = "";
-            if(snapshot.empty) html = "<div style='padding:20px; text-align:center; color:#999;'>메시지가 없습니다.</div>";
-            
-            snapshot.forEach(doc => {
-                const d = doc.data();
-                if(!d.read) unread++;
+            if(items.length===0) html = "<div style='padding:20px; text-align:center; color:#999;'>메시지가 없습니다.</div>";
+
+            for(const d of items){
                 const bg = d.read ? "white" : "#fff7ed";
+                const phone = d.parentPhone || '';
                 html += `
                     <div style="background:${bg}; padding:15px; margin-bottom:10px; border:1px solid #eee; border-radius:10px;">
                         <div style="font-weight:bold; margin-bottom:5px; display:flex; justify-content:space-between;">
-                            <span>${d.studentName} (${d.parentPhone})</span>
+                            <span>${d.studentName||''} (${phone})</span>
                             <div style="font-size:12px; font-weight:normal;">
-                                <button onclick="openMessageStudent('${d.studentId}')" style="background:#3b82f6; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">학생 열기</button>
-                                ${!d.read ? `<button onclick="markMessageRead('${doc.id}')" style="background:#10b981; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">읽음</button>` : ''}
+                                <button onclick="openMessageStudent('${d.studentId||''}')" style="background:#3b82f6; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">학생 열기</button>
+                                ${!d.read ? `<button onclick="markMessageRead('${d.id}')" style="background:#10b981; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">읽음</button>` : ''}
                             </div>
                         </div>
-                        <div style="font-size:14px; color:#333; white-space:pre-wrap;">${d.message}</div>
+                        <div style="font-size:14px; color:#333; white-space:pre-wrap;">${d.message||''}</div>
                     </div>`;
-            });
+            }
+
             inboxListEl.innerHTML = html;
             const badge = document.getElementById('inboxBadge');
             if(badge) {
                 badge.style.display = unread > 0 ? 'inline-block' : 'none';
                 badge.innerText = unread;
             }
-        });
-    }
 
+            // 선생님 모드 진입 시 미확인 메시지 자동 팝업(세션당 1회)
+            try{
+                if(isTeacherMode() && unread>0 && !sessionStorage.getItem('inboxPopupShown')){
+                    sessionStorage.setItem('inboxPopupShown','1');
+                    const latest = items.find(x=>!x.read) || items[0];
+                    if(latest){
+                        window.showInboxPopup(latest);
+                    }
+                }
+            }catch(e){}
+        });
     window.markMessageRead = async (id) => await updateDoc(doc(db, "parentMessages", id), { read: true });
     window.openMessageStudent = (sid) => {
         // 선생님 모드 켜고 이동
@@ -2345,13 +2386,88 @@ startRealtimeListeners();
 
     function updateScheduleList() {
         const list = document.getElementById('dailyEventList');
+        const titleEl = document.getElementById('selectedDateText');
         if(!list) return;
-        const evts = window.allSchedules.filter(s => s.date === selectedDateStr);
-        list.innerHTML = evts.length ? evts.map(e => `<div>📅 ${e.title}</div>`).join('') : "<div style='color:#ccc;'>일정 없음</div>";
+
+        const base = new Date(selectedDateStr + "T00:00:00");
+        let evts = [];
+        let title = "";
+
+        if(scheduleViewMode === 'week'){
+            const start = _startOfWeek(base);
+            const end = new Date(start); end.setDate(end.getDate()+7);
+            evts = window.allSchedules.filter(s => {
+                const d = new Date((s.date||'') + "T00:00:00");
+                return d >= start && d < end;
+            }).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.title||'').localeCompare(b.title||''));
+            const endLabel = new Date(start); endLabel.setDate(endLabel.getDate()+6);
+            title = `주간 일정 (${_dateKey(start)} ~ ${_dateKey(endLabel)})`;
+            list.innerHTML = evts.length
+                ? evts.map(e => `<div style="padding:8px 0; border-bottom:1px dashed #e2e8f0;">📅 <b>${e.date}</b> - ${e.title}</div>`).join('')
+                : "<div style='color:#ccc;'>해당 주 일정 없음</div>";
+
+        } else if(scheduleViewMode === 'month'){
+            const y = base.getFullYear(), mo = base.getMonth();
+            evts = window.allSchedules.filter(s => {
+                const d = new Date((s.date||'') + "T00:00:00");
+                return d.getFullYear()===y && d.getMonth()===mo;
+            }).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.title||'').localeCompare(b.title||''));
+            title = `월간 일정 (${y}-${String(mo+1).padStart(2,'0')})`;
+            list.innerHTML = evts.length
+                ? evts.map(e => `<div style="padding:8px 0; border-bottom:1px dashed #e2e8f0;">📅 <b>${e.date}</b> - ${e.title}</div>`).join('')
+                : "<div style='color:#ccc;'>해당 월 일정 없음</div>";
+
+        } else if(scheduleViewMode === 'year'){
+            const y = base.getFullYear();
+            evts = window.allSchedules.filter(s => {
+                const d = new Date((s.date||'') + "T00:00:00");
+                return d.getFullYear()===y;
+            }).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.title||'').localeCompare(b.title||''));
+            title = `연간 일정 (${y}년)`;
+            list.innerHTML = evts.length
+                ? evts.map(e => `<div style="padding:8px 0; border-bottom:1px dashed #e2e8f0;">📅 <b>${e.date}</b> - ${e.title}</div>`).join('')
+                : "<div style='color:#ccc;'>해당 연도 일정 없음</div>";
+
+        } else {
+            // day
+            evts = window.allSchedules.filter(s => s.date === selectedDateStr)
+                .sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+            title = `일간 일정 (${selectedDateStr})`;
+            list.innerHTML = evts.length
+                ? evts.map(e => `<div style="padding:8px 0; border-bottom:1px dashed #e2e8f0;">📅 ${e.title}</div>`).join('')
+                : "<div style='color:#ccc;'>일정 없음</div>";
+        }
+
+        if(titleEl) {
+            const span = titleEl.querySelector('span');
+            if(span) span.textContent = title;
+        }
     }
     
     window.changeCalDate = (n) => { calDate.setMonth(calDate.getMonth() + n); window.renderCalendar(); };
-    window.changeListView = () => {}; // 뷰모드 변경 placeholder
+    // 일정 리스트 뷰모드 (일간/주간/월간/연간)
+    let scheduleViewMode = 'day'; // day|week|month|year
+
+    function _dateKey(d){
+        const z = new Date(d);
+        return z.toISOString().slice(0,10);
+    }
+    function _startOfWeek(d){
+        const x = new Date(d);
+        const day = x.getDay(); // 0 Sun
+        const diff = (day===0 ? -6 : 1-day); // Monday start
+        x.setDate(x.getDate()+diff);
+        x.setHours(0,0,0,0);
+        return x;
+    }
+
+    window.changeListView = (mode, btn) => {
+        scheduleViewMode = mode || 'day';
+        document.querySelectorAll('.view-mode-btn').forEach(b=>b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+        updateScheduleList();
+    };
+
 
     // ==========================================
     // 9. 키오스크 모드 (자동 SMS 복구됨)
