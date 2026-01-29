@@ -1552,19 +1552,7 @@ body.kiosk-mode .kiosk-exit-btn {
         </div>
     </div>
     <div class="card">
-        <div id="inboxFilters" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0;">
-        <select id="inboxStudentFilter" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:white;">
-          <option value="">전체 학생</option>
-        </select>
-        <input id="inboxStartDate" type="date" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:white;">
-        <input id="inboxEndDate" type="date" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:white;">
-        <input id="inboxKeyword" placeholder="내용 검색" style="flex:1; min-width:160px; padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:white;">
-        <select id="inboxSort" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:white;">
-          <option value="desc">최신순</option>
-          <option value="asc">오래된순</option>
-        </select>
-      </div>
-<div id="inboxList" style="max-height:520px; overflow-y:auto;"></div>
+        <div id="inboxList" style="max-height:520px; overflow-y:auto;"></div>
     </div>
 </div>
 
@@ -1596,7 +1584,7 @@ body.kiosk-mode .kiosk-exit-btn {
 
       <div class="modal-overlay" id="detailModal">
     <div class="modal">
-        <button class="close-btn" onclick="closeModal()">×</button>
+        <button class="close-btn" onclick="window.closeModal()">×</button>
 
         <div class="modal-header-fixed">
             <div style="text-align:center;">
@@ -1983,10 +1971,9 @@ startRealtimeListeners();
     // ==========================================
     window.openDetail = (s) => {
         window.currentStudentId = s.id;
-        window.showPage('detail');
-        const modal = document.getElementById('detailPageContainer') || document.getElementById('detailModal');
-
-        try { /* page view */ } catch(e) {}
+        const modal = document.getElementById('detailModal');
+        modal.style.display = 'flex';
+        try { modal.querySelector('.modal').classList.add('modal-full'); } catch(e) {}
 
         // 기본정보
         document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
@@ -2183,44 +2170,16 @@ startRealtimeListeners();
     // ==========================================
     // 6. 알림장, 정산, 카톡 공유 (기능 복구)
     // ==========================================
-    
-window.generateNotice = () => {
-        const s = window.allStudents.find(st => st.id === window.currentStudentId) || {};
-        const text = (document.getElementById('dailyProgress').value || '').trim();
-        if(!text) { alert("오늘 공부한 내용을 입력하세요"); return ""; }
-
-        const greet = [
-          "안녕하세요, 학부모님 😊",
-          "학부모님 안녕하세요 😊",
-          "안녕하세요! 오늘도 함께해주셔서 감사합니다 😊"
-        ];
-        const closing = [
-          "가정에서도 짧게 복습해주시면 학습 효과가 더 좋아요. 감사합니다!",
-          "오늘도 수고 많으셨습니다. 궁금하신 점은 언제든 편하게 남겨주세요!",
-          "항상 믿고 맡겨주셔서 감사합니다. 편안한 저녁 보내세요 😊"
-        ];
-        const tips = [
-          "✅ 오늘 배운 내용은 ‘핵심 3문제’만 다시 풀어봐도 충분합니다.",
-          "✅ 오답이 있었던 문제는 ‘왜 틀렸는지 한 문장’으로 적어보면 좋아요.",
-          "✅ 단원 용어(정의)만 한 번 소리내어 읽어도 기억이 오래 갑니다."
-        ];
-
-        const msg = `[미래엔수학] 알림장 📢
-
-${greet[Math.floor(Math.random()*greet.length)]}
-오늘 ${s.name || ''} 학생 학습 내용을 안내드립니다.
-
-📚 학습 내용
-${text}
-
-${tips[Math.floor(Math.random()*tips.length)]}
-
-${closing[Math.floor(Math.random()*closing.length)]}`;
+    window.generateNotice = () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        const text = document.getElementById('dailyProgress').value;
+        if(!text) { alert("내용을 입력하세요"); return ""; }
+        
+        const msg = `[미래엔수학] 알림장 📢\n\n안녕하세요, 학부모님!\n오늘 ${s.name} 학생 학습 내용입니다.\n\n📚 학습내용\n${text}\n\n감사합니다.`;
         const box = document.getElementById('noticePreview');
         if(box) { box.innerText = msg; box.style.display = 'block'; }
         return msg;
     };
-
     
     // [Manual SMS] 버튼: 휴대폰 앱 열기
     window.sendNoticeSms = () => {
@@ -2280,243 +2239,50 @@ ${closing[Math.floor(Math.random()*closing.length)]}`;
     };
 
     // ==========================================
-    
-    // ==========================================
     // 7. 학부모 의견함 (통합)
     // ==========================================
-    window.__inboxRaw = [];
-
-    // ✅ 미확인 메시지 팝업(선생님 로그인/모드 진입 시 1회)
-    window.showUnreadPopup = (docs) => {
-        try { sessionStorage.setItem('unreadPopupShown', '1'); } catch(e){}
-        window.__unreadPopupShown = true;
-
-        // 이미 열려있으면 중복 생성 방지
-        const existing = document.getElementById('unreadPopupOverlay');
-        if(existing) existing.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'unreadPopupOverlay';
-        overlay.style.cssText = `
-            position:fixed; left:0; top:0; width:100vw; height:100vh;
-            background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center;
-            z-index:99999; padding:16px; box-sizing:border-box;
-        `;
-
-        const box = document.createElement('div');
-        box.style.cssText = `
-            width:min(520px, 100%); background:#fff; border-radius:16px;
-            box-shadow:0 10px 30px rgba(0,0,0,.2);
-            overflow:hidden;
-        `;
-
-        const header = document.createElement('div');
-        header.style.cssText = `padding:14px 16px; font-weight:800; border-bottom:1px solid #eee;`;
-        header.innerText = `새 학부모 메시지 ${docs.length}건`;
-
-        const body = document.createElement('div');
-        body.style.cssText = `max-height:50vh; overflow:auto; padding:12px 16px;`;
-
-        const items = (docs || []).slice(0, 10).map(d => {
-            const when = (()=>{ try{ return d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString() : ''; }catch(e){ return '';} })();
-            const msg = (d.message || '').toString().slice(0, 120);
-            return `<div style="padding:10px 0; border-bottom:1px dashed #eee;">
-                      <div style="font-weight:700;">${d.studentName || '학생'} <span style="color:#888; font-weight:500; font-size:12px;">${when}</span></div>
-                      <div style="color:#333; margin-top:4px; white-space:pre-wrap;">${escapeHtml(msg)}</div>
+    const inboxListEl = document.getElementById('inboxList');
+    if(inboxListEl) {
+        onSnapshot(collection(db,"parentMessages"), (snapshot) => {
+            let unread = 0;
+            let html = "";
+            if(snapshot.empty) html = "<div style='padding:20px; text-align:center; color:#999;'>메시지가 없습니다.</div>";
+            
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                if(!d.read) unread++;
+                const bg = d.read ? "white" : "#fff7ed";
+                html += `
+                    <div style="background:${bg}; padding:15px; margin-bottom:10px; border:1px solid #eee; border-radius:10px;">
+                        <div style="font-weight:bold; margin-bottom:5px; display:flex; justify-content:space-between;">
+                            <span>${d.studentName} (${d.parentPhone})</span>
+                            <div style="font-size:12px; font-weight:normal;">
+                                <button onclick="openMessageStudent('${d.studentId}')" style="background:#3b82f6; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">학생 열기</button>
+                                ${!d.read ? `<button onclick="markMessageRead('${doc.id}')" style="background:#10b981; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">읽음</button>` : ''}
+                            </div>
+                        </div>
+                        <div style="font-size:14px; color:#333; white-space:pre-wrap;">${d.message}</div>
                     </div>`;
-        }).join('');
-        body.innerHTML = items || `<div style="color:#666;">새 메시지가 없습니다.</div>`;
-
-        const footer = document.createElement('div');
-        footer.style.cssText = `display:flex; gap:8px; justify-content:flex-end; padding:12px 16px; border-top:1px solid #eee; background:#fafafa;`;
-
-        const btnClose = document.createElement('button');
-        btnClose.className = 'btn';
-        btnClose.innerText = '닫기';
-        btnClose.onclick = ()=> overlay.remove();
-
-        const btnOpen = document.createElement('button');
-        btnOpen.className = 'btn primary';
-        btnOpen.innerText = '의견함 열기';
-        btnOpen.onclick = ()=>{ overlay.remove(); try{ showPage('inbox'); }catch(e){} };
-
-        const btnReadAll = document.createElement('button');
-        btnReadAll.className = 'btn';
-        btnReadAll.innerText = '모두 읽음';
-        btnReadAll.onclick = async ()=>{
-            try{
-                const unreadIds = (docs||[]).map(d=>d.id).filter(Boolean);
-                for(const id of unreadIds){
-                    await updateDoc(doc(db, "parentMessages", id), { read: true });
-                }
-            }catch(e){}
-            overlay.remove();
-        };
-
-        footer.appendChild(btnReadAll);
-        footer.appendChild(btnOpen);
-        footer.appendChild(btnClose);
-
-        box.appendChild(header);
-        box.appendChild(body);
-        box.appendChild(footer);
-        overlay.appendChild(box);
-        document.body.appendChild(overlay);
-    };
-
-    // ✅ 필터/정렬 적용 + 학생별 묶어서 표시
-    window.__renderInbox = () => {
-        const inboxListEl = document.getElementById('inboxList');
-        if(!inboxListEl) return;
-
-        let msgs = Array.isArray(window.__inboxRaw) ? [...window.__inboxRaw] : [];
-
-        // 학생 필터 옵션 갱신
-        const sel = document.getElementById('inboxStudentFilter');
-        if(sel && Array.isArray(window.allStudents)){
-            const cur = sel.value;
-            const opts = ['<option value="">전체 학생</option>']
-              .concat(window.allStudents.map(s => `<option value="${s.id}">${escapeHtml(s.name||'')}</option>`));
-            sel.innerHTML = opts.join('');
-            sel.value = cur;
-        }
-
-        const studentId = document.getElementById('inboxStudentFilter')?.value || '';
-        const kw = (document.getElementById('inboxKeyword')?.value || '').trim().toLowerCase();
-        const sd = document.getElementById('inboxStartDate')?.value || '';
-        const ed = document.getElementById('inboxEndDate')?.value || '';
-        const sort = document.getElementById('inboxSort')?.value || 'desc';
-
-        const toISODate = (ts) => {
-            try{
-                const dt = ts?.toDate ? ts.toDate() : (ts instanceof Date ? ts : null);
-                return dt ? dt.toISOString().slice(0,10) : '';
-            }catch(e){ return ''; }
-        };
-
-        msgs = msgs.filter(d => {
-            if(studentId && d.studentId !== studentId) return false;
-            const day = toISODate(d.createdAt);
-            if(sd && day && day < sd) return false;
-            if(ed && day && day > ed) return false;
-            if(kw){
-                const blob = ((d.studentName||'')+' '+(d.message||'')+' '+(d.parentPhone||'')).toLowerCase();
-                if(!blob.includes(kw)) return false;
-            }
-            return true;
-        });
-
-        msgs.sort((a,b)=>{
-            const at = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-            const bt = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-            return sort === 'asc' ? at-bt : bt-at;
-        });
-
-        // 학생별 그룹
-        const groups = {};
-        msgs.forEach(m => {
-            const key = m.studentId || 'unknown';
-            (groups[key] ||= []).push(m);
-        });
-
-        const unreadDocs = msgs.filter(d=>!d.read);
-        const unread = unreadDocs.length;
-        const badge = document.getElementById('inboxBadge');
-        if(badge) { badge.style.display = unread>0 ? 'inline-block' : 'none'; badge.innerText = unread; }
-
-        if(!msgs.length){
-            inboxListEl.innerHTML = `<div style="color:#999; padding:14px;">메시지가 없습니다.</div>`;
-        }else{
-            const html = Object.keys(groups).map(sid=>{
-                const list = groups[sid];
-                const name = list[0]?.studentName || '학생';
-                const inner = list.map(d=>{
-                    const when = (()=>{ try{ return d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString() : ''; }catch(e){ return ''; } })();
-                    const readTag = d.read ? '' : `<span style="margin-left:6px; font-size:11px; color:#fff; background:#ff4d4f; padding:2px 6px; border-radius:999px;">NEW</span>`;
-                    return `<div style="padding:10px 0; border-top:1px dashed #eee;">
-                              <div style="font-size:12px; color:#777;">${when}${readTag}</div>
-                              <div style="white-space:pre-wrap; margin-top:4px;">${escapeHtml(d.message||'')}</div>
-                              <div style="margin-top:8px;">
-                                <button class="btn" onclick="markMessageRead('${d.id}')">읽음</button>
-                              </div>
-                            </div>`;
-                }).join('');
-
-                return `<div style="border:1px solid #eee; border-radius:14px; padding:12px 14px; background:#fff; margin-bottom:12px;">
-                          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                            <div style="font-weight:800;">${escapeHtml(name)}</div>
-                            <button class="btn" onclick="openStudentDetailById('${sid}')">학생 열기</button>
-                          </div>
-                          ${inner}
-                        </div>`;
-            }).join('');
+            });
             inboxListEl.innerHTML = html;
-        }
-
-        // ✅ 선생님 모드 진입 시 미확인 메시지 팝업(세션당 1회)
-        try{
-            const teacher = (typeof isTeacherMode === 'function') ? isTeacherMode() : false;
-            const already = sessionStorage.getItem('unreadPopupShown') === '1';
-            if(teacher && unread > 0 && !already && !window.__unreadPopupShown){
-                window.showUnreadPopup(unreadDocs.slice(0,10));
+            const badge = document.getElementById('inboxBadge');
+            if(badge) {
+                badge.style.display = unread > 0 ? 'inline-block' : 'none';
+                badge.innerText = unread;
             }
-        }catch(e){}
-    };
-
-    // 학생 상세 페이지 열기(존재하면 활용)
-    window.openStudentDetailById = (studentId) => {
-        try{
-            window.currentStudentId = studentId;
-            if(typeof showPage === 'function') showPage('list');
-            if(typeof openStudentDetail === 'function') openStudentDetail(studentId);
-        }catch(e){}
-    };
-
-    window.markMessageRead = async (id) => {
-        try { await updateDoc(doc(db, "parentMessages", id), { read: true }); } catch(e){}
-    };
-
-    // ✅ 필터 입력 즉시 반영
-    (function(){
-        const ids = ['inboxStudentFilter','inboxStartDate','inboxEndDate','inboxKeyword','inboxSort'];
-        ids.forEach(id=>{
-            const el = document.getElementById(id);
-            if(!el) return;
-            el.addEventListener(id==='inboxKeyword'?'input':'change', ()=> window.__renderInbox());
         });
-    })();
+    }
 
-    // ✅ Firestore 실시간 수신 (익명로그인 완료 후 시작 + 에러시 재시도)
-window.__startInboxListener = async function(){
-  try{
-    // auth 준비
-    await __authReady;
-    // 기존 리스너 정리
-    if(window.__inboxUnsub){ try{ window.__inboxUnsub(); }catch(e){} }
-    const q = query(collection(db, "parentMessages"), orderBy("createdAt", "desc"));
-    window.__inboxUnsub = onSnapshot(q, (snapshot) => {
-      const raw = [];
-      snapshot.forEach(d => raw.push({ id: d.id, ...d.data() }));
-      window.__inboxRaw = raw;
-      // DOM이 아직 준비 안 됐을 수 있으니 방어
-      try{ window.__renderInbox && window.__renderInbox(); }catch(e){}
-    }, (err) => {
-      console.warn("inbox listener error:", err);
-      // 권한/네트워크 등 일시 오류 시 재시도
-      setTimeout(()=>window.__startInboxListener(), 1500);
-    });
-  }catch(e){
-    console.warn("start inbox listener failed:", e);
-    setTimeout(()=>window.__startInboxListener(), 1500);
-  }
-};
-// DOM 로딩 후 시작 (초기 멈춤 방지)
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', ()=>window.__startInboxListener());
-} else {
-  window.__startInboxListener();
-}
-// 8. 캘린더 & 일정
+    window.markMessageRead = async (id) => await updateDoc(doc(db, "parentMessages", id), { read: true });
+    window.openMessageStudent = (sid) => {
+        // 선생님 모드 켜고 이동
+        if(!isTeacherMode()) window.toggleAdminMode(true); 
+        window.showPage('list');
+        setTimeout(() => window.openDetailById(sid), 500);
+    };
+
+    // ==========================================
+    // 8. 캘린더 & 일정
     // ==========================================
     window.renderCalendar = () => {
         const y = calDate.getFullYear(), m = calDate.getMonth();
@@ -2577,72 +2343,15 @@ if(document.readyState === 'loading'){
         document.getElementById('scheduleModal').style.display = 'none';
     };
 
-    let listViewMode = 'day';
     function updateScheduleList() {
         const list = document.getElementById('dailyEventList');
-        const label = document.getElementById('selectedDateText');
         if(!list) return;
-
-        const base = new Date(selectedDateStr + "T00:00:00");
-        const y = base.getFullYear();
-        const m = base.getMonth();
-        const d = base.getDate();
-
-        // 범위 계산
-        let start = new Date(base), end = new Date(base);
-        if(listViewMode === 'week'){
-            const day = start.getDay(); // 0 Sun
-            const diffToMon = (day === 0 ? -6 : 1 - day);
-            start.setDate(start.getDate() + diffToMon);
-            end = new Date(start); end.setDate(start.getDate() + 6);
-        } else if(listViewMode === 'month'){
-            start = new Date(y, m, 1);
-            end = new Date(y, m+1, 0);
-        } else if(listViewMode === 'year'){
-            start = new Date(y, 0, 1);
-            end = new Date(y, 11, 31);
-        }
-
-        const toStr = (dt)=> dt.toISOString().slice(0,10);
-        const startStr = toStr(start);
-        const endStr = toStr(end);
-
-        const inRange = (dateStr)=> dateStr >= startStr && dateStr <= endStr;
-        const evts = (window.allSchedules||[])
-            .filter(s => s.date && inRange(s.date))
-            .sort((a,b)=> (a.date||"").localeCompare(b.date||""));
-
-        if(label){
-            if(listViewMode==='day') label.innerText = `${selectedDateStr} 일정`;
-            else label.innerText = `${startStr} ~ ${endStr} 일정`;
-        }
-
-        if(!evts.length){
-            list.innerHTML = "<div style='color:#ccc;'>일정 없음</div>";
-            return;
-        }
-
-        // 날짜별 그룹
-        const groups = {};
-        evts.forEach(e => { (groups[e.date] ||= []).push(e); });
-        list.innerHTML = Object.keys(groups).map(date => {
-            const items = groups[date].map(e => `<div style="padding:6px 0;">📅 ${e.title}</div>`).join('');
-            return `<div style="padding:10px; border:1px solid #eee; border-radius:10px; margin-bottom:10px; background:white;">
-                      <div style="font-weight:700; margin-bottom:6px;">${date}</div>
-                      ${items}
-                    </div>`;
-        }).join('');
+        const evts = window.allSchedules.filter(s => s.date === selectedDateStr);
+        list.innerHTML = evts.length ? evts.map(e => `<div>📅 ${e.title}</div>`).join('') : "<div style='color:#ccc;'>일정 없음</div>";
     }
-
+    
     window.changeCalDate = (n) => { calDate.setMonth(calDate.getMonth() + n); window.renderCalendar(); };
-
-    // ✅ 일정 리스트 뷰모드 변경(일/주/월/년)
-    window.changeListView = (mode, btn) => {
-        listViewMode = mode || 'day';
-        document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-        updateScheduleList();
-    };
+    window.changeListView = () => {}; // 뷰모드 변경 placeholder
 
     // ==========================================
     // 9. 키오스크 모드 (자동 SMS 복구됨)
@@ -2797,27 +2506,6 @@ if(document.readyState === 'loading'){
         if(isTeacherMode() || kioskSaved) window.showPage('list');
         else window.showPage('calendar');
     };
-
-    // ==========================================
-    // 부트스트랩: 상세 모달 UI를 상세 페이지로 이동
-    // ==========================================
-    (function(){
-      try{
-        const container = document.getElementById('detailPageContainer');
-        const detailModal = document.getElementById('detailModal');
-        if(container && detailModal){
-          const inner = detailModal.querySelector('.modal') || detailModal.firstElementChild;
-          if(inner){
-            // 기존 모달 닫기 버튼이 있다면 목록으로 버튼으로 교체
-            const closeBtn = inner.querySelector('[onclick="closeDetail()"]');
-            if(closeBtn) closeBtn.innerText = "← 목록으로";
-            container.appendChild(inner);
-          }
-          detailModal.remove();
-        }
-      }catch(e){ console.warn(e); }
-    })();
-
 </script>
 <div id="toast" class="toast" aria-live="polite" aria-atomic="true">
     <span class="dot"></span><span id="toastText"></span>
@@ -2850,33 +2538,5 @@ if(document.readyState === 'loading'){
         <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
     </div>
 </div>
-
-    <!-- 학생 상세 페이지 (팝업 대신 페이지로 표시) -->
-    <div id="detail" class="page">
-      <div class="section">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">
-          <button class="action-btn" style="background:#e5e7eb; color:#111827; margin:0; padding:10px 12px; border-radius:10px;" onclick="closeDetail()">← 목록으로</button>
-          <div style="font-weight:700; color:#111827;">학생 상세</div>
-          <div style="width:90px;"></div>
-        </div>
-        <div id="detailPageContainer"></div>
-      </div>
-    </div>
-
-    <!-- 선생님 로그인 시 미확인 학부모 메시지 팝업 -->
-    <div id="unreadPopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99999;">
-      <div style="max-width:560px; margin:8vh auto; background:white; border-radius:16px; padding:16px; box-shadow:0 20px 60px rgba(0,0,0,.25);">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-          <div style="font-weight:800; font-size:16px;">📬 새 학부모 메시지</div>
-          <button onclick="closeUnreadPopup()" style="border:none; background:#f3f4f6; border-radius:10px; padding:8px 10px; cursor:pointer;">닫기</button>
-        </div>
-        <div id="unreadPopupBody" style="margin-top:12px; max-height:55vh; overflow:auto;"></div>
-        <div style="display:flex; gap:8px; margin-top:12px;">
-          <button class="action-btn" style="margin:0; background:#3b82f6;" onclick="openInboxFromPopup()">의견함 열기</button>
-          <button class="action-btn" style="margin:0; background:#10b981;" onclick="markAllPopupRead()">모두 읽음</button>
-        </div>
-      </div>
-    </div>
-
 </body>
 </html>
