@@ -215,7 +215,17 @@
             const s = currentStudent;
             document.getElementById('sName').innerText = s.name + " 학생";
             document.getElementById('sInfo').innerText = `${s.school||''} | ${s.belt||''}`;
-            document.getElementById('sNotice').innerText = s.lastNotice || "최신 알림이 없습니다.";
+            // 최신 알림장: lastNotice → noticeLog 최신 → counselLog의 [알림장] 최신 순으로 fallback
+            let noticeText = s.lastNotice || '';
+            if(!noticeText && Array.isArray(s.noticeLog) && s.noticeLog.length){
+                const last = s.noticeLog.slice().reverse().find(x=>x && x.text);
+                if(last) noticeText = last.text;
+            }
+            if(!noticeText && Array.isArray(s.counselLog) && s.counselLog.length){
+                const lastN = s.counselLog.slice().reverse().find(h => (h.text||'').includes('[알림장]'));
+                if(lastN) noticeText = (lastN.text||'').replace('[알림장]','').trim();
+            }
+            document.getElementById('sNotice').innerText = noticeText || "최신 알림이 없습니다.";
 
             // 성적(읽기 전용)
             renderParentScore(s.scoreLog || []);
