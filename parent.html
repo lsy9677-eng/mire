@@ -222,15 +222,7 @@ let currentStudent = null;
             const s = currentStudent;
             document.getElementById('sName').innerText = s.name + " 학생";
             document.getElementById('sInfo').innerText = `${s.school||''} | ${s.belt||''}`;
-            // ✅ 최신 알림장 표시 (lastNotice → noticeLog → counselLog 순으로 fallback)
-            const latestNotice =
-                (s.lastNotice && String(s.lastNotice).trim()) ? String(s.lastNotice) :
-                (Array.isArray(s.noticeLog) && s.noticeLog.length ? String(s.noticeLog[s.noticeLog.length - 1].text || '') :
-                (Array.isArray(s.counselLog) ? (function(){
-                    const hit = s.counselLog.slice().reverse().find(l => String(l.text || '').startsWith('[알림장]'));
-                    return hit ? String(hit.text).replace(/^\[알림장\]\s*/, '') : '';
-                })() : ''));
-            document.getElementById('sNotice').innerText = latestNotice || "최신 알림이 없습니다.";
+            document.getElementById('sNotice').innerText = s.lastNotice || "최신 알림이 없습니다.";
 
             // 성적(읽기 전용)
             renderParentScore(s.scoreLog || []);
