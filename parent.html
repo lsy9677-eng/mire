@@ -86,7 +86,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDPLl5y5xMBL07yLyQDU185qfYLa4c3yv4",
@@ -100,28 +99,13 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
-// =========================================================
-// [추가] Firestore 권한을 위한 익명 로그인 (Anonymous Auth)
-// =========================================================
-const auth = getAuth(app);
-let __authReadyResolve;
-const __authReady = new Promise(res => (__authReadyResolve = res));
-onAuthStateChanged(auth, (u) => { if(u) __authReadyResolve(u); });
-if(!auth.currentUser){
-  signInAnonymously(auth).catch(e => {
-    console.error("Anonymous sign-in failed", e);
-    alert("Firebase 익명 로그인 실패: " + (e?.message || e));
-  });
-}
-
-let currentStudent = null;
+        let currentStudent = null;
         let unsubStudent = null;
         let parentChart = null;
 
         window.checkParent = async () => {
             const phoneInput = document.getElementById('inputPhone');
-            const phone = phoneInput.value.toString().replace(/\D/g,'').trim();
+            const phone = phoneInput.value.replace(/-/g, '').trim();
             
             if(phone.length < 8) return alert("전화번호를 올바르게 입력해주세요.");
 
@@ -131,8 +115,6 @@ let currentStudent = null;
             btn.disabled = true;
 
             try {
-                await __authReady;
-
                 // 부모님 번호로 학생 검색
                 const q = query(collection(db, "students"), where("phone", "==", phone));
                 const snap = await getDocs(q);
@@ -260,7 +242,7 @@ let currentStudent = null;
             
             try {
                 await addDoc(collection(db, "parentMessages"), {
-                    parentPhone: (currentStudent.phone || '').toString().replace(/\D/g,''),
+                    parentPhone: (currentStudent.phone || '').toString(),
                     studentId: currentStudent.id,
                     studentName: currentStudent.name,
                     message: msg,
