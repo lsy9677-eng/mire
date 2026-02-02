@@ -1,21 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>미래엔수학 능동해냄 교실 관리</title>
-
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3B82F6">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>미래엔수학 능동해냄 교실 관리</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#3B82F6" name="theme-color"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
+<style>
 /* =========================================================
    2026 Parent-Friendly UI System (Mobile-first)
    - Soft card UI + gentle 3D
@@ -697,7 +696,6 @@ body.kiosk-mode .kiosk-btn-group{
 /* Small tweaks */
 .dept-badge{ border-radius: 999px; padding: 3px 8px; font-weight: 900; }
 
-
 /* ===== Calendar (restored & modernized) ===== */
 #calendar .calendar-controls{
   display:flex;
@@ -861,7 +859,6 @@ body.show-admin #selectAll{
   35%{ opacity:1; transform: translate(-50%,-50%) scale(1); }
   100%{ opacity:0; transform: translate(-50%,-80%) scale(.8); }
 }
-
 
 /* =========================
    KIOSK: True metal/plastic card feel + remove ghost print text
@@ -1095,7 +1092,6 @@ body.show-admin div.info-box.admin-only {
 body { padding-bottom: 20px !important; }
 #register { padding-bottom: 20px !important; }
 
-
 /* =========================================
    2. [출석부 모드] 3D 입체 버튼 & 카드 디자인
    ========================================= */
@@ -1272,7 +1268,6 @@ body.kiosk-mode .kiosk-exit-btn {
     transform: translateY(-1px);     /* 글자와 높이 미세 조정 */
 }
 
-
 /* Fullscreen detail modal */
 .modal.modal-full{
   width: min(1200px, 100vw);
@@ -1375,7 +1370,6 @@ body.kiosk-mode .kiosk-exit-btn {
     grid-column: 1 / -1; /* 가로 전체 차지 */
 }
 
-
 /* ===== 정감있는 학원앱 스타일(초등~중등) 패치 ===== */
 :root{
   --ink:#1f2937;
@@ -1451,7 +1445,6 @@ input, select, textarea{
   font-size: 13px !important;
   opacity: .9;
 }
-
 
 /* ===== v3: 파랑 톤 더 차분/따뜻 + 학원앱 간격 다듬기 ===== */
 :root{
@@ -1562,381 +1555,560 @@ input:focus, select:focus, textarea:focus{
 header, .header{
   margin-bottom: var(--gap-3) !important;
 }
-</style>
 
-    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+/* ===== v4: 상단 헤더를 따뜻한 '학원앱 첫인상'으로 ===== */
+.app-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 14px;
+  padding: 18px 18px 16px !important;
+  margin: 12px 0 12px !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(900px 280px at 18% 20%, rgba(90,143,247,.22) 0%, rgba(90,143,247,0) 60%),
+    radial-gradient(700px 240px at 78% 10%, rgba(245,158,11,.16) 0%, rgba(245,158,11,0) 55%),
+    rgba(255,255,255,.92) !important;
+  border: 1px solid rgba(31,41,55,.06) !important;
+  box-shadow: 0 14px 26px rgba(31,41,55,.10) !important;
+  position: relative;
+  overflow:hidden;
+}
+.app-header::after{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background: linear-gradient(120deg, rgba(90,143,247,.12), rgba(245,158,11,.10), rgba(34,197,94,.10));
+  opacity:.55;
+  filter: blur(22px);
+  pointer-events:none;
+}
+
+/* 헤더 내용이 흐려지지 않도록 */
+.app-header > *{ position: relative; z-index: 1; }
+
+.brand{
+  display:flex !important;
+  align-items:center !important;
+  gap: 14px !important;
+}
+.brand-mark{
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 18px !important;
+  background: rgba(255,255,255,.96) !important;
+  border: 1px solid rgba(31,41,55,.06) !important;
+  box-shadow: 0 10px 18px rgba(31,41,55,.10) !important;
+  padding: 8px !important;
+}
+.brand-title strong{
+  font-size: 22px !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.6px;
+}
+.brand-title span{
+  display:inline-block;
+  margin-top: 4px;
+  font-size: 13px !important;
+  color: rgba(31,41,55,.68) !important;
+}
+
+/* 칩(기능 배지) */
+/* 우측 토글/설정 버튼도 자연스럽게 */
+.admin-switch{
+  background: rgba(255,255,255,.92) !important;
+  border: 1px solid rgba(31,41,55,.06) !important;
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
+  box-shadow: 0 10px 18px rgba(31,41,55,.08) !important;
+}
+
+
+/* ===== v6: 헤더 우측(선생님/설정) 상단바 스타일로 정돈 ===== */
+.header-actions{
+  display:flex !important;
+  align-items:center !important;
+  gap: 10px !important;
+}
+
+/* 토글을 작은 캡슐 형태로 */
+.switch-pill{
+  display:flex !important;
+  align-items:center !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.94) !important;
+  border: 1px solid rgba(31,41,55,.08) !important;
+  box-shadow: 0 10px 18px rgba(31,41,55,.08) !important;
+  font-weight: 900 !important;
+  color: rgba(31,41,55,.78) !important;
+  user-select:none;
+}
+
+/* 체크박스가 너무 커 보이지 않게 */
+.switch-check{
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  accent-color: var(--brand-blue-700);
+}
+
+/* 설정 아이콘: 작은 정사각 버튼 */
+.icon-btn{
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(31,41,55,.08) !important;
+  background: rgba(255,255,255,.94) !important;
+  box-shadow: 0 10px 18px rgba(31,41,55,.08) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  color: rgba(31,41,55,.72) !important;
+}
+.icon-btn:hover{
+  filter: brightness(0.99);
+}
+.icon-btn:active{
+  transform: translateY(1px) scale(.99);
+}
+
+/* 모바일에서 헤더가 너무 크지 않게 높이 살짝 줄이기 */
+.app-header{
+  padding: 16px 16px 14px !important;
+}
+
+
+/* ===== v7: 헤더 높이 더 줄이고 로고 작게/정렬 ===== */
+.app-header-compact{
+  padding: 12px 14px 12px !important;
+  gap: 10px !important;
+}
+
+/* 브랜드 영역을 더 컴팩트하게 */
+.app-header-compact .brand{
+  gap: 10px !important;
+}
+.app-header-compact .brand-mark{
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 14px !important;
+  padding: 6px !important;
+}
+.app-header-compact .brand-title strong{
+  font-size: 19px !important;
+}
+.app-header-compact .brand-title span{
+  font-size: 12px !important;
+}
+
+/* 우측 액션도 더 작게 */
+.app-header-compact .switch-pill{
+  padding: 7px 10px !important;
+  gap: 7px !important;
+}
+.app-header-compact .icon-btn{
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 12px !important;
+}
+
+/* 작은 화면에서는 subtitle 숨겨서 더 앱 같게 */
+@media (max-width: 420px){
+  .app-header-compact .brand-title span{
+    display:none !important;
+  }
+}
+
+
+/* ===== v8: 헤더 아래 '학습 일정' 카드형 퀵버튼 ===== */
+.quick-actions{
+  margin: 10px 0 12px;
+}
+.quick-card{
+  width: 100%;
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 14px 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(31,41,55,.06);
+  background:
+    radial-gradient(700px 220px at 20% 20%, rgba(90,143,247,.20) 0%, rgba(90,143,247,0) 60%),
+    radial-gradient(600px 220px at 85% 20%, rgba(245,158,11,.14) 0%, rgba(245,158,11,0) 55%),
+    rgba(255,255,255,.94);
+  box-shadow: 0 14px 26px rgba(31,41,55,.10);
+  cursor:pointer;
+  text-align:left;
+}
+.quick-card:hover{ filter: brightness(0.995); }
+.quick-card:active{ transform: translateY(1px) scale(.995); }
+
+.quick-ic{
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(90,143,247,.16);
+  color: rgba(60,116,240,.95);
+  box-shadow: 0 10px 18px rgba(31,41,55,.08);
+  flex: 0 0 auto;
+}
+.quick-txt{
+  display:flex;
+  flex-direction:column;
+  gap: 3px;
+  min-width: 0;
+}
+.quick-title{
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: -0.3px;
+  color: rgba(31,41,55,.92);
+}
+.quick-sub{
+  font-weight: 900;
+  font-size: 12px;
+  color: rgba(31,41,55,.58);
+}
+.quick-go{
+  margin-left:auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(31,41,55,.06);
+  box-shadow: 0 10px 18px rgba(31,41,55,.07);
+  color: rgba(31,41,55,.55);
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;display=swap" rel="stylesheet"/>
 </head>
 <body>
-
 <div class="kiosk-exit-btn" onclick="exitKioskMode()">
-    <i class="fas fa-lock"></i>
+<i class="fas fa-lock"></i>
 </div>
-
 <div class="container">
-    <div class="kiosk-header" id="kioskHeader">
-        <button class="k-filter-btn active" onclick="setKioskCategory('all', this)">전체</button>
-        <button class="k-filter-btn" onclick="setKioskCategory('미취학', this)">미취학</button>
-        <button class="k-filter-btn" onclick="setKioskCategory('초등', this)">초등부</button>
-        <button class="k-filter-btn" onclick="setKioskCategory('중등', this)">중등부</button>
-        <button class="k-filter-btn" onclick="setKioskCategory('고등', this)">고등부</button>
-    </div>
-
-<header>
-        <div class="brand">
-            <img class="brand-mark" 
-                 src="nam-512.png" 
-                 alt="능동해냄" 
-                 style="background:#fff; object-fit:contain;"
-                 onerror="this.src='https://cdn-icons-png.flaticon.com/512/3468/3468306.png'">
-
-            <div class="brand-title">
-                <strong>미래엔수학 능동해냄</strong>
-                <span>학부모용 · 알림/출석/상담</span>
-            </div>
-        </div>
-
-        <div style="display:flex; align-items:center; gap:8px;">
-            <label class="admin-switch" style="margin:0; cursor:pointer;">
-                <input type="checkbox" id="adminToggle" onclick="toggleAdminMode()" style="width:auto; margin-right:6px;"> 선생님
-            </label>
-            <button class="admin-only" onclick="document.getElementById('settingsModal').style.display='flex'" 
-                style="border:none; background:white; width:36px; height:36px; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.1); color:#555;">
-                <i class="fas fa-cog"></i>
-            </button>
-        </div>
-    </header>    
-    <div class="tabs">
-        <button class="tab-btn active" onclick="showPage('register')"><i class="fas fa-user-plus"></i> 신규 등록</button>
-        <button class="tab-btn" onclick="showPage('list')"><i class="fas fa-users"></i> 원생 관리</button>
-        <button class="tab-btn" onclick="showPage('calendar')"><i class="fas fa-calendar-alt"></i> 학습 일정</button>
-        <button class="tab-btn admin-only" onclick="showPage('inbox')"><i class="fas fa-inbox"></i> 학부모 의견 <span id="inboxBadge" style="display:none; margin-left:6px; background:#ef4444; color:white; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:900;">0</span></button>
-    </div>
-
-    <div id="register" class="page active">
-        <div class="form-grid">
-            <div class="full-width">
-                <label>학생 사진</label>
-                <input type="file" id="regPhoto" accept="image/*">
-            </div>
-            <div>
-                <label>이름</label>
-                <input type="text" id="regName" placeholder="예: 김수학">
-            </div>
-            <div>
-                <label>생년월일</label>
-                <input type="date" id="regBirth">
-            </div>
-            <div>
-                <label>성별</label>
-                <select id="regGender">
-                    <option value="남">남자</option>
-                    <option value="여">여자</option>
-                </select>
-            </div>
-            <div>
-                <label>학교</label>
-                <input type="text" id="regSchool" placeholder="예: 능동초">
-            </div>
-            <div>
-                <label>학년/과정</label>
-                <select id="regGrade">
-                    <option value="미취학">미취학</option>
-                    <option value="초등1-2">초등 1~2학년</option>
-                    <option value="초등3-4">초등 3~4학년</option>
-                    <option value="초등5-6">초등 5~6학년</option>
-                    <option value="중등부">중등부</option>
-                    <option value="고등부">고등부</option>
-                </select>
-            </div>
-            <div class="full-width" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <div>
-                    <label style="color:var(--primary);">학부모 연락처 (알림용)</label>
-                    <input type="tel" id="regParentPhone" placeholder="01012345678">
-                </div>
-                <div>
-                    <label>학생 본인 연락처</label>
-                    <input type="tel" id="regStudentPhone" placeholder="01012345678">
-                </div>
-            </div>
-            <div class="full-width">
-                <label>주소</label>
-                <input type="text" id="regAddress" placeholder="주소를 입력하세요">
-            </div>
-            <div class="full-width">
-                <label>학습 특이사항 (진도, 성향 등)</label>
-                <textarea id="regNotes" rows="3" placeholder="상담 및 지도 시 참고할 사항"></textarea>
-            </div>
-        </div>
-        <button class="action-btn" id="addBtn">학생 등록하기</button>
-    </div>
-
-  <div id="list" class="page">
-        <div class="filter-container">
-            <div class="filter-row">
-                <span class="filter-label">과정</span>
-                <div class="filter-group" id="ageFilterGroup">
-                    <div class="filter-chip active" onclick="setGradeFilter('all', this)">전체</div>
-                    <div class="filter-chip" onclick="setGradeFilter('미취학', this)">미취학</div>
-                    <div class="filter-chip" onclick="setGradeFilter('초등', this)">초등부</div>
-                    <div class="filter-chip" onclick="setGradeFilter('중등', this)">중등부</div>
-                    <div class="filter-chip" onclick="setGradeFilter('고등', this)">고등부</div>
-                </div>
-            </div>
-            <div class="filter-row">
-                <span class="filter-label">검색</span>
-                <input type="text" id="searchKeyword" placeholder="이름 검색" onkeyup="filterList()" style="flex:1;">
-                <select id="schoolFilter" onchange="filterList()" style="width: auto; flex:1;">
-                    <option value="all">전체 학교</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="studentListArea">로딩중...</div>
-    </div>
-
-
-<div id="calendar" class="page">
-    <div class="calendar-controls">
-        <button class="cal-btn" onclick="changeCalDate(-1)"><i class="fas fa-chevron-left"></i></button>
-        <div class="current-date" id="calTitle"></div>
-        <button class="cal-btn" onclick="changeCalDate(1)"><i class="fas fa-chevron-right"></i></button>
-    </div>
-
-    <div class="filter-group" style="justify-content:center; margin-bottom:10px;">
-        <label><input type="checkbox" id="showSchedule" checked onchange="renderCalendar()"> 학원일정</label> &nbsp;
-        <label><input type="checkbox" id="showBirthday" checked onchange="renderCalendar()"> 생일</label>
-    </div>
-
-    <div class="calendar-grid">
-        <div class="day-name" style="color:var(--danger)">일</div><div class="day-name">월</div><div class="day-name">화</div>
-        <div class="day-name">수</div><div class="day-name">목</div><div class="day-name">금</div><div class="day-name" style="color:var(--primary)">토</div>
-    </div>
-    <div class="calendar-grid" id="calGrid"></div>
-
-<div id="dateDetailArea" style="margin-top:20px;">
-        <div class="view-mode-group">
-            <button class="view-mode-btn active" onclick="changeListView('day', this)">일간</button>
-            <button class="view-mode-btn" onclick="changeListView('week', this)">주간</button>
-            <button class="view-mode-btn" onclick="changeListView('month', this)">월간</button>
-            <button class="view-mode-btn" onclick="changeListView('year', this)">연간</button>
-        </div>
-
-        <h3 id="selectedDateText" style="font-size:15px; margin-bottom:10px; border-bottom:2px solid var(--primary); padding-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
-            <span>날짜를 선택하세요</span>
-            <button class="action-btn admin-only" id="addSchedBtn" onclick="openScheduleModal()" style="width:auto; margin:0; padding:5px 10px; font-size:12px; display:none;">+ 일정 등록</button>
-        </h3>
-
-        <div id="dailyEventList" style="max-height:300px; overflow-y:auto;"></div>
-    </div>
+<div class="kiosk-header" id="kioskHeader">
+<button class="k-filter-btn active" onclick="setKioskCategory('all', this)">전체</button>
+<button class="k-filter-btn" onclick="setKioskCategory('미취학', this)">미취학</button>
+<button class="k-filter-btn" onclick="setKioskCategory('초등', this)">초등부</button>
+<button class="k-filter-btn" onclick="setKioskCategory('중등', this)">중등부</button>
+<button class="k-filter-btn" onclick="setKioskCategory('고등', this)">고등부</button>
 </div>
-
+<header class="app-header app-header-compact">
+<div class="brand">
+<img alt="능동해냄" class="brand-mark" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3468/3468306.png'" src="nam-512.png" style="background:#fff; object-fit:contain;"/>
+<div class="brand-title">
+<strong>미래엔수학 능동해냄</strong>
+<span>학부모용 · 알림/출석/상담</span>
+</div>
+</div>
+<div class="header-actions" style="display:flex;">
+<label class="admin-switch switch-pill">
+<input class="switch-check" id="adminToggle" onclick="toggleAdminMode()" type="checkbox"/> 선생님
+            </label>
+<button class="admin-only icon-btn" onclick="document.getElementById('settingsModal').style.display='flex'">
+<i class="fas fa-cog"></i>
+</button>
+</div>
+</header><div class="quick-actions"><button class="quick-card" onclick="showPage('calendar')" type="button"><span class="quick-ic"><i class="fas fa-calendar-alt"></i></span><span class="quick-txt"><span class="quick-title">학습 일정</span><span class="quick-sub">주간 · 월간 · 연간 확인</span></span><span class="quick-go"><i class="fas fa-chevron-right"></i></span></button></div>
+<div class="tabs">
+<button class="tab-btn active" onclick="showPage('register')"><i class="fas fa-user-plus"></i> 신규 등록</button>
+<button class="tab-btn" onclick="showPage('list')"><i class="fas fa-users"></i> 원생 관리</button>
+<button class="tab-btn" onclick="showPage('calendar')"><i class="fas fa-calendar-alt"></i> 학습 일정</button>
+<button class="tab-btn admin-only" onclick="showPage('inbox')"><i class="fas fa-inbox"></i> 학부모 의견 <span id="inboxBadge" style="display:none; margin-left:6px; background:#ef4444; color:white; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:900;">0</span></button>
+</div>
+<div class="page active" id="register">
+<div class="form-grid">
+<div class="full-width">
+<label>학생 사진</label>
+<input accept="image/*" id="regPhoto" type="file"/>
+</div>
+<div>
+<label>이름</label>
+<input id="regName" placeholder="예: 김수학" type="text"/>
+</div>
+<div>
+<label>생년월일</label>
+<input id="regBirth" type="date"/>
+</div>
+<div>
+<label>성별</label>
+<select id="regGender">
+<option value="남">남자</option>
+<option value="여">여자</option>
+</select>
+</div>
+<div>
+<label>학교</label>
+<input id="regSchool" placeholder="예: 능동초" type="text"/>
+</div>
+<div>
+<label>학년/과정</label>
+<select id="regGrade">
+<option value="미취학">미취학</option>
+<option value="초등1-2">초등 1~2학년</option>
+<option value="초등3-4">초등 3~4학년</option>
+<option value="초등5-6">초등 5~6학년</option>
+<option value="중등부">중등부</option>
+<option value="고등부">고등부</option>
+</select>
+</div>
+<div class="full-width" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+<div>
+<label style="color:var(--primary);">학부모 연락처 (알림용)</label>
+<input id="regParentPhone" placeholder="01012345678" type="tel"/>
+</div>
+<div>
+<label>학생 본인 연락처</label>
+<input id="regStudentPhone" placeholder="01012345678" type="tel"/>
+</div>
+</div>
+<div class="full-width">
+<label>주소</label>
+<input id="regAddress" placeholder="주소를 입력하세요" type="text"/>
+</div>
+<div class="full-width">
+<label>학습 특이사항 (진도, 성향 등)</label>
+<textarea id="regNotes" placeholder="상담 및 지도 시 참고할 사항" rows="3"></textarea>
+</div>
+</div>
+<button class="action-btn" id="addBtn">학생 등록하기</button>
+</div>
+<div class="page" id="list">
+<div class="filter-container">
+<div class="filter-row">
+<span class="filter-label">과정</span>
+<div class="filter-group" id="ageFilterGroup">
+<div class="filter-chip active" onclick="setGradeFilter('all', this)">전체</div>
+<div class="filter-chip" onclick="setGradeFilter('미취학', this)">미취학</div>
+<div class="filter-chip" onclick="setGradeFilter('초등', this)">초등부</div>
+<div class="filter-chip" onclick="setGradeFilter('중등', this)">중등부</div>
+<div class="filter-chip" onclick="setGradeFilter('고등', this)">고등부</div>
+</div>
+</div>
+<div class="filter-row">
+<span class="filter-label">검색</span>
+<input id="searchKeyword" onkeyup="filterList()" placeholder="이름 검색" style="flex:1;" type="text"/>
+<select id="schoolFilter" onchange="filterList()" style="width: auto; flex:1;">
+<option value="all">전체 학교</option>
+</select>
+</div>
+</div>
+<div id="studentListArea">로딩중...</div>
+</div>
+<div class="page" id="calendar">
+<div class="calendar-controls">
+<button class="cal-btn" onclick="changeCalDate(-1)"><i class="fas fa-chevron-left"></i></button>
+<div class="current-date" id="calTitle"></div>
+<button class="cal-btn" onclick="changeCalDate(1)"><i class="fas fa-chevron-right"></i></button>
+</div>
+<div class="filter-group" style="justify-content:center; margin-bottom:10px;">
+<label><input checked="" id="showSchedule" onchange="renderCalendar()" type="checkbox"/> 학원일정</label>  
+        <label><input checked="" id="showBirthday" onchange="renderCalendar()" type="checkbox"/> 생일</label>
+</div>
+<div class="calendar-grid">
+<div class="day-name" style="color:var(--danger)">일</div><div class="day-name">월</div><div class="day-name">화</div>
+<div class="day-name">수</div><div class="day-name">목</div><div class="day-name">금</div><div class="day-name" style="color:var(--primary)">토</div>
+</div>
+<div class="calendar-grid" id="calGrid"></div>
+<div id="dateDetailArea" style="margin-top:20px;">
+<div class="view-mode-group">
+<button class="view-mode-btn active" onclick="changeListView('day', this)">일간</button>
+<button class="view-mode-btn" onclick="changeListView('week', this)">주간</button>
+<button class="view-mode-btn" onclick="changeListView('month', this)">월간</button>
+<button class="view-mode-btn" onclick="changeListView('year', this)">연간</button>
+</div>
+<h3 id="selectedDateText" style="font-size:15px; margin-bottom:10px; border-bottom:2px solid var(--primary); padding-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+<span>날짜를 선택하세요</span>
+<button class="action-btn admin-only" id="addSchedBtn" onclick="openScheduleModal()" style="width:auto; margin:0; padding:5px 10px; font-size:12px; display:none;">+ 일정 등록</button>
+</h3>
+<div id="dailyEventList" style="max-height:300px; overflow-y:auto;"></div>
+</div>
+</div>
 <!-- ===========================
      학부모 의견함 (선생님 전용)
      =========================== -->
-<div id="inbox" class="page">
-    <div class="card" style="margin-top:10px;">
-        <h3 style="margin:0 0 6px 0;">📨 학부모 의견함</h3>
-        <div style="font-size:13px; color:#64748b; line-height:1.5;">
+<div class="page" id="inbox">
+<div class="card" style="margin-top:10px;">
+<h3 style="margin:0 0 6px 0;">📨 학부모 의견함</h3>
+<div style="font-size:13px; color:#64748b; line-height:1.5;">
             학부모가 <b>parent.html</b>에서 보낸 메시지가 여기 모입니다.
-            <br>각 메시지에서 <b>학생 열기</b>를 눌러 바로 해당 학생 상세로 이동할 수 있습니다.
+            <br/>각 메시지에서 <b>학생 열기</b>를 눌러 바로 해당 학생 상세로 이동할 수 있습니다.
         </div>
-    </div>
-    <div class="card">
-        <div id="inboxList" style="max-height:520px; overflow-y:auto;"></div>
-    </div>
 </div>
-
+<div class="card">
+<div id="inboxList" style="max-height:520px; overflow-y:auto;"></div>
+</div>
+</div>
 <div class="modal-overlay" id="scheduleModal">
-    <div class="modal" style="max-width:340px;">
-        <h3 id="schedModalTitle" style="margin-top:0;">📅 일정 관리</h3>
-
-        <div style="margin-bottom:15px;">
-            <label style="margin-bottom:5px;">등록된 일정</label>
-            <div id="popupSchedList" style="background:#f1f5f9; padding:10px; border-radius:8px; min-height:50px; max-height:120px; overflow-y:auto; font-size:13px;">
-                </div>
-        </div>
-
-        <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
-
-        <label>날짜 선택</label>
-        <input type="date" id="schedDate" style="margin-bottom:10px;">
-
-        <label>일정 내용</label>
-        <input type="hidden" id="schedId"> <input type="text" id="schedTitle" placeholder="새 내용을 입력하거나 위 목록을 클릭" style="margin-bottom:15px;">
-
-        <div class="modal-btn-group" style="display:flex; gap:8px;">
-            <button class="action-btn" onclick="saveSchedule()" style="margin:0; flex:2;">저장/추가</button>
-            <button class="action-btn" onclick="deleteSchedule()" id="btnDelSched" style="margin:0; flex:1; background:var(--danger); display:none;">삭제</button>
-            <button class="action-btn" onclick="document.getElementById('scheduleModal').style.display='none'" style="margin:0; flex:1; background:#94a3b8;">닫기</button>
-        </div>
-    </div>
+<div class="modal" style="max-width:340px;">
+<h3 id="schedModalTitle" style="margin-top:0;">📅 일정 관리</h3>
+<div style="margin-bottom:15px;">
+<label style="margin-bottom:5px;">등록된 일정</label>
+<div id="popupSchedList" style="background:#f1f5f9; padding:10px; border-radius:8px; min-height:50px; max-height:120px; overflow-y:auto; font-size:13px;">
 </div>
-
-      <div class="modal-overlay" id="detailModal">
-    <div class="modal">
-        <button class="close-btn" onclick="closeModal()">×</button>
-
-        <div class="modal-header-fixed">
-            <div style="text-align:center;">
-                <div style="width:70px; height:70px; margin:0 auto 10px; position:relative;" onclick="triggerPhotoEdit()">
-                    <img id="modalImg" src="" style="width:100%; height:100%; border-radius:24px; object-fit:cover; border:1px solid #e2e8f0; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
-                    <div class="admin-only" style="position:absolute; bottom:-5px; right:-5px; background:#3b82f6; color:white; width:24px; height:24px; line-height:24px; text-align:center; border-radius:50%; font-size:12px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-                        <i class="fas fa-camera"></i>
-                    </div>
-                </div>
-                <h2 id="modalName" style="margin:0 0 4px 0; font-size:18px; color:#1e293b;"></h2>
-                <div id="modalInfo" style="color:#64748b; font-size:13px; margin-bottom:12px;"></div>
-
-                <div class="contact-row" style="margin-bottom:5px;">
-                    <div class="contact-group">
-                        <span class="contact-label" style="font-size:11px; color:#94a3b8; margin-right:4px;">학생</span>
-                        <a id="linkCallStu" class="contact-btn btn-call" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-phone"></i></a>
-                        <a id="linkSmsStu" class="contact-btn btn-sms" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment-dots"></i></a>
-                        <a id="linkKakaoStu" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('student')" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment"></i></a>
-                    </div>
-                    <div style="width:1px; height:15px; background:#e2e8f0; margin:0 5px;"></div>
-                    <div class="contact-group">
-                        <span class="contact-label" style="font-size:11px; color:#94a3b8; margin-right:4px;">부모</span>
-                        <a id="linkCallPar" class="contact-btn btn-call" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-phone"></i></a>
-                        <a id="linkSmsPar" class="contact-btn btn-sms" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment-dots"></i></a>
-                        <a id="linkKakaoPar" class="contact-btn btn-kakao" onclick="sendKakaoToTarget('parent')" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment"></i></a>
-                    </div>
-                </div>
-                <input type="file" id="editPhotoInput" accept="image/*" style="display:none;" onchange="previewEditPhoto()">
-            </div>
-        </div>
-
-        <div class="modal-tab-nav" style="margin-top:10px;">
-            <button class="modal-tab-btn active" onclick="switchModalTab('tabDaily', this)">📋 학습/출석</button>
-            <button class="modal-tab-btn" onclick="switchModalTab('tabScore', this)">📈 성적/기록</button>
-            <button class="modal-tab-btn" onclick="switchModalTab('tabInfo', this)">⚙️ 정보/정산</button>
-        </div>
-
-        <div class="modal-body-scroll">
-            
-            <div id="tabDaily" class="modal-tab-pane active">
-    <div class="stat-box" style="margin: 0 0 15px 0; background:white;">
-        <div class="stat-item"><div class="stat-num" id="statMonth">0회</div><div style="font-size:12px; color:#64748b;">이번달 등원</div></div>
-        <div style="width:1px; height:30px; background:#eee;"></div>
-        <div class="stat-item"><div class="stat-num" id="statTotal">0회</div><div style="font-size:12px; color:#64748b;">총 누적 등원</div></div>
-    </div>
-
-    <div class="info-box" style="background:#fffbeb; border-color:#fcd34d;">
-        <h4 style="color:#d97706; border-color:#fde68a;"><i class="fas fa-bullhorn"></i> 오늘의 알림장 (학부모 전송)</h4>
-        
-        <textarea id="dailyProgress" rows="3" placeholder="오늘 공부한 내용이나 전달사항을 입력하세요." style="background:white; border:1px solid #fde68a; margin-bottom:8px;"></textarea>
-        
-        <div id="noticePreview" style="display:none; background:white; padding:10px; border:1px solid #fcd34d; font-size:13px; white-space:pre-wrap; margin-bottom:8px; color:#333; border-radius:6px;"></div>
-
-        <div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
-            <button class="action-btn" onclick="generateNotice()" style="background:#f59e0b; margin:0; font-size:13px; padding:12px 0;">📝 문구 생성</button>
-            <button class="action-btn" onclick="sendNoticeSms()" style="background:#22c55e; margin:0; font-size:13px; padding:12px 0;"><i class="fas fa-envelope"></i> 문자</button>
-            <button class="action-btn" onclick="sendNoticeKakao()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:12px 0;"><i class="fas fa-comment"></i> 카톡</button>
-        </div>
-    </div>
 </div>
-
-            <div id="tabScore" class="modal-tab-pane">
-                <div class="info-box">
-                    <h4>💬 상담 및 지도 기록</h4>
-                    <div class="admin-only" style="display:flex; gap:6px; margin-bottom:10px;">
-                        <input type="text" id="newCounsel" placeholder="상담 내용을 입력하세요" style="flex:1;">
-                        <button class="action-btn" onclick="addCounselLog()" style="width:60px; margin:0; background:#3b82f6;">등록</button>
-                    </div>
-                    <div id="modalCounselLog" style="max-height:150px; overflow-y:auto; border:1px solid #f1f5f9; background:#f8fafc; padding:10px; border-radius:8px;"></div>
-                </div>
-
-                <div class="info-box">
-                    <h4 style="display:flex; justify-content:space-between; align-items:center;">
+<hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;"/>
+<label>날짜 선택</label>
+<input id="schedDate" style="margin-bottom:10px;" type="date"/>
+<label>일정 내용</label>
+<input id="schedId" type="hidden"/> <input id="schedTitle" placeholder="새 내용을 입력하거나 위 목록을 클릭" style="margin-bottom:15px;" type="text"/>
+<div class="modal-btn-group" style="display:flex; gap:8px;">
+<button class="action-btn" onclick="saveSchedule()" style="margin:0; flex:2;">저장/추가</button>
+<button class="action-btn" id="btnDelSched" onclick="deleteSchedule()" style="margin:0; flex:1; background:var(--danger); display:none;">삭제</button>
+<button class="action-btn" onclick="document.getElementById('scheduleModal').style.display='none'" style="margin:0; flex:1; background:#94a3b8;">닫기</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="detailModal">
+<div class="modal">
+<button class="close-btn" onclick="closeModal()">×</button>
+<div class="modal-header-fixed">
+<div style="text-align:center;">
+<div onclick="triggerPhotoEdit()" style="width:70px; height:70px; margin:0 auto 10px; position:relative;">
+<img id="modalImg" src="" style="width:100%; height:100%; border-radius:24px; object-fit:cover; border:1px solid #e2e8f0; box-shadow:0 4px 10px rgba(0,0,0,0.05);"/>
+<div class="admin-only" style="position:absolute; bottom:-5px; right:-5px; background:#3b82f6; color:white; width:24px; height:24px; line-height:24px; text-align:center; border-radius:50%; font-size:12px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+<i class="fas fa-camera"></i>
+</div>
+</div>
+<h2 id="modalName" style="margin:0 0 4px 0; font-size:18px; color:#1e293b;"></h2>
+<div id="modalInfo" style="color:#64748b; font-size:13px; margin-bottom:12px;"></div>
+<div class="contact-row" style="margin-bottom:5px;">
+<div class="contact-group">
+<span class="contact-label" style="font-size:11px; color:#94a3b8; margin-right:4px;">학생</span>
+<a class="contact-btn btn-call" id="linkCallStu" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-phone"></i></a>
+<a class="contact-btn btn-sms" id="linkSmsStu" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment-dots"></i></a>
+<a class="contact-btn btn-kakao" id="linkKakaoStu" onclick="sendKakaoToTarget('student')" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment"></i></a>
+</div>
+<div style="width:1px; height:15px; background:#e2e8f0; margin:0 5px;"></div>
+<div class="contact-group">
+<span class="contact-label" style="font-size:11px; color:#94a3b8; margin-right:4px;">부모</span>
+<a class="contact-btn btn-call" id="linkCallPar" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-phone"></i></a>
+<a class="contact-btn btn-sms" id="linkSmsPar" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment-dots"></i></a>
+<a class="contact-btn btn-kakao" id="linkKakaoPar" onclick="sendKakaoToTarget('parent')" style="width:32px; height:32px; font-size:13px;"><i class="fas fa-comment"></i></a>
+</div>
+</div>
+<input accept="image/*" id="editPhotoInput" onchange="previewEditPhoto()" style="display:none;" type="file"/>
+</div>
+</div>
+<div class="modal-tab-nav" style="margin-top:10px;">
+<button class="modal-tab-btn active" onclick="switchModalTab('tabDaily', this)">📋 학습/출석</button>
+<button class="modal-tab-btn" onclick="switchModalTab('tabScore', this)">📈 성적/기록</button>
+<button class="modal-tab-btn" onclick="switchModalTab('tabInfo', this)">⚙️ 정보/정산</button>
+</div>
+<div class="modal-body-scroll">
+<div class="modal-tab-pane active" id="tabDaily">
+<div class="stat-box" style="margin: 0 0 15px 0; background:white;">
+<div class="stat-item"><div class="stat-num" id="statMonth">0회</div><div style="font-size:12px; color:#64748b;">이번달 등원</div></div>
+<div style="width:1px; height:30px; background:#eee;"></div>
+<div class="stat-item"><div class="stat-num" id="statTotal">0회</div><div style="font-size:12px; color:#64748b;">총 누적 등원</div></div>
+</div>
+<div class="info-box" style="background:#fffbeb; border-color:#fcd34d;">
+<h4 style="color:#d97706; border-color:#fde68a;"><i class="fas fa-bullhorn"></i> 오늘의 알림장 (학부모 전송)</h4>
+<textarea id="dailyProgress" placeholder="오늘 공부한 내용이나 전달사항을 입력하세요." rows="3" style="background:white; border:1px solid #fde68a; margin-bottom:8px;"></textarea>
+<div id="noticePreview" style="display:none; background:white; padding:10px; border:1px solid #fcd34d; font-size:13px; white-space:pre-wrap; margin-bottom:8px; color:#333; border-radius:6px;"></div>
+<div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+<button class="action-btn" onclick="generateNotice()" style="background:#f59e0b; margin:0; font-size:13px; padding:12px 0;">📝 문구 생성</button>
+<button class="action-btn" onclick="sendNoticeSms()" style="background:#22c55e; margin:0; font-size:13px; padding:12px 0;"><i class="fas fa-envelope"></i> 문자</button>
+<button class="action-btn" onclick="sendNoticeKakao()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:12px 0;"><i class="fas fa-comment"></i> 카톡</button>
+</div>
+</div>
+</div>
+<div class="modal-tab-pane" id="tabScore">
+<div class="info-box">
+<h4>💬 상담 및 지도 기록</h4>
+<div class="admin-only" style="display:flex; gap:6px; margin-bottom:10px;">
+<input id="newCounsel" placeholder="상담 내용을 입력하세요" style="flex:1;" type="text"/>
+<button class="action-btn" onclick="addCounselLog()" style="width:60px; margin:0; background:#3b82f6;">등록</button>
+</div>
+<div id="modalCounselLog" style="max-height:150px; overflow-y:auto; border:1px solid #f1f5f9; background:#f8fafc; padding:10px; border-radius:8px;"></div>
+</div>
+<div class="info-box">
+<h4 style="display:flex; justify-content:space-between; align-items:center;">
                         📈 성적 관리 
                         <button onclick="document.getElementById('scoreInputArea').style.display = document.getElementById('scoreInputArea').style.display=='none'?'block':'none'" style="font-size:11px; padding:4px 8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer;">입력창 열기</button>
-                    </h4>
-                    
-                    <div id="scoreInputArea" class="admin-only" style="display:none; background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
-                        <div class="score-input-group" style="display:flex; gap:5px;">
-                            <input type="text" id="scoreTitle" placeholder="시험명(예: 3월모의)" style="flex:2;">
-                            <input type="number" id="scoreValue" placeholder="점수" style="flex:1;">
-                            <button onclick="addScore()" style="background:#7b1fa2; color:white; border:none; border-radius:6px; width:50px;">추가</button>
-                        </div>
-                    </div>
-
-                    <div class="chart-container" style="height:180px; margin-bottom:10px;">
-                        <canvas id="scoreChart"></canvas>
-                    </div>
-                    <div id="scoreList" style="max-height:120px; overflow-y:auto; font-size:12px;"></div>
-                </div>
-            </div>
-
-            <div id="tabInfo" class="modal-tab-pane">
-                
-                <div class="info-box" style="background:#f0f9ff; border-color:#bae6fd;">
-                    <h4 style="color:#0369a1; border-color:#e0f2fe;"><i class="fas fa-file-invoice-dollar"></i> 교육비 정산 안내</h4>
-                    <div style="font-size:12px; color:#555; margin-bottom:8px;">
+</h4>
+<div class="admin-only" id="scoreInputArea" style="display:none; background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+<div class="score-input-group" style="display:flex; gap:5px;">
+<input id="scoreTitle" placeholder="시험명(예: 3월모의)" style="flex:2;" type="text"/>
+<input id="scoreValue" placeholder="점수" style="flex:1;" type="number"/>
+<button onclick="addScore()" style="background:#7b1fa2; color:white; border:none; border-radius:6px; width:50px;">추가</button>
+</div>
+</div>
+<div class="chart-container" style="height:180px; margin-bottom:10px;">
+<canvas id="scoreChart"></canvas>
+</div>
+<div id="scoreList" style="max-height:120px; overflow-y:auto; font-size:12px;"></div>
+</div>
+</div>
+<div class="modal-tab-pane" id="tabInfo">
+<div class="info-box" style="background:#f0f9ff; border-color:#bae6fd;">
+<h4 style="color:#0369a1; border-color:#e0f2fe;"><i class="fas fa-file-invoice-dollar"></i> 교육비 정산 안내</h4>
+<div style="font-size:12px; color:#555; margin-bottom:8px;">
                         이번 달 출석일수와 안내 문구를 자동으로 생성합니다.
                     </div>
-                    <div id="settlementPreview" style="background:white; padding:10px; border:1px solid #bae6fd; font-size:12px; white-space:pre-wrap; margin-bottom:8px; color:#333; min-height:60px; border-radius:6px;"></div>
-                    <div class="modal-action-row" style="display:flex; gap:8px;">
-                        <button onclick="generateSettlement()" class="action-btn" style="flex:1; background:#0ea5e9; font-size:13px; margin:0;">문구 생성</button>
-                        <button onclick="copyText('settlementPreview')" class="action-btn" style="flex:1; background:#0284c7; font-size:13px; margin:0;">내용 복사</button>
-                    </div>
-                </div>
-
-                <div class="info-box admin-only">
-                    <h4>⚙️ 학생 정보 수정</h4>
-                    
-                    <div id="modalEditForm">
-                        <input type="hidden" id="editId">
-                        
-                        <div class="full-row">
-                            <label>이름</label>
-                            <input type="text" id="editName">
-                        </div>
-                        
-                        <div>
-                            <label>학교</label>
-                            <input type="text" id="editSchool">
-                        </div>
-                        <div>
-                            <label>학년/과정</label>
-                            <select id="editGrade"> 
-                                <option value="미취학">미취학</option><option value="초등1-2">초등 1~2학년</option>
-                                <option value="초등3-4">초등 3~4학년</option><option value="초등5-6">초등 5~6학년</option>
-                                <option value="중등부">중등부</option><option value="고등부">고등부</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label>생년월일</label>
-                            <input type="date" id="editBirth">
-                        </div>
-                        <div>
-                            <label>성별</label>
-                            <select id="editGender"><option value="남">남</option><option value="여">여</option></select>
-                        </div>
-
-                        <div class="full-row">
-                            <label>부모님 연락처</label>
-                            <input type="tel" id="editParentPhone">
-                        </div>
-                        <div class="full-row">
-                            <label>학생 연락처</label>
-                            <input type="tel" id="editStudentPhone">
-                        </div>
-                        <div class="full-row">
-                            <label>특이사항 (메모)</label>
-                            <textarea id="editNotes" rows="2"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="modal-action-row" style="margin-top:15px; display:flex; gap:10px;">
-                        <button class="action-btn" onclick="saveEdit()" style="background:#3b82f6; margin:0; flex:2;">저장하기</button>
-                        <button class="action-btn" onclick="deleteStudent()" style="background:#ef4444; margin:0; flex:1;">삭제</button>
-                    </div>
-                </div>
-                
-            </div> </div> </div>
+<div id="settlementPreview" style="background:white; padding:10px; border:1px solid #bae6fd; font-size:12px; white-space:pre-wrap; margin-bottom:8px; color:#333; min-height:60px; border-radius:6px;"></div>
+<div class="modal-action-row" style="display:flex; gap:8px;">
+<button class="action-btn" onclick="generateSettlement()" style="flex:1; background:#0ea5e9; font-size:13px; margin:0;">문구 생성</button>
+<button class="action-btn" onclick="copyText('settlementPreview')" style="flex:1; background:#0284c7; font-size:13px; margin:0;">내용 복사</button>
 </div>
-
+</div>
+<div class="info-box admin-only">
+<h4>⚙️ 학생 정보 수정</h4>
+<div id="modalEditForm">
+<input id="editId" type="hidden"/>
+<div class="full-row">
+<label>이름</label>
+<input id="editName" type="text"/>
+</div>
+<div>
+<label>학교</label>
+<input id="editSchool" type="text"/>
+</div>
+<div>
+<label>학년/과정</label>
+<select id="editGrade">
+<option value="미취학">미취학</option><option value="초등1-2">초등 1~2학년</option>
+<option value="초등3-4">초등 3~4학년</option><option value="초등5-6">초등 5~6학년</option>
+<option value="중등부">중등부</option><option value="고등부">고등부</option>
+</select>
+</div>
+<div>
+<label>생년월일</label>
+<input id="editBirth" type="date"/>
+</div>
+<div>
+<label>성별</label>
+<select id="editGender"><option value="남">남</option><option value="여">여</option></select>
+</div>
+<div class="full-row">
+<label>부모님 연락처</label>
+<input id="editParentPhone" type="tel"/>
+</div>
+<div class="full-row">
+<label>학생 연락처</label>
+<input id="editStudentPhone" type="tel"/>
+</div>
+<div class="full-row">
+<label>특이사항 (메모)</label>
+<textarea id="editNotes" rows="2"></textarea>
+</div>
+</div>
+<div class="modal-action-row" style="margin-top:15px; display:flex; gap:10px;">
+<button class="action-btn" onclick="saveEdit()" style="background:#3b82f6; margin:0; flex:2;">저장하기</button>
+<button class="action-btn" onclick="deleteStudent()" style="background:#ef4444; margin:0; flex:1;">삭제</button>
+</div>
+</div>
+</div> </div> </div>
+</div>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, getDocs, query, where, addDoc, serverTimestamp, doc, onSnapshot, updateDoc, deleteDoc, arrayUnion, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -2692,36 +2864,34 @@ startRealtimeListeners();
         else window.showPage('calendar');
     };
 </script>
-<div id="toast" class="toast" aria-live="polite" aria-atomic="true">
-    <span class="dot"></span><span id="toastText"></span>
+<div aria-atomic="true" aria-live="polite" class="toast" id="toast">
+<span class="dot"></span><span id="toastText"></span>
 </div>
-
 <div class="modal-overlay" id="settingsModal">
-    <div class="modal" style="max-width:340px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-            <h3 style="margin:0;">⚙️ 관리자 설정</h3>
-            <button onclick="document.getElementById('settingsModal').style.display='none'" style="border:none; background:none; font-size:20px;">&times;</button>
-        </div>
-
-        <div style="display:grid; gap:10px;">
-            <button class="action-btn" onclick="startKioskMode()" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; box-shadow:none;">
-                <i class="fas fa-tablet-alt"></i> 출석부 모드 시작
-            </button>
-            <button class="action-btn" onclick="downloadExcel()" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; box-shadow:none;">
-                <i class="fas fa-file-excel"></i> 엑셀 명단 저장
-            </button>
-            <button class="action-btn" onclick="downloadBackup()" style="background:#eff6ff; color:#1d4ed8; border:1px solid #93c5fd; box-shadow:none;">
-                <i class="fas fa-download"></i> 데이터 백업 (JSON)
-            </button>
-            <button class="action-btn" onclick="document.getElementById('restoreInput').click()" style="background:#faf5ff; color:#7e22ce; border:1px solid #d8b4fe; box-shadow:none;">
-                <i class="fas fa-upload"></i> 데이터 복구
-            </button>
-            <button class="action-btn" onclick="changeAdminPassword()" style="background:#fff1f2; color:#be123c; border:1px solid #fda4af; box-shadow:none;">
-                <i class="fas fa-key"></i> 관리자 비번 변경
-            </button>
-        </div>
-        <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
-    </div>
+<div class="modal" style="max-width:340px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+<h3 style="margin:0;">⚙️ 관리자 설정</h3>
+<button onclick="document.getElementById('settingsModal').style.display='none'" style="border:none; background:none; font-size:20px;">×</button>
 </div>
-</body>
+<div style="display:grid; gap:10px;">
+<button class="action-btn" onclick="startKioskMode()" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; box-shadow:none;">
+<i class="fas fa-tablet-alt"></i> 출석부 모드 시작
+            </button>
+<button class="action-btn" onclick="downloadExcel()" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; box-shadow:none;">
+<i class="fas fa-file-excel"></i> 엑셀 명단 저장
+            </button>
+<button class="action-btn" onclick="downloadBackup()" style="background:#eff6ff; color:#1d4ed8; border:1px solid #93c5fd; box-shadow:none;">
+<i class="fas fa-download"></i> 데이터 백업 (JSON)
+            </button>
+<button class="action-btn" onclick="document.getElementById('restoreInput').click()" style="background:#faf5ff; color:#7e22ce; border:1px solid #d8b4fe; box-shadow:none;">
+<i class="fas fa-upload"></i> 데이터 복구
+            </button>
+<button class="action-btn" onclick="changeAdminPassword()" style="background:#fff1f2; color:#be123c; border:1px solid #fda4af; box-shadow:none;">
+<i class="fas fa-key"></i> 관리자 비번 변경
+            </button>
+</div>
+<input accept=".json" id="restoreInput" onchange="restoreData(event)" style="display:none" type="file"/>
+</div>
+</div>
+</div></body>
 </html>
