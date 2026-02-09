@@ -22,132 +22,172 @@
    - Tablet kiosk: big, tappable 3D attendance cards
    ========================================================= */
 
-:root{
-  --brand-blue:#3B82F6;
-  --brand-blue-700:#1D4ED8;
-  --brand-blue-soft:#EFF6FF;
-
-  --brand-yellow:#FACC15;
-  --brand-yellow-soft:#FEF9C3;
-
-  --ink:#0F172A;
-  --ink-sub:#475569;
-
-  --bg:#F8FAFC;
-  --card:#FFFFFF;
-
-  --line: rgba(15,23,42,.08);
-  --shadow: 0 10px 30px rgba(15,23,42,.08);
-  --shadow-soft: 0 6px 16px rgba(15,23,42,.08);
-
-  --success:#22C55E;
-  --warning:#F59E0B;
-  --danger:#EF4444;
-
-  --r-lg: 22px;
-  --r-md: 16px;
-  --r-sm: 12px;
-
-  --tap: 48px;
+:root {
+  --brand-main: #5C9DFF;      /* 다정한 하늘색 */
+  --brand-sub: #FFD25D;       /* 따뜻한 망고 옐로우 */
+  --brand-soft: #F0F7FF;      /* 연한 파스텔 블루 */
+  --brand-warm: #FFF9EB;      /* 포근한 베이지 */
+  
+  --ink: #334155;             /* 부드러운 먹색 */
+  --ink-sub: #64748B;
+  
+  --bg: #FDFDFD;
+  --card: #FFFFFF;
+  
+  --r-xl: 30px;               /* 아주 둥근 모서리 */
+  --r-lg: 24px;
+  --r-md: 18px;
+  
+  --shadow-warm: 0 12px 24px rgba(92, 157, 255, 0.08);
+  --shadow-soft: 0 8px 16px rgba(0, 0, 0, 0.04);
 }
 
-*{ box-sizing:border-box; }
-html,body{ height:100%; }
-body{
-  margin:0;
-  font-family:'Pretendard', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: radial-gradient(1200px 600px at 30% -10%, #DBEAFE 0%, rgba(219,234,254,0) 60%),
-              radial-gradient(900px 500px at 90% 10%, #FEF9C3 0%, rgba(254,249,195,0) 55%),
-              var(--bg);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
- padding: 14px 12px 160px; 
+body {
+  margin: 0;
+  font-family: 'Pretendard', sans-serif;
+  /* 구름 위 같은 부드러운 그라데이션 */
+  background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 50%, #FFF9EB 100%);
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  padding: 10px 10px 100px;
 }
 
-.container{
+/* ----- 따스한 컨테이너 ----- */
+.container {
   max-width: 860px;
   margin: 0 auto;
-  background: rgba(255,255,255,.72);
-  border: 1px solid rgba(255,255,255,.6);
-  backdrop-filter: blur(14px);
-  border-radius: calc(var(--r-lg) + 6px);
-  box-shadow: var(--shadow);
-  padding: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border-radius: var(--r-xl);
+  border: 2px solid #FFFFFF;
+  box-shadow: var(--shadow-warm);
+  padding: 15px;
 }
 
-/* ----- Header (Brand) ----- */
-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding: 10px 10px 14px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 12px;
+/* ----- 헤더: 브랜드 로고 강조 ----- */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 10px;
+  margin-bottom: 15px;
 }
 
-.brand{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  min-width:0;
+.brand-mark {
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 20px !important;
+  border: 3px solid #FFF;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.08);
 }
-.brand-mark{
-  width: 38px;
-  height: 38px;
+
+.brand-title strong {
+  font-size: 22px !important;
+  color: #2C5282; /* 조금 더 깊은 블루 */
+}
+
+/* ----- 정감있는 탭 메뉴 ----- */
+.tabs {
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.85);
+  padding: 10px;
+  border-radius: var(--r-md);
+  margin-bottom: 20px;
+  display: flex;
+  gap: 8px;
+  border: 1px solid rgba(92, 157, 255, 0.1);
+}
+
+.tab-btn {
   border-radius: 14px;
-  object-fit: cover;
-  box-shadow: 0 8px 20px rgba(59,130,246,.18);
-  background: #fff;
-  border: 1px solid rgba(15,23,42,.06);
-}
-.brand-title{
-  display:flex;
-  flex-direction:column;
-  min-width:0;
-}
-.brand-title strong{
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: -0.2px;
-  line-height: 1.1;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.brand-title span{
-  font-size: 12px;
+  font-weight: 700;
   color: var(--ink-sub);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  background: transparent;
+  transition: all 0.2s;
 }
 
-.admin-switch{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.65);
-  border: 1px solid rgba(15,23,42,.06);
-  box-shadow: 0 6px 16px rgba(15,23,42,.06);
-  font-size: 12px;
-  color: var(--ink-sub);
+.tab-btn.active {
+  background: var(--brand-main);
+  color: white;
+  box-shadow: 0 6px 12px rgba(92, 157, 255, 0.3);
+  transform: translateY(-2px);
 }
-.admin-switch input{ transform: translateY(1px); }
-#btnKioskStart{
-  display:none;
-  border:none;
-  border-radius: 999px;
-  padding: 10px 12px;
+
+/* ----- 원생 카드: 둥글고 깨끗하게 ----- */
+.student-card {
+  background: #FFF;
+  border-radius: var(--r-lg) !important;
+  border: 1.5px solid #F1F5F9;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.student-card:hover {
+  border-color: var(--brand-main);
+  transform: translateY(-5px);
+}
+
+.profile-wrapper {
+  width: 90px !important;
+  height: 90px !important;
+  border: 4px solid var(--brand-soft);
+}
+
+.profile-img {
+  border-radius: 18px !important;
+}
+
+/* ----- 키오스크 모드: 아이들을 위한 '칭찬도장' 스타일 ----- */
+body.kiosk-mode .student-card {
+  background: var(--brand-warm);
+  border: none;
+  height: 340px;
+}
+
+/* 등원 완료 시 풍선껌 같은 초록색 */
+body.kiosk-mode .student-card.arrived {
+  background: #E8F9F1;
+  border: 4px solid #4ADE80;
+}
+
+.k-filter-btn {
+  background: #FFF;
+  border: 2px solid #E2E8F0;
+  border-radius: 15px;
+  padding: 12px 20px;
   font-weight: 800;
-  color:#0F172A;
-  background: linear-gradient(180deg, #FEF9C3 0%, #FDE68A 100%);
-  box-shadow: 0 8px 18px rgba(250,204,21,.25);
-  cursor:pointer;
 }
 
+.k-filter-btn.active {
+  background: var(--brand-sub);
+  border-color: #F59E0B;
+  color: #78350F;
+}
+
+/* ----- 알림장/상담 박스 ----- */
+.info-box {
+  background: var(--brand-warm);
+  border: 1px solid #FEF3C7;
+  border-radius: var(--r-md);
+  padding: 20px;
+}
+
+.info-box h4 {
+  color: #B45309;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ----- 버튼 디자인: 통통 튀는 느낌 ----- */
+.action-btn {
+  border-radius: 18px !important;
+  background: linear-gradient(135deg, var(--brand-main) 0%, #3B82F6 100%) !important;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
 /* ----- Pages / Tabs ----- */
 .page{ display:none; animation: fadeIn .2s ease; }
 .page.active{ display:block; }
@@ -2012,13 +2052,44 @@ header, .header{
 <div class="stat-item"><div class="stat-num" id="statTotal">0회</div><div style="font-size:12px; color:#64748b;">총 누적 등원</div></div>
 </div>
 <div class="info-box" style="background:#fffbeb; border-color:#fcd34d;">
-<h4 style="color:#d97706; border-color:#fde68a;"><i class="fas fa-bullhorn"></i> 오늘의 알림장 (학부모 전송)</h4>
-<textarea id="dailyProgress" placeholder="오늘 공부한 내용이나 전달사항을 입력하세요." rows="3" style="background:white; border:1px solid #fde68a; margin-bottom:8px;"></textarea>
-<div id="noticePreview" style="display:none; background:white; padding:10px; border:1px solid #fcd34d; font-size:13px; white-space:pre-wrap; margin-bottom:8px; color:#333; border-radius:6px;"></div>
-<div class="modal-action-row" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
-<button class="action-btn" onclick="generateNotice()" style="background:#f59e0b; margin:0; font-size:13px; padding:12px 0;">📝 문구 생성</button>
-<button class="action-btn" onclick="sendNoticeSms()" style="background:#22c55e; margin:0; font-size:13px; padding:12px 0;"><i class="fas fa-envelope"></i> 문자</button>
-<button class="action-btn" onclick="sendNoticeKakao()" style="background:#fee500; color:#3c1e1e; margin:0; font-size:13px; padding:12px 0;"><i class="fas fa-comment"></i> 카톡</button>
+<h4 style="color:#d97706; border-color:#fde68a;"><i class="fas fa-bullhorn"></i> 오늘의 알림장</h4>
+
+<!-- ▼▼▼ [개선] 학부모 연락처 자동 표시 ▼▼▼ -->
+<div id="parentContactInfo" style="background:white; padding:10px; border-radius:8px; border:1px solid #fde68a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+    <div style="flex:1;">
+        <div style="font-size:12px; color:#78350f; margin-bottom:2px;">전송 대상</div>
+        <div id="parentContactDisplay" style="font-size:14px; font-weight:600; color:#92400e;">
+            📞 학부모 연락처 확인 중...
+        </div>
+    </div>
+    <div style="font-size:24px;">📱</div>
+</div>
+
+<textarea id="dailyProgress" placeholder="예: 오늘은 분수의 덧셈을 학습했습니다. 집에서 복습 부탁드립니다." rows="4" style="background:white; border:1px solid #fde68a; margin-bottom:10px; font-size:14px; line-height:1.6;"></textarea>
+
+<!-- ▼▼▼ [개선] 미리보기 영역 (자동 생성) ▼▼▼ -->
+<div id="noticePreview" style="display:none; background:#fef9e7; padding:12px; border:1px solid #fcd34d; font-size:13px; white-space:pre-wrap; margin-bottom:10px; color:#333; border-radius:8px; line-height:1.5;"></div>
+
+<!-- ▼▼▼ [개선] 원클릭 전송 버튼 ▼▼▼ -->
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+    <button class="action-btn" onclick="quickSendNotice('sms')" style="background:#22c55e; margin:0; font-size:14px; padding:14px 0; font-weight:700; box-shadow: 0 4px 12px rgba(34,197,94,0.25);">
+        💬 문자 전송
+    </button>
+    <button class="action-btn" onclick="quickSendNotice('kakao')" style="background:#fee500; color:#3c1e1e; margin:0; font-size:14px; padding:14px 0; font-weight:700; box-shadow: 0 4px 12px rgba(254,229,0,0.25);">
+        💛 카톡 전송
+    </button>
+</div>
+
+<!-- ▼▼▼ [추가] 미리보기 토글 버튼 ▼▼▼ -->
+<button onclick="toggleNoticePreview()" style="width:100%; margin-top:10px; padding:8px; background:white; border:1px dashed #fcd34d; border-radius:6px; color:#92400e; font-size:12px; cursor:pointer;">
+    📄 미리보기 보기/숨기기
+</button>
+
+<!-- ▼▼▼ [추가] 전송 내역 ▼▼▼ -->
+<div id="noticeHistory" style="margin-top:12px; padding:10px; background:white; border-radius:8px; border:1px solid #fde68a; display:none;">
+    <div style="font-size:12px; color:#78350f; margin-bottom:6px; font-weight:600;">📋 최근 전송 내역</div>
+    <div id="noticeHistoryList" style="font-size:12px; color:#64748b; max-height:100px; overflow-y:auto;">
+    </div>
 </div>
 </div>
 </div>
@@ -2126,6 +2197,14 @@ header, .header{
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // =========================================================
+    // [추가] 카카오 SDK 초기화
+    // =========================================================
+    if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
+        Kakao.init('dcefb7d07deb53cbd714d68b71392292');
+        console.log('카카오 SDK 초기화 완료:', Kakao.isInitialized());
+    }
 
     
 // =========================================================
@@ -2295,34 +2374,126 @@ startRealtimeListeners();
 
             const div = document.createElement('div');
             div.id = `card-${s.id}`;
-            const stateClass = hasLeft ? 'left' : (hasArrived ? 'arrived' : 'missing');
 
             if (isKiosk) {
-                // [키오스크] 카드
-                const pillText = hasLeft ? '하원 완료' : (hasArrived ? '등원 완료' : '미등원');
-                const hint = hasLeft ? '완료 상태' : (hasArrived ? '<strong>한 번 더 탭</strong>하면 하원 처리' : '<strong>한 번 탭</strong>하면 등원 처리');
-                div.className = `student-card ${stateClass}`;
-                div.innerHTML = `
-                    <div class="kiosk-pill ${stateClass}">${pillText}</div>
-                    <div class="profile-wrapper"><img src="${imgSrc}" class="profile-img"></div>
-                    <div class="info-area">
-                        <div>${s.name}</div>
-                        <small>${s.school || '학교미입력'} | <span style="font-weight:900;">${s.belt || '학년없음'}</span></small>
-                    </div>
-                    <div class="kiosk-hint">${hint}</div>
+                // ▼▼▼ [개선] 키오스크 카드 - 토스 스타일 ▼▼▼
+                const statusConfig = hasLeft 
+                    ? { text: '하원완료', icon: '🏠', color: '#64748b', bg: '#f1f5f9', hint: '완료' }
+                    : hasArrived 
+                    ? { text: '등원중', icon: '✅', color: '#10b981', bg: '#d1fae5', hint: '탭하면 하원 처리' }
+                    : { text: '미등원', icon: '⏰', color: '#f59e0b', bg: '#fef3c7', hint: '탭하면 등원 처리' };
+
+                div.className = 'student-card-toss';
+                div.style.cssText = `
+                    background: white;
+                    border-radius: 20px;
+                    padding: 20px;
+                    margin-bottom: 12px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    border: 2px solid ${statusConfig.bg};
                 `;
+                
+                div.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <!-- 프로필 이미지 -->
+                        <div style="position: relative;">
+                            <img src="${imgSrc}" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 3px solid ${statusConfig.bg};">
+                            <div style="position: absolute; bottom: -4px; right: -4px; width: 28px; height: 28px; background: ${statusConfig.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid white;">
+                                ${statusConfig.icon}
+                            </div>
+                        </div>
+                        
+                        <!-- 학생 정보 -->
+                        <div style="flex: 1;">
+                            <div style="font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+                                ${s.name}
+                            </div>
+                            <div style="font-size: 13px; color: #64748b;">
+                                ${s.school || '학교 미등록'} · ${s.belt || '학년 미등록'}
+                            </div>
+                        </div>
+                        
+                        <!-- 상태 배지 -->
+                        <div style="background: ${statusConfig.bg}; color: ${statusConfig.color}; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; white-space: nowrap;">
+                            ${statusConfig.text}
+                        </div>
+                    </div>
+                    
+                    <!-- 힌트 -->
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                        ${statusConfig.hint}
+                    </div>
+                `;
+                
+                // 호버 효과
+                div.onmouseenter = () => {
+                    div.style.transform = 'translateY(-2px)';
+                    div.style.boxShadow = '0 8px 16px rgba(0,0,0,0.08)';
+                };
+                div.onmouseleave = () => {
+                    div.style.transform = 'translateY(0)';
+                    div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                };
+                
                 div.onclick = () => window.kioskTapAttendance(s.id);
+                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
             } else {
-                // [선생님] 카드
-                div.className = `student-card ${stateClass}`;
+                // ▼▼▼ [개선] 선생님 모드 카드 - 토스 스타일 ▼▼▼
+                const statusConfig = hasLeft 
+                    ? { icon: '🏠', color: '#64748b', bg: '#f8fafc' }
+                    : hasArrived 
+                    ? { icon: '✅', color: '#10b981', bg: '#ecfdf5' }
+                    : { icon: '⏰', color: '#f59e0b', bg: '#fffbeb' };
+
+                div.className = 'student-card-toss';
+                div.style.cssText = `
+                    background: ${statusConfig.bg};
+                    border-radius: 16px;
+                    padding: 16px;
+                    margin-bottom: 10px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    border: 1px solid rgba(0,0,0,0.04);
+                `;
+                
                 div.innerHTML = `
-                    <div class="profile-wrapper" style="width:55px; height:55px; margin:0;"><img src="${imgSrc}" class="profile-img" style="border-radius:18px;"></div>
-                    <div class="info-area" style="text-align:left; padding-left:15px;">
-                        <div><strong style="color:#333; font-size:16px;">${s.name}</strong> <span class="dept-badge">${s.belt || ''}</span></div>
-                        <div style="font-size:13px; color:#777; margin-top:4px;">${s.school || ''}</div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <!-- 프로필 -->
+                        <img src="${imgSrc}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover;">
+                        
+                        <!-- 정보 -->
+                        <div style="flex: 1;">
+                            <div style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 2px;">
+                                ${s.name}
+                                <span style="font-size: 12px; font-weight: 500; color: ${statusConfig.color}; background: white; padding: 2px 8px; border-radius: 6px; margin-left: 6px;">
+                                    ${s.belt || ''}
+                                </span>
+                            </div>
+                            <div style="font-size: 13px; color: #64748b;">
+                                ${s.school || '학교 미등록'}
+                            </div>
+                        </div>
+                        
+                        <!-- 상태 아이콘 -->
+                        <div style="font-size: 24px;">
+                            ${statusConfig.icon}
+                        </div>
                     </div>
                 `;
+                
+                div.onmouseenter = () => {
+                    div.style.transform = 'translateX(4px)';
+                    div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                };
+                div.onmouseleave = () => {
+                    div.style.transform = 'translateX(0)';
+                    div.style.boxShadow = 'none';
+                };
+                
                 div.onclick = () => window.openDetail(s);
+                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
             }
             listArea.appendChild(div);
         });
@@ -2341,6 +2512,23 @@ startRealtimeListeners();
         document.getElementById('modalImg').src = s.photo || "https://via.placeholder.com/150";
         document.getElementById('modalName').innerText = s.name;
         document.getElementById('modalInfo').innerText = `${s.school||''} | ${s.belt||''}`;
+
+        // ▼▼▼ [추가] 학부모 연락처 자동 표시 ▼▼▼
+        const parentContactDisplay = document.getElementById('parentContactDisplay');
+        if (parentContactDisplay) {
+            const parPhone = s.phone || '';
+            if (parPhone) {
+                parentContactDisplay.innerHTML = `<strong>${s.name}</strong> 학부모 ${parPhone}`;
+                parentContactDisplay.style.color = '#10b981';
+            } else {
+                parentContactDisplay.innerHTML = `⚠️ 학부모 연락처 미등록`;
+                parentContactDisplay.style.color = '#ef4444';
+            }
+        }
+        
+        // 전송 내역 표시
+        updateNoticeHistory(s);
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         // 연락처 연결
         const stuPhone = (s.studentPhone || "").replace(/[^0-9]/g, '');
@@ -2543,35 +2731,260 @@ startRealtimeListeners();
         return msg;
     };
     
-    // [Manual SMS] 버튼: 휴대폰 앱 열기
-    window.sendNoticeSms = () => {
+    // ==========================================
+    // [개선] 원클릭 알림장 전송
+    // ==========================================
+    window.quickSendNotice = async (method) => {
         const s = window.allStudents.find(st => st.id === window.currentStudentId);
-        if(!s.phone) return alert("부모님 연락처 없음");
-        const msg = window.generateNotice();
-        if(msg) location.href = `sms:${s.phone.replace(/-/g,'')}?body=${encodeURIComponent(msg)}`;
-    };
-
-    // [Kakao] 버튼: 링크 생성 및 공유
-    window.sendNoticeKakao = async () => {
-        const s = window.allStudents.find(st => st.id === window.currentStudentId);
-        const text = document.getElementById('dailyProgress').value;
-        if(!text) return alert("내용을 입력하세요");
-        const parentUrl = location.origin + '/parent.html?v=' + Date.now();
-        const msg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 확인하기\n${parentUrl}`;
-
-        // DB 저장 (알림장 내용 기록)
-        await updateDoc(doc(db, 'students', window.currentStudentId), {
-            lastNotice: text,
-            counselLog: arrayUnion({ date: new Date().toLocaleDateString(), text: '[알림장] ' + text })
-        });
-
-        if (navigator.share) {
-            try { await navigator.share({ title: '알림장', text: msg, url: parentUrl }); } catch(e){}
-        } else {
-            navigator.clipboard.writeText(msg).then(()=>alert("복사되었습니다. 카톡에 붙여넣으세요."));
+        if (!s) return alert('학생 정보를 찾을 수 없습니다.');
+        
+        const text = document.getElementById('dailyProgress').value.trim();
+        if (!text) return alert("알림장 내용을 입력하세요");
+        
+        // 학부모 연락처 확인
+        if (!s.phone) {
+            return alert(`${s.name} 학생의 학부모 연락처가 등록되어 있지 않습니다.\n\n정보 수정 탭에서 연락처를 먼저 등록해주세요.`);
+        }
+        
+        // 자동으로 문구 생성
+        const fullMessage = window.generateNotice();
+        if (!fullMessage) return;
+        
+        // DB 저장 (전송 내역 기록)
+        try {
+            await updateDoc(doc(db, 'students', window.currentStudentId), {
+                lastNotice: text,
+                lastNoticeDate: new Date().toISOString(),
+                lastNoticeMethod: method,
+                counselLog: arrayUnion({ 
+                    date: new Date().toLocaleDateString(), 
+                    text: `[알림장-${method}] ${text}` 
+                })
+            });
+        } catch(e) {
+            console.error('저장 오류:', e);
+        }
+        
+        // 전송 방법에 따라 처리
+        if (method === 'sms') {
+            // 문자 전송
+            location.href = `sms:${s.phone.replace(/-/g,'')}?body=${encodeURIComponent(fullMessage)}`;
+        } else if (method === 'kakao') {
+            // 카카오톡 전송
+            if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
+                alert('카카오톡 SDK 오류. 문자로 전송합니다.');
+                location.href = `sms:${s.phone.replace(/-/g,'')}?body=${encodeURIComponent(fullMessage)}`;
+                return;
+            }
+            
+            try {
+                Kakao.Share.sendDefault({
+                    objectType: 'feed',
+                    content: {
+                        title: `📚 ${s.name} 학생 알림장`,
+                        description: text,
+                        imageUrl: 'https://mire-seven.vercel.app/logo.png',
+                        link: {
+                            mobileWebUrl: 'https://mire-seven.vercel.app/parent.html',
+                            webUrl: 'https://mire-seven.vercel.app/parent.html'
+                        }
+                    },
+                    buttons: [
+                        {
+                            title: '학부모 페이지 열기',
+                            link: {
+                                mobileWebUrl: 'https://mire-seven.vercel.app/parent.html',
+                                webUrl: 'https://mire-seven.vercel.app/parent.html'
+                            }
+                        }
+                    ]
+                });
+                
+                // 전송 성공 후 내역 갱신
+                setTimeout(() => {
+                    updateNoticeHistory(s);
+                    document.getElementById('dailyProgress').value = ''; // 내용 초기화
+                }, 500);
+                
+            } catch(err) {
+                console.error('카카오톡 공유 오류:', err);
+                alert('카카오톡 공유 실패. 문자로 전송합니다.');
+                location.href = `sms:${s.phone.replace(/-/g,'')}?body=${encodeURIComponent(fullMessage)}`;
+            }
         }
     };
-    window.sendKakaoToTarget = (target) => window.sendNoticeKakao();
+    
+    // ==========================================
+    // [추가] 미리보기 토글
+    // ==========================================
+    window.toggleNoticePreview = () => {
+        const text = document.getElementById('dailyProgress').value.trim();
+        if (!text) {
+            alert('내용을 먼저 입력하세요');
+            return;
+        }
+        
+        const preview = document.getElementById('noticePreview');
+        if (preview.style.display === 'none') {
+            window.generateNotice();
+        } else {
+            preview.style.display = 'none';
+        }
+    };
+    
+    // ==========================================
+    // [추가] 전송 내역 표시
+    // ==========================================
+    window.updateNoticeHistory = (s) => {
+        const historyBox = document.getElementById('noticeHistory');
+        const historyList = document.getElementById('noticeHistoryList');
+        
+        if (!s.lastNoticeDate) {
+            historyBox.style.display = 'none';
+            return;
+        }
+        
+        const date = new Date(s.lastNoticeDate);
+        const timeAgo = getTimeAgo(date);
+        const method = s.lastNoticeMethod === 'kakao' ? '💛 카톡' : '💬 문자';
+        
+        historyBox.style.display = 'block';
+        historyList.innerHTML = `
+            <div style="padding:8px; background:#fef9e7; border-radius:6px; margin-bottom:4px;">
+                <div style="font-weight:600; color:#92400e; margin-bottom:2px;">
+                    ${method} · ${timeAgo}
+                </div>
+                <div style="color:#64748b; font-size:11px;">
+                    ${s.lastNotice || '내용 없음'}
+                </div>
+            </div>
+        `;
+    };
+    
+    // 시간 차이 계산
+    function getTimeAgo(date) {
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        if (minutes < 1) return '방금 전';
+        if (minutes < 60) return `${minutes}분 전`;
+        if (hours < 24) return `${hours}시간 전`;
+        return `${days}일 전`;
+    }
+    
+    // ==========================================
+    // [기존] Manual SMS 버튼 (호환성 유지)
+    // ==========================================
+    window.sendNoticeSms = () => {
+        window.quickSendNotice('sms');
+    };
+
+    // ==========================================
+    // [카카오톡] 알림장 공유하기 (Feed 타입)
+    // ==========================================
+    window.sendNoticeKakao = async () => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        if (!s) return alert('학생 정보를 찾을 수 없습니다.');
+        
+        const text = document.getElementById('dailyProgress').value.trim();
+        if (!text) return alert("알림장 내용을 입력하세요");
+
+        // DB 저장 (알림장 내용 기록)
+        try {
+            await updateDoc(doc(db, 'students', window.currentStudentId), {
+                lastNotice: text,
+                lastNoticeDate: new Date().toISOString(),
+                counselLog: arrayUnion({ 
+                    date: new Date().toLocaleDateString(), 
+                    text: '[알림장] ' + text 
+                })
+            });
+        } catch(e) {
+            console.error('알림장 저장 오류:', e);
+        }
+
+        // 카카오톡 SDK 확인
+        if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
+            alert('카카오톡 SDK 오류. 페이지를 새로고침해주세요.');
+            return;
+        }
+
+        // 카카오톡 공유하기 (Feed 메시지)
+        try {
+            Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: `📚 ${s.name} 학생 알림장`,
+                    description: text,
+                    imageUrl: 'https://mire-seven.vercel.app/logo.png', // 능동해냄 로고
+                    link: {
+                        mobileWebUrl: 'https://mire-seven.vercel.app/parent.html',
+                        webUrl: 'https://mire-seven.vercel.app/parent.html'
+                    }
+                },
+                buttons: [
+                    {
+                        title: '학부모 페이지 열기',
+                        link: {
+                            mobileWebUrl: 'https://mire-seven.vercel.app/parent.html',
+                            webUrl: 'https://mire-seven.vercel.app/parent.html'
+                        }
+                    }
+                ]
+            });
+            console.log('카카오톡 공유 성공');
+        } catch(err) {
+            console.error('카카오톡 공유 오류:', err);
+            // 실패 시 폴백: 클립보드 복사
+            const fallbackMsg = `[미래엔수학] ${s.name} 학생 알림장\n\n${text}\n\n👇 학부모 페이지\nhttps://mire-seven.vercel.app/parent.html`;
+            try {
+                await navigator.clipboard.writeText(fallbackMsg);
+                alert("카카오톡 공유 실패\n내용이 복사되었습니다.\n카톡에 직접 붙여넣어주세요.");
+            } catch(clipErr) {
+                alert("카카오톡 공유 실패\n\n" + fallbackMsg);
+            }
+        }
+    };
+
+    // ==========================================
+    // [카카오톡] 학생/학부모 연락처로 공유
+    // ==========================================
+    window.sendKakaoToTarget = async (target) => {
+        const s = window.allStudents.find(st => st.id === window.currentStudentId);
+        if (!s) return alert('학생 정보를 찾을 수 없습니다.');
+
+        const phone = target === 'student' ? s.studentPhone : s.phone;
+        if (!phone) {
+            return alert(`${target === 'student' ? '학생' : '학부모'} 연락처가 등록되지 않았습니다.`);
+        }
+
+        // 간단 메시지 (알림장이 아닌 일반 연락용)
+        const message = `안녕하세요, 미래엔수학입니다.\n${s.name} 학생 관련 안내드립니다.`;
+
+        if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
+            // 폴백: SMS 열기
+            location.href = `sms:${phone.replace(/-/g, '')}?body=${encodeURIComponent(message)}`;
+            return;
+        }
+
+        try {
+            Kakao.Share.sendDefault({
+                objectType: 'text',
+                text: message,
+                link: {
+                    mobileWebUrl: 'https://mire-seven.vercel.app/parent.html',
+                    webUrl: 'https://mire-seven.vercel.app/parent.html'
+                }
+            });
+        } catch(err) {
+            console.error('카카오톡 공유 오류:', err);
+            // 폴백: SMS
+            location.href = `sms:${phone.replace(/-/g, '')}?body=${encodeURIComponent(message)}`;
+        }
+    };
 
     // [정산] 자동 문구 생성
     window.generateSettlement = () => {
