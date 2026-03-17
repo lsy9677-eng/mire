@@ -99,7 +99,7 @@ body {
   color: var(--gray-900);
   line-height: 1.6;
   letter-spacing: -0.3px;
-  padding: 0 0 80px 0;
+  padding: 0 0 16px 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -151,15 +151,14 @@ header {
 
 .tabs {
   background: white;
-  border-radius: var(--radius-lg);
-  padding: var(--space-xs);
+  border-bottom: 1px solid var(--gray-200);
+  padding: var(--space-xs) var(--space-lg);
   display: flex;
   gap: var(--space-xs);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: var(--space-xl);
   position: sticky;
-  top: 80px;
+  top: 73px;   /* header 높이만큼 */
   z-index: 90;
+  margin-bottom: var(--space-xl);
 }
 
 .tab {
@@ -850,58 +849,31 @@ body.kiosk-mode .student-card.arrived {
 .page.active{ display:block; }
 @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
 
-/* Bottom Navigation (re-using existing .tabs markup) */
-.tabs{
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
-  z-index: 50;
-
-  display:flex;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.78);
-  border: 1px solid rgba(15,23,42,.08);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 18px 40px rgba(15,23,42,.12);
-}
+/* tab-btn 스타일 */
 .tab-btn{
   flex:1;
-  min-height: var(--tap);
+  min-height: 42px;
   border:none;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: transparent;
   cursor:pointer;
-
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:8px;
-
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--ink-sub);
-  transition: transform .12s ease, background .12s ease, color .12s ease;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--gray-600);
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
 }
-.tab-btn i{ font-size: 16px; }
+.tab-btn i{ font-size: 15px; }
 .tab-btn.active{
-  background: linear-gradient(180deg, rgba(59,130,246,.18) 0%, rgba(59,130,246,.10) 100%);
-  color: var(--brand-blue-700);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: var(--font-bold);
 }
-.tab-btn:active{ transform: scale(.98); }
-
-/* On wider screens, make tabs inline (not fixed) */
-@media (min-width: 900px){
-  body{ padding-bottom: 14px; }
-  .tabs{
-    position: static;
-    margin: 8px 0 14px;
-    border-radius: 18px;
-    box-shadow: 0 10px 26px rgba(15,23,42,.10);
-  }
-}
+.tab-btn:active{ opacity: .85; }
 
 /* ----- Forms ----- */
 .form-grid{
@@ -1164,11 +1136,11 @@ button.action-btn:disabled{
 .btn-sms{ background: rgba(59,130,246,.12); color: #1D4ED8; }
 .btn-kakao{ background: rgba(250,204,21,.25); color: #3c1e1e; }
 
-/* ----- Toast (cute) ----- */
+/* ----- Toast ----- */
 .toast{
   position: fixed;
   left:50%;
-  bottom: calc(120px + env(safe-area-inset-bottom));
+  bottom: 24px;
   transform: translateX(-50%) translateY(10px);
   opacity: 0;
   pointer-events:none;
@@ -1761,33 +1733,7 @@ body.kiosk-mode .kiosk-header{
 body.show-admin div.info-box.admin-only {
     display: block !important;
 }
-/* =========================================
-   1. 메뉴 버튼 상단 배치 & 모바일 최적화
-   ========================================= */
-.tabs {
-    position: sticky; /* 스크롤 내려도 상단에 고정 */
-    top: 0;
-    z-index: 90;
-    margin: 0 0 15px 0;
-    padding: 8px;
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 0 0 16px 16px; /* 아래쪽만 둥글게 */
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    width: 100%; /* 가로 꽉 차게 */
-    left: 0;
-}
-/* 탭 버튼 스타일 단순화 */
-.tab-btn {
-    border-radius: 12px;
-    font-size: 14px;
-    padding: 8px 0; /* 높이 조절 */
-}
-
-/* 본문 여백 재조정 (버튼이 위로 갔으므로 아래 여백 제거) */
-body { padding-bottom: 20px !important; }
-#register { padding-bottom: 20px !important; }
+/* [중복제거] tabs 블록 통합됨 */
 
 /* =========================================
    2. [출석부 모드] 3D 입체 버튼 & 카드 디자인
@@ -2091,18 +2037,7 @@ body.kiosk-mode .kiosk-exit-btn {
 }
 
 /* 전체 폰트 변경 */
-body{
-  font-family: 'Gowun Dodum', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
-  background: linear-gradient(180deg, #FFF8F1 0%, #FDF2F8 40%, #F8FAFC 100%) !important;
-  color: var(--ink);
-}
 
-/* 컨테이너를 더 따뜻하게 */
-.container{
-  background: rgba(255,255,255,.88) !important;
-  border: 1px solid rgba(31,41,55,.06) !important;
-  border-radius: var(--r-lg) !important;
-}
 
 /* 버튼을 “친근한 젤리 버튼 느낌” */
 button, .action-btn{
@@ -2111,147 +2046,15 @@ button, .action-btn{
   letter-spacing: -0.2px;
 }
 
-/* 입력창도 더 말랑하게 */
-input, select, textarea{
-  border-radius: 18px !important;
-  background: rgba(255,255,255,.95) !important;
-}
 
-/* 카드: 더 따뜻한 느낌 */
-.card, .student-card, .panel, .box{
-  border-radius: 24px !important;
-  box-shadow: 0 10px 20px rgba(31,41,55,.08) !important;
-}
 
-/* 탭바(메뉴)도 부드럽게 */
-.tabs, .tabbar, .nav-tabs{
-  border-radius: 18px !important;
-  background: rgba(255,255,255,.92) !important;
-  box-shadow: var(--shadow-soft) !important;
-}
-.tab-btn, .tab, .nav-link{
-  border-radius: 16px !important;
-}
 
-/* 타이틀을 조금 더 따뜻하게 */
-.brand-title strong, .app-title, header h1{
-  font-size: 20px !important;
-  font-weight: 900 !important;
-}
-.brand-title span, .subtitle, header p{
-  font-size: 13px !important;
-  opacity: .9;
-}
 
-/* ===== v3: 파랑 톤 더 차분/따뜻 + 학원앱 간격 다듬기 ===== */
-:root{
-  /* 차분한 파랑(약간 따뜻한 기운) */
-  --brand-blue:#5A8FF7;      /* primary */
-  --brand-blue-700:#3C74F0;  /* hover/active */
-  --brand-blue-50: rgba(90,143,247,.14);
+/* [중복제거] 탭 스타일 통합됨 */
 
-  /* 보조 파스텔 */
-  --soft-mint: rgba(34,197,94,.12);
-  --soft-amber: rgba(245,158,11,.14);
 
-  /* 간격/리듬 */
-  --gap-1: 10px;
-  --gap-2: 14px;
-  --gap-3: 18px;
-  --gap-4: 22px;
-}
 
-/* 버튼/포인트 컬러를 일관되게 */
-.action-btn,
-button.primary,
-.btn-primary{
-  background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue-700) 100%) !important;
-  border: 1px solid rgba(255,255,255,.22) !important;
-  box-shadow: 0 10px 18px rgba(60,116,240,.18) !important;
-}
-
-/* 기본 버튼(secondary) */
-button,
-.action-btn.secondary,
-.btn-secondary{
-  transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
-}
-button:active,
-.action-btn:active{
-  transform: translateY(1px) scale(.99);
-}
-
-/* 탭: 학원앱 느낌 (둥글 + 적당한 여백 + 선택 강조) */
-.tabs, .tabbar, .nav-tabs{
-  padding: 8px !important;
-  gap: 8px !important;
-}
-.tab-btn, .tab, .nav-link{
-  padding: 10px 14px !important;
-  font-weight: 900 !important;
-  color: rgba(31,41,55,.78) !important;
-}
-.tab-btn.active, .tab.active, .nav-link.active{
-  background: rgba(255,255,255,.92) !important;
-  color: var(--brand-blue-700) !important;
-  box-shadow: 0 10px 18px rgba(31,41,55,.10) !important;
-  border: 1px solid rgba(60,116,240,.18) !important;
-}
-
-/* 카드 간격: 촘촘하지 않게, 학원 관리앱 리듬 */
-.container{
-  padding: var(--gap-4) !important;
-}
-.section, .content, main{
-  gap: var(--gap-3) !important;
-}
-.card, .student-card, .panel, .box{
-  padding: var(--gap-3) !important;
-  margin-bottom: var(--gap-2) !important;
-  border: 1px solid rgba(31,41,55,.06) !important;
-}
-
-/* 리스트/행 간격 */
-.list, .list-item, .row, .item{
-  padding: 10px 12px !important;
-}
-.list-item + .list-item,
-.row + .row,
-.item + .item{
-  margin-top: 8px !important;
-}
-
-/* 입력 폼 간격 */
-.form, form{
-  gap: 12px !important;
-}
-label{
-  font-weight: 900 !important;
-  color: rgba(31,41,55,.78) !important;
-  letter-spacing: -0.2px;
-}
-input, select, textarea{
-  padding: 12px 14px !important;
-  border: 1px solid rgba(31,41,55,.10) !important;
-  box-shadow: 0 6px 14px rgba(31,41,55,.06) !important;
-}
-input:focus, select:focus, textarea:focus{
-  outline: none !important;
-  border-color: rgba(60,116,240,.40) !important;
-  box-shadow: 0 0 0 4px var(--brand-blue-50) !important;
-}
-
-/* 작은 배지/필터칩이 있다면 더 귀엽게 */
-.chip, .badge, .filter-label{
-  border-radius: 999px !important;
-  padding: 8px 12px !important;
-  background: var(--brand-blue-50) !important;
-}
-
-/* 상단 헤더가 있으면 여백 확보 */
-header, .header{
-  margin-bottom: var(--gap-3) !important;
-}
+/* [정리] v3 패치 블록 제거됨 */
 
 /* ===== v4: 상단 헤더를 따뜻한 '학원앱 첫인상'으로 ===== */
 .app-header{
@@ -2520,7 +2323,7 @@ header, .header{
 <button class="tab-btn active" onclick="showPage('register')"><i class="fas fa-user-plus"></i> 신규 등록</button>
 <button class="tab-btn" onclick="showPage('list')"><i class="fas fa-users"></i> 원생 관리</button>
 <button class="tab-btn" onclick="showPage('calendar')"><i class="fas fa-calendar-alt"></i> 학습 일정</button>
-<button class="tab-btn admin-only" onclick="showPage('inbox')"><i class="fas fa-inbox"></i> 학부모 의견 <span id="inboxBadge" style="display:none; margin-left:6px; background:#ef4444; color:white; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:900;">0</span></button>
+
 </div>
 <div class="page active" id="register">
 <div class="form-grid">
@@ -2630,19 +2433,7 @@ header, .header{
 <div id="dailyEventList" style="max-height:300px; overflow-y:auto;"></div>
 </div>
 </div>
-<!-- ===========================
-     학부모 의견함 (선생님 전용)
-     =========================== -->
-<div class="page" id="inbox">
-<div class="card" style="margin-top:10px;">
-<h3 style="margin:0 0 6px 0;">📨 학부모 의견함</h3>
-<div style="font-size:13px; color:#64748b; line-height:1.5;">
-            학부모가 <b>parent.html</b>에서 보낸 메시지가 여기 모입니다.
-            <br/>각 메시지에서 <b>학생 열기</b>를 눌러 바로 해당 학생 상세로 이동할 수 있습니다.
-        </div>
-</div>
-<div class="card">
-<div id="inboxList" style="max-height:520px; overflow-y:auto;"></div>
+
 </div>
 </div>
 <div class="modal-overlay" id="scheduleModal">
@@ -2941,7 +2732,7 @@ if (!auth.currentUser) {
         // 탭 버튼 제어 (선생님 아니면 원생관리 등 숨김)
         document.querySelectorAll('.tab-btn').forEach(btn => {
             const oc = btn.getAttribute('onclick') || '';
-            const restricted = oc.includes("showPage('register')") || oc.includes("showPage('list')") || oc.includes("showPage('inbox')");
+            const restricted = oc.includes("showPage('register')") || oc.includes("showPage('list')") ;
             if(!teacher && !kiosk && restricted) btn.style.display = 'none';
             else btn.style.display = '';
         });
@@ -3692,7 +3483,7 @@ startRealtimeListeners();
                     </div>`;
             });
             inboxListEl.innerHTML = html;
-            const badge = document.getElementById('inboxBadge');
+            const badge = null; // inbox 제거됨
             if(badge) {
                 badge.style.display = unread > 0 ? 'inline-block' : 'none';
                 badge.innerText = unread;
@@ -3861,7 +3652,7 @@ startRealtimeListeners();
         if(id==='register') tabs[0].classList.add('active');
         if(id==='list') tabs[1].classList.add('active');
         if(id==='calendar') tabs[2].classList.add('active');
-        if(id==='inbox') tabs[3].classList.add('active');
+        // inbox 탭 제거됨
         
         if(id==='calendar') window.renderCalendar();
         if(id==='list') window.filterList();
@@ -3930,8 +3721,16 @@ startRealtimeListeners();
         const kioskSaved = isKioskSaved();
         if(kioskSaved) document.body.classList.add('kiosk-mode');
         applyAccessUI();
-        if(isTeacherMode() || kioskSaved) window.showPage('list');
-        else window.showPage('calendar');
+        if(isTeacherMode() || kioskSaved) {
+            window.showPage('list');
+        } else {
+            // 기본: list 페이지 active 보장 후 calendar 이동
+            const lp = document.getElementById('list');
+            if(lp) lp.classList.add('active');
+            window.showPage('calendar');
+        }
+        // Firebase 데이터 로드 후 filterList 재실행 보장
+        setTimeout(() => { if(window.filterList) window.filterList(); }, 800);
     };
 </script>
 <div aria-atomic="true" aria-live="polite" class="toast" id="toast">
